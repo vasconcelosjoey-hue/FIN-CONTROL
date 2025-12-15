@@ -1,25 +1,130 @@
 import React, { useState } from 'react';
-import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey } from '../types';
-import { Card, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight } from 'lucide-react';
+import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey, CustomSection, SectionItem, RadarItem } from '../types';
+import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
+import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target } from 'lucide-react';
 
-const SectionHeader = ({ title, onAdd }: { title: string, onAdd: () => void }) => (
-  <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
-    <h2 className="text-lg font-extrabold text-white tracking-wide uppercase flex items-center gap-2 drop-shadow-md">
-      <span className="w-1.5 h-6 bg-neon-blue rounded-full shadow-[0_0_8px_#00f3ff]"></span>
-      {title}
-    </h2>
-    <Button onClick={onAdd} variant="primary" className="h-8 px-3 text-xs font-bold">
-      <Plus size={14} /> <span className="hidden sm:inline">Adicionar</span>
+const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
+  <div className="mb-4 pt-4 border-t border-white/5">
+    {children}
+    <Button onClick={onAdd} variant="primary" className="w-full mt-3 h-10">
+      <Plus size={16} /> Adicionar
     </Button>
   </div>
 );
 
-// --- Income Module ---
-export const IncomeModule = ({ data, onUpdate }: { data: FinancialData, onUpdate: (d: FinancialData) => void }) => {
+// Helper for Drag and Drop
+interface DraggableRowProps {
+  children: React.ReactNode;
+  index: number;
+  onMove: (from: number, to: number) => void;
+  className?: string;
+}
+
+const DraggableRow: React.FC<DraggableRowProps> = ({ children, index, onMove, className }) => {
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    if (isNaN(fromIndex)) return;
+    onMove(fromIndex, index);
+  };
+
+  return (
+    <div 
+      draggable 
+      onDragStart={handleDragStart} 
+      onDragOver={handleDragOver} 
+      onDrop={handleDrop}
+      className={`cursor-grab active:cursor-grabbing ${className}`}
+    >
+      <div className="mr-2 text-slate-600 hover:text-slate-400">
+        <GripVertical size={14} />
+      </div>
+      {children}
+    </div>
+  );
+};
+
+// --- Radar Module (No Radar) ---
+export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+  const [name, setName] = useState('');
+  const [value, setValue] = useState('');
+
+  // Safe check for radarItems in case of legacy data
+  const items = data.radarItems || [];
+  const total = items.reduce((acc, i) => acc + i.value, 0);
+
+  const handleAdd = () => {
+    if (!name || !value) return;
+    const item: RadarItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      value: parseFloat(value),
+    };
+    onUpdate({ ...data, radarItems: [...items, item] });
+    setName(''); setValue('');
+  };
+
+  const handleMove = (from: number, to: number) => {
+    const list = [...items];
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    onUpdate({ ...data, radarItems: list });
+  };
+
+  return (
+    <CollapsibleCard title="No Radar" totalValue={`R$ ${total.toFixed(2)}`} color="white" icon={<Target size={20} />}>
+       <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-12 gap-3">
+          <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
+        </div>
+      </AddForm>
+
+      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+         {items.map((item, idx) => (
+           <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/50">
+             <div className="flex-1">
+                <span className="font-bold text-white text-sm">{item.name}</span>
+             </div>
+              <div className="flex items-center gap-3">
+                <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                <button onClick={() => onUpdate({...data, radarItems: items.filter(i => i.id !== item.id)})} className="text-slate-500 hover:text-white"><Trash2 size={14} /></button>
+              </div>
+           </DraggableRow>
+         ))}
+      </div>
+    </CollapsibleCard>
+  );
+};
+
+// --- Income Module (Split Future/Present) ---
+export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void, type: 'current' | 'future' }> = ({ data, onUpdate, type }) => {
   const [newName, setNewName] = useState('');
   const [newValue, setNewValue] = useState('');
   const [newDate, setNewDate] = useState('');
+
+  // Filter Logic
+  const today = new Date();
+  const currentMonthStr = today.toISOString().slice(0, 7); // YYYY-MM
+  
+  const filteredIncomes = data.incomes.filter(item => {
+    if (type === 'current') {
+      return item.expectedDate.startsWith(currentMonthStr) || item.expectedDate < currentMonthStr;
+    } else {
+      return item.expectedDate > currentMonthStr + '-31'; 
+    }
+  });
+
+  const totalValue = filteredIncomes.reduce((acc, curr) => acc + curr.value, 0);
 
   const handleAdd = () => {
     if (!newName || !newValue) return;
@@ -37,45 +142,136 @@ export const IncomeModule = ({ data, onUpdate }: { data: FinancialData, onUpdate
     onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== id) });
   };
 
+  const handleMove = (fromIndex: number, toIndex: number) => {
+    // Note: This simple move logic works best when viewing the full list. 
+    // Since we filter displayed items, we need to map display-index to real-index or just accept it visually sorts the filtered list.
+    // For simplicity in this structure, we reorder the FULL list by finding items.
+    const fromItem = filteredIncomes[fromIndex];
+    const toItem = filteredIncomes[toIndex];
+    if (!fromItem || !toItem) return;
+
+    const allIncomes = [...data.incomes];
+    const realFrom = allIncomes.findIndex(i => i.id === fromItem.id);
+    const realTo = allIncomes.findIndex(i => i.id === toItem.id);
+
+    allIncomes.splice(realTo, 0, allIncomes.splice(realFrom, 1)[0]);
+    onUpdate({...data, incomes: allIncomes});
+  };
+
   return (
-    <Card className="h-full border-l-4 border-l-neon-green/30">
-      <SectionHeader title="Entradas" onAdd={handleAdd} />
-      
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 p-4 bg-black/20 rounded-xl border border-white/5">
-        <div className="md:col-span-5"><Input placeholder="Nome da Entrada" value={newName} onChange={e => setNewName(e.target.value)} /></div>
-        <div className="md:col-span-3"><Input type="number" placeholder="R$ Valor" value={newValue} onChange={e => setNewValue(e.target.value)} /></div>
-        <div className="md:col-span-4"><Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} /></div>
-      </div>
+    <CollapsibleCard 
+      title={type === 'current' ? "Entradas Vigentes" : "Entradas Futuras"} 
+      totalValue={`R$ ${totalValue.toFixed(2)}`}
+      color="green"
+      icon={type === 'current' ? <Wallet size={20}/> : <CalendarDays size={20}/>}
+    >
+      <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="md:col-span-5"><Input placeholder="Nome" value={newName} onChange={e => setNewName(e.target.value)} /></div>
+          <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={newValue} onChange={e => setNewValue(e.target.value)} /></div>
+          <div className="md:col-span-4"><Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} /></div>
+        </div>
+      </AddForm>
 
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-        {data.incomes.length === 0 && <p className="text-slate-500 text-center text-sm py-8 font-medium italic">Nenhuma entrada registrada.</p>}
-        {data.incomes.map(item => (
-          <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
-            <div className="flex items-center gap-3 mb-2 sm:mb-0">
-              <div className="p-2 bg-neon-green/10 rounded-full text-neon-green">
-                <ArrowRight size={14} className="transform -rotate-45" />
+        {filteredIncomes.length === 0 && <p className="text-slate-500 text-center text-sm py-4 italic">Nenhum registro.</p>}
+        {filteredIncomes.map((item, idx) => (
+          <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green">
+                <ArrowRight size={12} className="transform -rotate-45" />
               </div>
               <div>
-                <p className="font-bold text-white text-base">{item.name}</p>
-                <p className="text-xs text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider"><Calendar size={10} /> {item.expectedDate}</p>
+                <p className="font-bold text-white text-sm">{item.name}</p>
+                <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">{item.expectedDate}</p>
               </div>
             </div>
-            <div className="flex items-center justify-between w-full sm:w-auto gap-4 pl-11 sm:pl-0">
-              <span className="font-extrabold text-neon-green text-lg drop-shadow-[0_0_3px_rgba(10,255,104,0.5)]">R$ {item.value.toFixed(2)}</span>
-              <button onClick={() => handleRemove(item.id)} className="text-slate-500 hover:text-neon-red transition-colors opacity-50 group-hover:opacity-100"><Trash2 size={16} /></button>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
+              <span className="font-extrabold text-neon-green text-base">R$ {item.value.toFixed(2)}</span>
+              <button onClick={() => handleRemove(item.id)} className="text-slate-500 hover:text-neon-red transition-colors opacity-50 group-hover:opacity-100"><Trash2 size={14} /></button>
             </div>
-          </div>
+          </DraggableRow>
         ))}
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 };
 
-// --- Fixed Expense Module ---
-export const FixedExpenseModule = ({ data, onUpdate }: { data: FinancialData, onUpdate: (d: FinancialData) => void }) => {
+// --- Custom Section Module (Generic) ---
+export const CustomSectionModule: React.FC<{ 
+  section: CustomSection, 
+  onUpdate: (updatedSection: CustomSection) => void,
+  onDeleteSection: () => void 
+}> = ({ 
+  section, 
+  onUpdate, 
+  onDeleteSection 
+}) => {
+  const [name, setName] = useState('');
+  const [value, setValue] = useState('');
+
+  const total = section.items.reduce((acc, i) => acc + i.value, 0);
+
+  const handleAdd = () => {
+    if (!name || !value) return;
+    const item: SectionItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      value: parseFloat(value),
+      date: new Date().toISOString().split('T')[0]
+    };
+    onUpdate({ ...section, items: [...section.items, item] });
+    setName(''); setValue('');
+  };
+
+  const handleMove = (from: number, to: number) => {
+    const newItems = [...section.items];
+    newItems.splice(to, 0, newItems.splice(from, 1)[0]);
+    onUpdate({ ...section, items: newItems });
+  };
+
+  return (
+    <CollapsibleCard 
+      title={section.title} 
+      totalValue={`R$ ${total.toFixed(2)}`}
+      color="red"
+      icon={<FolderOpen size={20} />}
+    >
+      <div className="flex justify-end mb-2">
+        <button onClick={onDeleteSection} className="text-[10px] text-neon-red hover:underline flex items-center gap-1"><Trash2 size={10}/> Excluir Sessão</button>
+      </div>
+
+      <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-12 gap-3">
+          <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
+        </div>
+      </AddForm>
+
+      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+         {section.items.map((item, idx) => (
+           <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
+             <div className="flex-1">
+                <span className="font-bold text-white text-sm">{item.name}</span>
+             </div>
+              <div className="flex items-center gap-3">
+                <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                <button onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)})} className="text-slate-500 hover:text-neon-red"><Trash2 size={14} /></button>
+              </div>
+           </DraggableRow>
+         ))}
+      </div>
+    </CollapsibleCard>
+  );
+};
+
+// --- Fixed Expense Module (Renamed to Contas Pessoais) ---
+export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [date, setDate] = useState('');
+
+  const total = data.fixedExpenses.reduce((acc, i) => acc + i.value, 0);
 
   const handleAdd = () => {
     if (!name || !value) return;
@@ -89,49 +285,51 @@ export const FixedExpenseModule = ({ data, onUpdate }: { data: FinancialData, on
     setName(''); setValue(''); setDate('');
   };
 
+  const handleMove = (from: number, to: number) => {
+    const list = [...data.fixedExpenses];
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    onUpdate({ ...data, fixedExpenses: list });
+  };
+
   return (
-    <Card className="h-full border-l-4 border-l-neon-pink/30">
-      <SectionHeader title="Saídas Fixas" onAdd={handleAdd} />
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 p-4 bg-black/20 rounded-xl border border-white/5">
-        <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
-        <div className="md:col-span-3"><Input type="number" placeholder="R$ Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
-        <div className="md:col-span-4"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-      </div>
+    <CollapsibleCard title="Contas Pessoais" totalValue={`R$ ${total.toFixed(2)}`} color="red" icon={<AlertCircle size={20} />}>
+      <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
+          <div className="md:col-span-4"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+        </div>
+      </AddForm>
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-        {data.fixedExpenses.length === 0 && <p className="text-slate-500 text-center text-sm py-8 font-medium italic">Sem saídas fixas.</p>}
-        {data.fixedExpenses.map(item => {
-          const daysUntil = Math.ceil((new Date(item.dueDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-          const urgent = daysUntil <= 3 && daysUntil >= 0;
-          return (
-            <div key={item.id} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 rounded-xl border transition-all duration-300 group ${urgent ? 'bg-neon-red/5 border-neon-red/30 shadow-[0_0_10px_rgba(255,0,85,0.1)]' : 'bg-white/5 border-white/5 hover:border-neon-pink/50'}`}>
-              <div className="mb-2 sm:mb-0 w-full sm:w-auto">
-                <div className="flex justify-between sm:block">
-                    <p className="font-bold text-white text-base">{item.name}</p>
-                    {urgent && <span className="sm:hidden"><Badge color="red">URGENTE</Badge></span>}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-xs text-slate-400 font-medium uppercase">Venc: {item.dueDate}</p>
-                  {urgent && <span className="hidden sm:inline"><Badge color="red">Vence Logo</Badge></span>}
-                </div>
-              </div>
-              <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-                <span className="font-extrabold text-white text-lg">R$ {item.value.toFixed(2)}</span>
-                <button onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} className="text-slate-500 hover:text-neon-red opacity-50 group-hover:opacity-100"><Trash2 size={16} /></button>
-              </div>
-            </div>
-          );
-        })}
+        {data.fixedExpenses.map((item, idx) => (
+          <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
+             <div className="flex-1">
+               <p className="font-bold text-white text-sm">{item.name}</p>
+               <p className="text-[10px] text-slate-400">Venc: {item.dueDate}</p>
+             </div>
+             <div className="flex items-center gap-3">
+               <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+               <button onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} className="text-slate-500 hover:text-neon-red"><Trash2 size={14} /></button>
+             </div>
+          </DraggableRow>
+        ))}
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 };
 
 // --- Installment Module ---
-export const InstallmentModule = ({ data, onUpdate }: { data: FinancialData, onUpdate: (d: FinancialData) => void }) => {
+export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [total, setTotal] = useState('');
   const [count, setCount] = useState('');
   const [start, setStart] = useState('');
+
+  // Calculate monthly total
+  const monthlyTotal = data.installments.reduce((acc, curr) => {
+      const installmentValue = curr.totalValue / curr.installmentsCount;
+      return acc + installmentValue; 
+  }, 0);
 
   const handleAdd = () => {
     if (!name || !total || !count || !start) return;
@@ -146,62 +344,52 @@ export const InstallmentModule = ({ data, onUpdate }: { data: FinancialData, onU
     setName(''); setTotal(''); setCount(''); setStart('');
   };
 
+  const handleMove = (from: number, to: number) => {
+    const list = [...data.installments];
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    onUpdate({ ...data, installments: list });
+  };
+
   return (
-    <Card className="h-full border-l-4 border-l-neon-yellow/30">
-      <SectionHeader title="Parcelados" onAdd={handleAdd} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-        <Input placeholder="O que você comprou?" value={name} onChange={e => setName(e.target.value)} />
-        <Input type="month" value={start} onChange={e => setStart(e.target.value)} />
-      </div>
-      <div className="grid grid-cols-2 gap-3 mb-6">
-         <Input type="number" placeholder="Valor Total" value={total} onChange={e => setTotal(e.target.value)} />
-         <Input type="number" placeholder="Nº Parcelas" value={count} onChange={e => setCount(e.target.value)} />
-      </div>
+    <CollapsibleCard title="Parcelados" totalValue={`~ R$ ${monthlyTotal.toFixed(2)}/mês`} color="red" icon={<Calendar size={20} />}>
+      <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-2 gap-3 mb-2">
+          <Input placeholder="Item" value={name} onChange={e => setName(e.target.value)} />
+          <Input type="month" value={start} onChange={e => setStart(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+           <Input type="number" placeholder="Total (R$)" value={total} onChange={e => setTotal(e.target.value)} />
+           <Input type="number" placeholder="Qtd. Parcelas" value={count} onChange={e => setCount(e.target.value)} />
+        </div>
+      </AddForm>
       
       <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-        {data.installments.map(item => {
-          const installmentValue = item.totalValue / item.installmentsCount;
-          const startD = new Date(item.startMonth + "-01");
-          const now = new Date();
-          const monthsPassed = (now.getFullYear() - startD.getFullYear()) * 12 + (now.getMonth() - startD.getMonth());
-          const remaining = Math.max(0, item.installmentsCount - monthsPassed);
-          const isFinished = remaining === 0;
-          const progress = ((item.installmentsCount - remaining) / item.installmentsCount) * 100;
-
-          if (isFinished) return null;
-
-          return (
-            <div key={item.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-yellow/50 transition-colors">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="font-bold text-white text-sm">{item.name}</p>
-                  <p className="text-xs text-slate-400 font-medium">Início: {item.startMonth}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-extrabold text-white text-sm">R$ {installmentValue.toFixed(2)}<span className="text-[10px] font-medium text-slate-500">/mês</span></p>
-                  <span className="text-xs text-neon-yellow font-bold">{remaining}x restantes</span>
-                </div>
+        {data.installments.map((item, idx) => {
+           const installmentValue = item.totalValue / item.installmentsCount;
+           return (
+            <DraggableRow key={item.id} index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50 block">
+              <div className="flex justify-between w-full">
+                <span className="font-bold text-white text-sm">{item.name}</span>
+                <span className="font-extrabold text-white text-sm">R$ {installmentValue.toFixed(2)}/mês</span>
               </div>
-              <div className="w-full bg-black/50 h-1.5 rounded-full overflow-hidden mb-2">
-                <div className="bg-neon-yellow h-full shadow-[0_0_5px_currentColor]" style={{ width: `${progress}%` }}></div>
+              <div className="flex justify-between text-[10px] text-slate-400 mt-1 w-full">
+                 <span>{item.installmentsCount}x de R$ {installmentValue.toFixed(2)}</span>
+                 <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:underline">Remover</button>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400 font-medium">Total: {item.totalValue}</span>
-                <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-xs font-semibold text-slate-500 hover:text-neon-red transition-colors flex items-center gap-1">Remover</button>
-              </div>
-            </div>
-          );
+            </DraggableRow>
+           );
         })}
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 };
 
 // --- Credit Card Module ---
-export const CreditCardModule = ({ data, onUpdate }: { data: FinancialData, onUpdate: (d: FinancialData) => void }) => {
+export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
-  const [used, setUsed] = useState('');
+
+  const totalLimit = data.creditCards.reduce((acc, c) => acc + c.limit, 0);
 
   const handleAdd = () => {
     if (!name || !limit) return;
@@ -209,130 +397,115 @@ export const CreditCardModule = ({ data, onUpdate }: { data: FinancialData, onUp
       id: Math.random().toString(36).substr(2, 9),
       name,
       limit: parseFloat(limit),
-      currentInvoiceValue: parseFloat(used) || 0,
+      currentInvoiceValue: 0, // Default to 0 as user removed input
       closingDay: 1,
       dueDay: 10
     };
-    onUpdate({ ...data, creditCards: [...data.creditCards, item] });
-    setName(''); setLimit(''); setUsed('');
+    
+    // Add AND Sort by limit descending immediately
+    const newList = [...data.creditCards, item].sort((a, b) => b.limit - a.limit);
+    
+    onUpdate({ ...data, creditCards: newList });
+    setName(''); setLimit('');
+  };
+
+  const handleMove = (from: number, to: number) => {
+    const list = [...data.creditCards];
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    onUpdate({ ...data, creditCards: list });
   };
 
   return (
-    <Card className="h-full border-l-4 border-l-neon-blue/30">
-      <SectionHeader title="Cartões de Crédito" onAdd={handleAdd} />
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 p-4 bg-black/20 rounded-xl border border-white/5">
-        <Input placeholder="Apelido do Cartão" value={name} onChange={e => setName(e.target.value)} />
-        <Input type="number" placeholder="Limite Total" value={limit} onChange={e => setLimit(e.target.value)} />
-        <Input type="number" placeholder="Gasto Atual" value={used} onChange={e => setUsed(e.target.value)} />
-      </div>
+    <CollapsibleCard title="Limites de Cartões" totalValue={`Total: R$ ${totalLimit.toFixed(2)}`} color="blue" icon={<CCIcon size={20} />}>
+      <AddForm onAdd={handleAdd}>
+         <div className="grid grid-cols-2 gap-2">
+           <Input placeholder="Nome do Banco" value={name} onChange={e => setName(e.target.value)} />
+           <Input type="number" placeholder="Limite (R$)" value={limit} onChange={e => setLimit(e.target.value)} />
+         </div>
+      </AddForm>
 
       <div className="space-y-4">
-        {data.creditCards.map(card => {
-          const available = card.limit - card.currentInvoiceValue;
-          const percent = (card.currentInvoiceValue / card.limit) * 100;
-          const statusColor = percent > 80 ? 'bg-neon-red shadow-neon-red' : percent > 50 ? 'bg-neon-yellow shadow-neon-yellow' : 'bg-neon-blue shadow-neon-blue';
-          const borderColor = percent > 80 ? 'border-neon-red/50' : percent > 50 ? 'border-neon-yellow/50' : 'border-neon-blue/50';
-
-          return (
-            <div key={card.id} className={`p-5 bg-gradient-to-br from-white/5 to-transparent rounded-2xl border ${borderColor} relative overflow-hidden transition-all hover:scale-[1.01]`}>
-              {/* Background Glow */}
-              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 ${statusColor.split(' ')[0]}`}></div>
-
-              <div className="flex justify-between items-center mb-4 z-10 relative">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-black/40 rounded border border-white/10 text-slate-300">
-                    <CCIcon size={18} />
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-white tracking-wide block text-lg">{card.name}</span>
-                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-widest">**** **** **** 1234</span>
-                  </div>
-                </div>
-                <button onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) })} className="text-slate-500 hover:text-neon-red transition-colors"><Trash2 size={16} /></button>
-              </div>
-              
-              <div className="flex justify-between text-xs text-slate-300 mb-2 z-10 relative font-bold">
-                <span><span className="text-slate-500 font-medium mr-1">Fatura:</span> R$ {card.currentInvoiceValue.toLocaleString()}</span>
-                <span><span className="text-slate-500 font-medium mr-1">Disp:</span> R$ {available.toLocaleString()}</span>
-              </div>
-              
-              <div className="w-full bg-black/60 h-2.5 rounded-full overflow-hidden z-10 relative border border-white/5">
-                <div className={`h-full rounded-full transition-all duration-700 shadow-[0_0_8px_currentColor] ${statusColor}`} style={{ width: `${Math.min(percent, 100)}%` }}></div>
-              </div>
-              
-              {percent > 90 && <div className="mt-3 text-[10px] text-neon-red flex items-center gap-1 font-extrabold animate-pulse"><AlertCircle size={10} /> LIMITE CRÍTICO</div>}
-            </div>
-          );
-        })}
+        {data.creditCards.map((card, idx) => (
+            <DraggableRow key={card.id} index={idx} onMove={handleMove} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-blue/50 flex flex-col gap-2">
+               <div className="flex justify-between items-center">
+                 <span className="font-bold text-white text-lg">{card.name}</span>
+                 <button onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) })} className="text-slate-500 hover:text-neon-red"><Trash2 size={14} /></button>
+               </div>
+               <div className="flex justify-between text-sm text-slate-300">
+                 <span className="uppercase text-[10px] tracking-widest font-bold text-slate-500">Limite Disponível</span>
+                 <span className="font-mono text-neon-blue font-bold">R$ {card.limit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+               </div>
+            </DraggableRow>
+          ))}
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 };
 
 // --- Pix Module ---
-export const PixModule = ({ data, onUpdate }: { data: FinancialData, onUpdate: (d: FinancialData) => void }) => {
-  const [type, setType] = useState('CPF');
+export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+  const [type, setType] = useState<PixKey['type']>('CPF');
   const [key, setKey] = useState('');
+  const [beneficiary, setBeneficiary] = useState('');
 
   const handleAdd = () => {
     if (!key) return;
     const item: PixKey = {
       id: Math.random().toString(36).substr(2, 9),
-      type: type as any,
+      type,
       key,
+      beneficiary,
       active: true
     };
     onUpdate({ ...data, pixKeys: [...data.pixKeys, item] });
-    setKey('');
+    setKey(''); setBeneficiary('');
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleMove = (from: number, to: number) => {
+    const list = [...data.pixKeys];
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    onUpdate({ ...data, pixKeys: list });
   };
+
+  const options = [
+    { value: 'CPF', label: 'CPF' },
+    { value: 'CNPJ', label: 'CNPJ' },
+    { value: 'Telefone', label: 'Telefone' },
+    { value: 'Email', label: 'Email' },
+    { value: 'Aleatória', label: 'Aleatória' },
+  ];
 
   return (
-    <Card className="h-full border-l-4 border-l-white/20">
-      <SectionHeader title="Chaves Pix" onAdd={handleAdd} />
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="sm:w-1/3">
-          <Select 
-            value={type} 
-            onChange={e => setType(e.target.value)}
-            options={[
-              {value: 'CPF', label: 'CPF'},
-              {value: 'CNPJ', label: 'CNPJ'},
-              {value: 'Telefone', label: 'Telefone'},
-              {value: 'Email', label: 'E-mail'},
-              {value: 'Aleatória', label: 'Aleatória'},
-            ]} 
-          />
-        </div>
-        <div className="flex-1">
-          <Input placeholder="Cole sua chave aqui" value={key} onChange={e => setKey(e.target.value)} />
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {data.pixKeys.map(pk => (
-          <div key={pk.id} className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${pk.active ? 'bg-white/5 border-neon-blue/30 shadow-[0_0_5px_rgba(0,243,255,0.05)]' : 'bg-black/40 border-white/5 opacity-60'}`}>
-            <div className="overflow-hidden pr-2">
-              <span className="text-[10px] uppercase text-neon-blue font-extrabold tracking-widest border border-neon-blue/20 px-2 py-0.5 rounded mb-1 inline-block">{pk.type}</span>
-              <p className="text-sm font-bold font-mono text-slate-200 truncate">{pk.key}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => copyToClipboard(pk.key)} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors" title="Copiar"><Copy size={16} /></button>
-              <button 
-                onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.map(k => k.id === pk.id ? { ...k, active: !k.active } : k) })} 
-                className={`p-2 rounded-lg transition-colors ${pk.active ? 'text-neon-green hover:bg-neon-green/10' : 'text-slate-600 hover:bg-white/5'}`}
-                title="Ativar/Desativar"
-              >
-                <Check size={16} />
-              </button>
-              <button onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(k => k.id !== pk.id) })} className="p-2 hover:bg-neon-red/10 rounded-lg text-slate-600 hover:text-neon-red transition-colors"><Trash2 size={16} /></button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
+    <CollapsibleCard title="Registros de Chaves Pix" totalValue={`${data.pixKeys.length} chaves`} color="pink" icon={<Zap size={20} />}>
+       <AddForm onAdd={handleAdd}>
+         <div className="flex flex-col gap-3">
+           <div className="grid grid-cols-12 gap-3">
+             <div className="col-span-4">
+               <Select options={options} value={type} onChange={e => setType(e.target.value as any)} />
+             </div>
+             <div className="col-span-8">
+               <Input placeholder="Chave Pix" value={key} onChange={e => setKey(e.target.value)} />
+             </div>
+           </div>
+           <div>
+             <Input placeholder="Nome da Pessoa / Beneficiário" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} />
+           </div>
+         </div>
+       </AddForm>
+       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+          {data.pixKeys.map((item, idx) => (
+            <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-pink/50">
+               <div className="flex flex-col w-full overflow-hidden">
+                 <div className="flex items-center gap-2 mb-1">
+                    <Badge color="pink">{item.type}</Badge>
+                    {item.beneficiary && <span className="text-xs text-slate-300 font-bold uppercase truncate">{item.beneficiary}</span>}
+                 </div>
+                 <span className="font-bold text-white text-sm truncate">{item.key}</span>
+               </div>
+               <button onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(i => i.id !== item.id) })} className="text-slate-500 hover:text-neon-red ml-2 shrink-0"><Trash2 size={14} /></button>
+            </DraggableRow>
+          ))}
+       </div>
+    </CollapsibleCard>
   );
 };

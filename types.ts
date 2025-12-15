@@ -1,3 +1,4 @@
+
 export interface Income {
   id: string;
   name: string;
@@ -9,7 +10,21 @@ export interface FixedExpense {
   id: string;
   name: string;
   value: number;
-  dueDate: string; // Day of month as string usually, or full date. Let's use YYYY-MM-DD for simplicity in sorting, but visually show Day.
+  dueDate: string; // YYYY-MM-DD
+}
+
+// Generic item for custom sections
+export interface SectionItem {
+  id: string;
+  name: string;
+  value: number;
+  date?: string;
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  items: SectionItem[];
 }
 
 export interface InstallmentExpense {
@@ -26,22 +41,32 @@ export interface CreditCard {
   limit: number;
   closingDay: number;
   dueDay: number;
-  currentInvoiceValue: number; // Manually tracked or calculated from expenses linked to card (simplified to manual for this prompt)
+  currentInvoiceValue: number;
 }
 
 export interface PixKey {
   id: string;
   type: 'CPF' | 'CNPJ' | 'Telefone' | 'Email' | 'Aleatória';
   key: string;
+  beneficiary?: string; // New field
   active: boolean;
+}
+
+export interface RadarItem {
+  id: string;
+  name: string;
+  value: number;
 }
 
 export interface FinancialData {
   incomes: Income[];
-  fixedExpenses: FixedExpense[];
+  fixedExpenses: FixedExpense[]; // Renamed to "Contas Pessoais" in UI
+  customSections: CustomSection[]; // New dynamic sections (e.g. CBMC)
   installments: InstallmentExpense[];
   creditCards: CreditCard[];
   pixKeys: PixKey[];
+  radarItems: RadarItem[]; // New "No Radar" items
+  modulesOrder?: string[]; // Order of modules in the expense column
   settings?: {
     userName?: string;
   };
@@ -50,7 +75,10 @@ export interface FinancialData {
 export const INITIAL_DATA: FinancialData = {
   incomes: [],
   fixedExpenses: [],
+  customSections: [], // Start empty, user can add "CBMC MENSALIDADE"
   installments: [],
   creditCards: [],
   pixKeys: [],
+  radarItems: [],
+  modulesOrder: ['fixed', 'installments'], // Default order
 };

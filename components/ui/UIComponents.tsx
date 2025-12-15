@@ -201,16 +201,23 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
 
 export const DraggableModuleWrapper = ({ children, id, index, onMove }: { children?: React.ReactNode, id: string, index: number, onMove: (dragIndex: number, hoverIndex: number) => void }) => {
   const handleDragStart = (e: React.DragEvent) => {
+    // IMPORTANT: Tag this as a MODULE drag to avoid conflict with ROW drags
+    e.dataTransfer.setData('type', 'MODULE');
     e.dataTransfer.setData('moduleIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Allow dropping
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Stop bubbling
+    
+    const type = e.dataTransfer.getData('type');
+    if (type !== 'MODULE') return; // Ignore if it's a row being dropped
+
     const fromIndex = parseInt(e.dataTransfer.getData('moduleIndex'));
     if (!isNaN(fromIndex) && fromIndex !== index) {
       onMove(fromIndex, index);
@@ -225,7 +232,7 @@ export const DraggableModuleWrapper = ({ children, id, index, onMove }: { childr
       onDrop={handleDrop}
       className="relative group transition-transform duration-200 ease-in-out"
     >
-      <div className="absolute -left-5 top-6 opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white transition-opacity">
+      <div className="absolute -left-5 top-6 opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white transition-opacity z-10">
         <GripVertical size={20} />
       </div>
       {children}

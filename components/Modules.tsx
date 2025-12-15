@@ -16,25 +16,39 @@ const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () =>
 interface DraggableRowProps {
   children: React.ReactNode;
   index: number;
+  listId: string; // New prop to identify the list
   onMove: (from: number, to: number) => void;
   className?: string;
 }
 
-const DraggableRow: React.FC<DraggableRowProps> = ({ children, index, onMove, className }) => {
+const DraggableRow: React.FC<DraggableRowProps> = ({ children, index, listId, onMove, className }) => {
   const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', index.toString());
+    e.stopPropagation(); // Stop propagation to prevent module dragging
+    e.dataTransfer.setData('type', 'ROW');
+    e.dataTransfer.setData('listId', listId);
+    e.dataTransfer.setData('rowIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Stop bubbling
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    if (isNaN(fromIndex)) return;
+    e.stopPropagation();
+
+    // Verify if we are dropping a row from the SAME list
+    const type = e.dataTransfer.getData('type');
+    const srcListId = e.dataTransfer.getData('listId');
+    
+    if (type !== 'ROW' || srcListId !== listId) return;
+
+    const fromIndex = parseInt(e.dataTransfer.getData('rowIndex'));
+    if (isNaN(fromIndex) || fromIndex === index) return;
+    
     onMove(fromIndex, index);
   };
 
@@ -91,7 +105,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
 
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
          {items.map((item, idx) => (
-           <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/50">
+           <DraggableRow key={item.id} listId="radar" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/50">
              <div className="flex-1">
                 <span className="font-bold text-white text-sm">{item.name}</span>
              </div>
@@ -143,9 +157,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   };
 
   const handleMove = (fromIndex: number, toIndex: number) => {
-    // Note: This simple move logic works best when viewing the full list. 
-    // Since we filter displayed items, we need to map display-index to real-index or just accept it visually sorts the filtered list.
-    // For simplicity in this structure, we reorder the FULL list by finding items.
+    // Reorder based on the full list to avoid index issues
     const fromItem = filteredIncomes[fromIndex];
     const toItem = filteredIncomes[toIndex];
     if (!fromItem || !toItem) return;
@@ -176,7 +188,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
         {filteredIncomes.length === 0 && <p className="text-slate-500 text-center text-sm py-4 italic">Nenhum registro.</p>}
         {filteredIncomes.map((item, idx) => (
-          <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
+          <DraggableRow key={item.id} listId={`income-${type}`} index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green">
                 <ArrowRight size={12} className="transform -rotate-45" />
@@ -250,7 +262,7 @@ export const CustomSectionModule: React.FC<{
 
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
          {section.items.map((item, idx) => (
-           <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
+           <DraggableRow key={item.id} listId={section.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
              <div className="flex-1">
                 <span className="font-bold text-white text-sm">{item.name}</span>
              </div>
@@ -302,7 +314,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       </AddForm>
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
         {data.fixedExpenses.map((item, idx) => (
-          <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
+          <DraggableRow key={item.id} listId="fixed" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
              <div className="flex-1">
                <p className="font-bold text-white text-sm">{item.name}</p>
                <p className="text-[10px] text-slate-400">Venc: {item.dueDate}</p>
@@ -367,7 +379,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
         {data.installments.map((item, idx) => {
            const installmentValue = item.totalValue / item.installmentsCount;
            return (
-            <DraggableRow key={item.id} index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50 block">
+            <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50 block">
               <div className="flex justify-between w-full">
                 <span className="font-bold text-white text-sm">{item.name}</span>
                 <span className="font-extrabold text-white text-sm">R$ {installmentValue.toFixed(2)}/mês</span>
@@ -426,7 +438,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
 
       <div className="space-y-4">
         {data.creditCards.map((card, idx) => (
-            <DraggableRow key={card.id} index={idx} onMove={handleMove} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-blue/50 flex flex-col gap-2">
+            <DraggableRow key={card.id} listId="cc" index={idx} onMove={handleMove} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-blue/50 flex flex-col gap-2">
                <div className="flex justify-between items-center">
                  <span className="font-bold text-white text-lg">{card.name}</span>
                  <button onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) })} className="text-slate-500 hover:text-neon-red"><Trash2 size={14} /></button>
@@ -494,7 +506,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
        </AddForm>
        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
           {data.pixKeys.map((item, idx) => (
-            <DraggableRow key={item.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-pink/50">
+            <DraggableRow key={item.id} listId="pix" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-pink/50">
                <div className="flex flex-col w-full overflow-hidden">
                  <div className="flex items-center gap-2 mb-1">
                     <Badge color="pink">{item.type}</Badge>

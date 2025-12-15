@@ -113,33 +113,55 @@ function App() {
 
     const newData = { ...data };
     let addedType = '';
+    let foundSection = false;
 
-    if (lowerInput.includes('entrada') || lowerInput.includes('receber')) {
-      newData.incomes = [...newData.incomes, {
-        id: Math.random().toString(36).substr(2, 9),
-        name: description,
-        value: value,
-        expectedDate: new Date().toISOString().split('T')[0]
-      }];
-      addedType = 'Entrada';
-    } else if (lowerInput.includes('cartão') || lowerInput.includes('credito')) {
-      // Add to first credit card found or alert
-      if (newData.creditCards.length > 0) {
-        newData.creditCards[0].currentInvoiceValue += value;
-        addedType = 'Cartão (Fatura)';
-      } else {
-        setNotification('ERRO: Crie um cartão primeiro');
-        return;
+    // 1. Check Custom Sections first (Priority match)
+    // We check if any section title is present in the input string
+    if (newData.customSections) {
+      for (let i = 0; i < newData.customSections.length; i++) {
+        const section = newData.customSections[i];
+        if (lowerInput.includes(section.title.toLowerCase())) {
+          section.items.push({
+             id: Math.random().toString(36).substr(2, 9),
+             name: description.replace(new RegExp(section.title, "gi"), "").trim() || "Item",
+             value: value,
+             date: new Date().toISOString().split('T')[0]
+          });
+          addedType = section.title;
+          foundSection = true;
+          break;
+        }
       }
-    } else {
-       // Default to "Contas Pessoais" (Fixed Expenses)
-       newData.fixedExpenses = [...newData.fixedExpenses, {
-         id: Math.random().toString(36).substr(2, 9),
-         name: description,
-         value: value,
-         dueDate: new Date().toISOString().split('T')[0]
-       }];
-       addedType = 'Contas Pessoais';
+    }
+
+    if (!foundSection) {
+      if (lowerInput.includes('entrada') || lowerInput.includes('receber')) {
+        newData.incomes = [...newData.incomes, {
+          id: Math.random().toString(36).substr(2, 9),
+          name: description,
+          value: value,
+          expectedDate: new Date().toISOString().split('T')[0]
+        }];
+        addedType = 'Entrada';
+      } else if (lowerInput.includes('cartão') || lowerInput.includes('credito')) {
+        // Add to first credit card found or alert
+        if (newData.creditCards.length > 0) {
+          newData.creditCards[0].currentInvoiceValue += value;
+          addedType = 'Cartão (Fatura)';
+        } else {
+          setNotification('ERRO: Crie um cartão primeiro');
+          return;
+        }
+      } else {
+         // Default to "Contas Pessoais" (Fixed Expenses)
+         newData.fixedExpenses = [...newData.fixedExpenses, {
+           id: Math.random().toString(36).substr(2, 9),
+           name: description,
+           value: value,
+           dueDate: new Date().toISOString().split('T')[0]
+         }];
+         addedType = 'Contas Pessoais';
+      }
     }
 
     handleUpdate(newData);

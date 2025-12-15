@@ -1,0 +1,5 @@
+{
+  "name": "FinControle Inteligente",
+  "description": "Um aplicativo de controle financeiro pessoal focado no presente e futuro. Gerencie entradas, saídas fixas, parcelamentos e cartões de crédito com persistência de dados e compartilhamento via link.",
+  "requestFramePermissions": []
+}

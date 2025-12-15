@@ -324,8 +324,7 @@ function App() {
           {/* Column 1: Incomes (Green) */}
           <div className="flex-1 w-full flex flex-col gap-4">
              <h3 className="text-xs font-extrabold text-neon-green uppercase tracking-widest pl-1 border-l-2 border-neon-green/30 pl-3">Fluxo de Entradas</h3>
-             <IncomeModule data={data} onUpdate={handleUpdate} type="current" />
-             <IncomeModule data={data} onUpdate={handleUpdate} type="future" />
+             <IncomeModule data={data} onUpdate={handleUpdate} />
           </div>
 
           {/* Column 2: Expenses (Red) - Reorderable */}

@@ -103,7 +103,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
         </div>
       </AddForm>
 
-      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex flex-col gap-2">
          {items.map((item, idx) => (
            <DraggableRow key={item.id} listId="radar" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/50">
              <div className="flex-1">
@@ -185,7 +185,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         </div>
       </AddForm>
 
-      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex flex-col gap-2">
         {filteredIncomes.length === 0 && <p className="text-slate-500 text-center text-sm py-4 italic">Nenhum registro.</p>}
         {filteredIncomes.map((item, idx) => (
           <DraggableRow key={item.id} listId={`income-${type}`} index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
@@ -260,7 +260,7 @@ export const CustomSectionModule: React.FC<{
         </div>
       </AddForm>
 
-      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex flex-col gap-2">
          {section.items.map((item, idx) => (
            <DraggableRow key={item.id} listId={section.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
              <div className="flex-1">
@@ -312,7 +312,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
           <div className="md:col-span-4"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
         </div>
       </AddForm>
-      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex flex-col gap-2">
         {data.fixedExpenses.map((item, idx) => (
           <DraggableRow key={item.id} listId="fixed" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
              <div className="flex-1">
@@ -375,7 +375,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
         </div>
       </AddForm>
       
-      <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex flex-col gap-3">
         {data.installments.map((item, idx) => {
            const installmentValue = item.totalValue / item.installmentsCount;
            return (
@@ -436,7 +436,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
          </div>
       </AddForm>
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {data.creditCards.map((card, idx) => (
             <DraggableRow key={card.id} listId="cc" index={idx} onMove={handleMove} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-blue/50 flex flex-col gap-2">
                <div className="flex justify-between items-center">
@@ -504,7 +504,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
            </div>
          </div>
        </AddForm>
-       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+       <div className="flex flex-col gap-2">
           {data.pixKeys.map((item, idx) => (
             <DraggableRow key={item.id} listId="pix" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-pink/50">
                <div className="flex flex-col w-full overflow-hidden">

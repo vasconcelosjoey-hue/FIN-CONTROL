@@ -43,7 +43,7 @@ export const CollapsibleCard = ({
   };
 
   return (
-    <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-2xl transition-all duration-300 overflow-hidden ${colors[color]} ${isOpen ? 'shadow-lg scale-[1.01]' : 'shadow-sm'}`}>
+    <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-2xl transition-all duration-300 ${colors[color]} ${isOpen ? 'shadow-lg scale-[1.01]' : 'shadow-sm'}`}>
       <div 
         onClick={() => setIsOpen(!isOpen)} 
         className="p-5 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors"
@@ -64,7 +64,11 @@ export const CollapsibleCard = ({
         </div>
       </div>
       
-      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+      {/* Used inline style for max-height to ensure it overrides any CSS limits and allows massive lists */}
+      <div 
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        style={{ maxHeight: isOpen ? '20000px' : '0px' }}
+      >
         <div className="p-5 pt-0 border-t border-white/5">
           {children}
         </div>

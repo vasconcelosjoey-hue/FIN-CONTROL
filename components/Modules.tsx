@@ -204,7 +204,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       id: Math.random().toString(36).substr(2, 9),
       name: newName,
       value: parseFloat(newValue),
-      expectedDate: newDate || new Date().toISOString().split('T')[0]
+      expectedDate: newDate || new Date().toLocaleDateString('pt-BR')
     };
     onUpdate({ ...data, incomes: [...data.incomes, item] });
     setNewName(''); setNewValue(''); setNewDate('');
@@ -212,6 +212,11 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
 
   const handleRemove = (id: string) => {
     onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== id) });
+  };
+
+  const handleDuplicate = (item: Income) => {
+    const newItem = { ...item, id: Math.random().toString(36).substr(2, 9) };
+    onUpdate({ ...data, incomes: [...data.incomes, newItem] });
   };
 
   const handleMove = (fromIndex: number, toIndex: number) => {
@@ -232,7 +237,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-5"><Input placeholder="Nome" value={newName} onChange={e => setNewName(e.target.value)} /></div>
           <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={newValue} onChange={e => setNewValue(e.target.value)} /></div>
-          <div className="md:col-span-4"><Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} /></div>
+          <div className="md:col-span-4"><Input type="text" placeholder="Data (ex: 15/10)" value={newDate} onChange={e => setNewDate(e.target.value)} /></div>
         </div>
       </AddForm>
 
@@ -251,7 +256,10 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
             </div>
             <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
               <span className="font-extrabold text-neon-green text-base">R$ {item.value.toFixed(2)}</span>
-              <button onClick={() => handleRemove(item.id)} className="text-slate-500 hover:text-neon-red transition-colors opacity-50 group-hover:opacity-100"><Trash2 size={14} /></button>
+              <div className="flex items-center gap-1">
+                 <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                 <ActionButton onClick={() => handleRemove(item.id)} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+              </div>
             </div>
           </DraggableRow>
         ))}
@@ -281,10 +289,15 @@ export const CustomSectionModule: React.FC<{
       id: Math.random().toString(36).substr(2, 9),
       name,
       value: parseFloat(value),
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toLocaleDateString('pt-BR')
     };
     onUpdate({ ...section, items: [...section.items, item] });
     setName(''); setValue('');
+  };
+
+  const handleDuplicate = (item: SectionItem) => {
+    const newItem = { ...item, id: Math.random().toString(36).substr(2, 9) };
+    onUpdate({ ...section, items: [...section.items, newItem] });
   };
 
   const handleMove = (from: number, to: number) => {
@@ -319,7 +332,10 @@ export const CustomSectionModule: React.FC<{
              </div>
               <div className="flex items-center gap-3">
                 <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
-                <button onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)})} className="text-slate-500 hover:text-neon-red"><Trash2 size={14} /></button>
+                <div className="flex items-center gap-1">
+                   <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                   <ActionButton onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)})} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                </div>
               </div>
            </DraggableRow>
          ))}
@@ -342,10 +358,15 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       id: Math.random().toString(36).substr(2, 9),
       name,
       value: parseFloat(value),
-      dueDate: date || new Date().toISOString().split('T')[0]
+      dueDate: date || new Date().toLocaleDateString('pt-BR')
     };
     onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, item] });
     setName(''); setValue(''); setDate('');
+  };
+
+  const handleDuplicate = (item: FixedExpense) => {
+    const newItem = { ...item, id: Math.random().toString(36).substr(2, 9) };
+    onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, newItem] });
   };
 
   const handleMove = (from: number, to: number) => {
@@ -360,7 +381,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
           <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
-          <div className="md:col-span-4"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="md:col-span-4"><Input type="text" placeholder="Vencimento (Dia)" value={date} onChange={e => setDate(e.target.value)} /></div>
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -372,7 +393,10 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
              </div>
              <div className="flex items-center gap-3">
                <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
-               <button onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} className="text-slate-500 hover:text-neon-red"><Trash2 size={14} /></button>
+               <div className="flex items-center gap-1">
+                  <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                  <ActionButton onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+               </div>
              </div>
           </DraggableRow>
         ))}
@@ -407,6 +431,11 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
     setName(''); setTotal(''); setCount(''); setStart('');
   };
 
+  const handleDuplicate = (item: InstallmentExpense) => {
+    const newItem = { ...item, id: Math.random().toString(36).substr(2, 9) };
+    onUpdate({ ...data, installments: [...data.installments, newItem] });
+  };
+
   const handleMove = (from: number, to: number) => {
     const list = [...data.installments];
     list.splice(to, 0, list.splice(from, 1)[0]);
@@ -437,7 +466,10 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
               </div>
               <div className="flex justify-between text-[10px] text-slate-400 mt-1 w-full">
                  <span>{item.installmentsCount}x de R$ {installmentValue.toFixed(2)}</span>
-                 <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:underline">Remover</button>
+                 <div className="flex gap-2">
+                    <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1"><Copy size={10} /> Duplicar</button>
+                    <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:underline">Remover</button>
+                 </div>
               </div>
             </DraggableRow>
            );
@@ -615,6 +647,10 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
     setEditingId(null);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   const options = [
     { value: 'CPF', label: 'CPF' },
     { value: 'CNPJ', label: 'CNPJ' },
@@ -678,7 +714,10 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
                         <Badge color="pink">{item.type}</Badge>
                         {item.beneficiary && <span className="text-xs text-slate-300 font-bold uppercase truncate">{item.beneficiary}</span>}
                      </div>
-                     <span className="font-bold text-white text-sm truncate">{item.key}</span>
+                     <div className="flex items-center gap-2">
+                       <span className="font-bold text-white text-sm truncate">{item.key}</span>
+                       <ActionButton onClick={() => copyToClipboard(item.key)} icon={<Copy size={12} />} color="text-neon-blue hover:text-white" />
+                     </div>
                    </div>
                    <div className="flex items-center gap-1 ml-2 shrink-0">
                      <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />

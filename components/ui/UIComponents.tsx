@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 
-export const Card = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
-  <div className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
+export const Card = ({ children, className = "", onClick }: { children?: React.ReactNode, className?: string, onClick?: () => void }) => (
+  <div onClick={onClick} className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
     {children}
   </div>
 );
@@ -59,7 +59,7 @@ export const CollapsibleCard = ({
             </span>
           )}
           <div className="text-slate-500">
-            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
         </div>
       </div>
@@ -78,7 +78,7 @@ export const CollapsibleCard = ({
 };
 
 export const Button = ({ onClick, children, variant = 'primary', className = "", disabled = false }: { onClick?: () => void, children?: React.ReactNode, variant?: 'primary' | 'secondary' | 'danger' | 'ghost', className?: string, disabled?: boolean }) => {
-  const base = "px-3 py-1.5 rounded-lg font-bold tracking-wide transition-all duration-300 transform active:scale-95 text-xs flex items-center justify-center gap-2";
+  const base = "px-4 py-2 rounded-lg font-bold tracking-wide transition-all duration-300 transform active:scale-95 text-xs sm:text-sm flex items-center justify-center gap-2";
   
   const variants = {
     primary: "bg-neon-blue/10 text-neon-blue border border-neon-blue hover:bg-neon-blue hover:text-black hover:shadow-neon-blue",

@@ -12,6 +12,9 @@ const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () =>
   </div>
 );
 
+// Formatter Helper (PT-BR)
+const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 // Helper for Drag and Drop
 interface DraggableRowProps {
   children: React.ReactNode;
@@ -143,7 +146,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
   };
 
   return (
-    <CollapsibleCard title="No Radar" totalValue={`R$ ${total.toFixed(2)}`} color="white" icon={<Target size={20} />}>
+    <CollapsibleCard title="No Radar" totalValue={`R$ ${fmt(total)}`} color="white" icon={<Target size={20} />}>
        <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-12 gap-3">
           <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
@@ -183,7 +186,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
                     <span className="font-bold text-white text-sm">{item.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                  <span className="font-extrabold text-white text-sm">R$ {fmt(item.value)}</span>
                   <div className="flex items-center gap-1">
                     <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
                     <ActionButton onClick={() => onUpdate({...data, radarItems: items.filter(i => i.id !== item.id)})} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
@@ -269,7 +272,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   return (
     <CollapsibleCard 
       title="Entradas Vigentes" 
-      totalValue={`R$ ${totalValue.toFixed(2)}`}
+      totalValue={`R$ ${fmt(totalValue)}`}
       color="green"
       icon={<Wallet size={20}/>}
     >
@@ -330,7 +333,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                   </div>
                 </div>
                 <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
-                  <span className="font-extrabold text-neon-green text-base">R$ {item.value.toFixed(2)}</span>
+                  <span className="font-extrabold text-neon-green text-base">R$ {fmt(item.value)}</span>
                   <div className="flex items-center gap-1">
                      <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
                      <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
@@ -410,7 +413,7 @@ export const CustomSectionModule: React.FC<{
   return (
     <CollapsibleCard 
       title={section.title} 
-      totalValue={`R$ ${total.toFixed(2)}`}
+      totalValue={`R$ ${fmt(total)}`}
       color="red"
       icon={<FolderOpen size={20} />}
     >
@@ -460,7 +463,7 @@ export const CustomSectionModule: React.FC<{
                     <span className="font-bold text-white text-sm">{item.name}</span>
                  </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                    <span className="font-extrabold text-white text-sm">R$ {fmt(item.value)}</span>
                     <div className="flex items-center gap-1">
                        <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
                        <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
@@ -533,7 +536,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   };
 
   return (
-    <CollapsibleCard title="Contas Pessoais" totalValue={`R$ ${total.toFixed(2)}`} color="red" icon={<AlertCircle size={20} />}>
+    <CollapsibleCard title="Contas Pessoais" totalValue={`R$ ${fmt(total)}`} color="red" icon={<AlertCircle size={20} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
@@ -584,7 +587,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                    <p className="text-[10px] text-slate-400">Venc: {item.dueDate}</p>
                  </div>
                  <div className="flex items-center gap-3">
-                   <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                   <span className="font-extrabold text-white text-sm">R$ {fmt(item.value)}</span>
                    <div className="flex items-center gap-1">
                       <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
                       <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
@@ -787,7 +790,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   };
 
   return (
-    <CollapsibleCard title="Parcelados" totalValue={`R$ ${monthlyTotal.toFixed(2)}/mês`} color="red" icon={<Calendar size={20} />}>
+    <CollapsibleCard title="Parcelados" totalValue={`R$ ${fmt(monthlyTotal)}/mês`} color="red" icon={<Calendar size={20} />}>
       <AddForm onAdd={handleAdd}>
         {/* NEW SMART LAYOUT */}
         <div className="flex flex-col gap-3">
@@ -882,7 +885,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                     <div className="text-white text-sm font-medium">
                       <span className="font-bold text-white">{item.name}</span>
                       <span className="text-slate-400 mx-2">—</span> 
-                      <span className="font-bold text-neon-red">{val.toFixed(0)}</span> 
+                      <span className="font-bold text-neon-red">{fmt(val)}</span> 
                       <span className="text-slate-500 mx-1">×</span> 
                       <span className="text-white font-bold">{item.installmentsCount}</span>
                     </div>
@@ -974,7 +977,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
   };
 
   return (
-    <CollapsibleCard title="Limites de Cartões" totalValue={`Total: R$ ${totalLimit.toFixed(2)}`} color="blue" icon={<CCIcon size={20} />}>
+    <CollapsibleCard title="Limites de Cartões" totalValue={`Total: R$ ${fmt(totalLimit)}`} color="blue" icon={<CCIcon size={20} />}>
       <AddForm onAdd={handleAdd}>
          <div className="grid grid-cols-2 gap-2">
            <Input placeholder="Nome do Banco" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
@@ -1024,7 +1027,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                    </div>
                    <div className="flex justify-between text-sm text-slate-300">
                      <span className="uppercase text-[10px] tracking-widest font-bold text-slate-500">Limite Disponível</span>
-                     <span className="font-mono text-neon-blue font-bold">R$ {card.limit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                     <span className="font-mono text-neon-blue font-bold">R$ {fmt(card.limit)}</span>
                    </div>
                  </>
                )}

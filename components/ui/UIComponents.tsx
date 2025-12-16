@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 
 export const Card = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
-  <div className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
+  <div className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
     {children}
   </div>
 );
@@ -25,12 +25,12 @@ export const CollapsibleCard = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const colors = {
-    blue: "border-neon-blue/30 shadow-neon-blue/10 hover:border-neon-blue/60",
-    green: "border-neon-green/30 shadow-neon-green/10 hover:border-neon-green/60",
-    red: "border-neon-red/30 shadow-neon-red/10 hover:border-neon-red/60",
-    yellow: "border-neon-yellow/30 shadow-neon-yellow/10 hover:border-neon-yellow/60",
-    pink: "border-neon-pink/30 shadow-neon-pink/10 hover:border-neon-pink/60",
-    white: "border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:border-white/70",
+    blue: "border-neon-blue/30 shadow-neon-blue/5 hover:border-neon-blue/60",
+    green: "border-neon-green/30 shadow-neon-green/5 hover:border-neon-green/60",
+    red: "border-neon-red/30 shadow-neon-red/5 hover:border-neon-red/60",
+    yellow: "border-neon-yellow/30 shadow-neon-yellow/5 hover:border-neon-yellow/60",
+    pink: "border-neon-pink/30 shadow-neon-pink/5 hover:border-neon-pink/60",
+    white: "border-white/30 shadow-[0_0_10px_rgba(255,255,255,0.05)] hover:border-white/60",
   };
 
   const textColors = {
@@ -43,23 +43,23 @@ export const CollapsibleCard = ({
   };
 
   return (
-    <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-2xl transition-all duration-300 ${colors[color]} ${isOpen ? 'shadow-lg scale-[1.01]' : 'shadow-sm'}`}>
+    <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-xl transition-all duration-300 ${colors[color]} ${isOpen ? 'shadow-md' : 'shadow-sm'}`}>
       <div 
         onClick={() => setIsOpen(!isOpen)} 
-        className="p-5 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors"
+        className="p-3 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {icon && <div className={`${textColors[color]}`}>{icon}</div>}
-          <h3 className="text-lg font-extrabold text-white tracking-wide uppercase drop-shadow-md">{title}</h3>
+          <h3 className="text-sm font-bold text-white tracking-wide uppercase drop-shadow-sm">{title}</h3>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {totalValue && (
-            <span className={`font-mono font-bold text-lg ${textColors[color]} drop-shadow-[0_0_5px_currentColor]`}>
+            <span className={`font-mono font-bold text-sm ${textColors[color]} drop-shadow-[0_0_3px_currentColor]`}>
               {totalValue}
             </span>
           )}
-          <div className="text-slate-400">
-            {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          <div className="text-slate-500">
+            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </div>
       </div>
@@ -69,7 +69,7 @@ export const CollapsibleCard = ({
         className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         style={{ maxHeight: isOpen ? '20000px' : '0px' }}
       >
-        <div className="p-5 pt-0 border-t border-white/5">
+        <div className="p-3 pt-0 border-t border-white/5 text-sm">
           {children}
         </div>
       </div>
@@ -78,7 +78,7 @@ export const CollapsibleCard = ({
 };
 
 export const Button = ({ onClick, children, variant = 'primary', className = "", disabled = false }: { onClick?: () => void, children?: React.ReactNode, variant?: 'primary' | 'secondary' | 'danger' | 'ghost', className?: string, disabled?: boolean }) => {
-  const base = "px-4 py-2.5 rounded-xl font-bold tracking-wide transition-all duration-300 transform active:scale-95 text-sm flex items-center justify-center gap-2";
+  const base = "px-3 py-1.5 rounded-lg font-bold tracking-wide transition-all duration-300 transform active:scale-95 text-xs flex items-center justify-center gap-2";
   
   const variants = {
     primary: "bg-neon-blue/10 text-neon-blue border border-neon-blue hover:bg-neon-blue hover:text-black hover:shadow-neon-blue",
@@ -99,24 +99,24 @@ export const Button = ({ onClick, children, variant = 'primary', className = "",
 };
 
 export const Input = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) => (
-  <div className="flex flex-col gap-1.5 w-full group">
-    {label && <label className="text-xs text-slate-300 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
+  <div className="flex flex-col gap-1 w-full group">
+    {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
     <input 
-      className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-base
-                 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] 
-                 transition-all placeholder:text-slate-500 placeholder:font-normal w-full"
+      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-medium text-sm
+                 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
+                 transition-all placeholder:text-slate-600 placeholder:text-xs w-full h-9"
       {...props}
     />
   </div>
 );
 
 export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string, options: {value: string, label: string}[] }) => (
-  <div className="flex flex-col gap-1.5 w-full group">
-    {label && <label className="text-xs text-slate-300 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
+  <div className="flex flex-col gap-1 w-full group">
+    {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
     <select 
-      className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-base
-                 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] 
-                 transition-all appearance-none w-full"
+      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-medium text-sm
+                 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
+                 transition-all appearance-none w-full h-9"
       {...props}
     >
       {options.map(opt => <option key={opt.value} value={opt.value} className="bg-neon-surface text-slate-200 font-medium">{opt.label}</option>)}
@@ -134,7 +134,7 @@ export const Badge = ({ children, color = 'blue' }: { children?: React.ReactNode
     white: "bg-white/10 text-white border-white/30 shadow-[0_0_5px_rgba(255,255,255,0.3)]",
   };
   return (
-    <span className={`text-xs uppercase tracking-wider px-2.5 py-1 rounded-md border font-extrabold ${colors[color] || colors.blue}`}>
+    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border font-bold ${colors[color] || colors.blue}`}>
       {children}
     </span>
   );
@@ -143,7 +143,7 @@ export const Badge = ({ children, color = 'blue' }: { children?: React.ReactNode
 export const DonutChart = ({ income, expense }: { income: number, expense: number }) => {
   const total = income + expense;
   const radius = 40;
-  const stroke = 8;
+  const stroke = 10;
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   
@@ -154,7 +154,7 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
   const expenseOffset = circumference - (expensePercent / 100) * circumference;
 
   return (
-    <div className="relative w-32 h-32 flex items-center justify-center">
+    <div className="relative w-24 h-24 flex items-center justify-center">
       <svg
         height="100%"
         width="100%"
@@ -180,7 +180,7 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
           r={normalizedRadius}
           cx="40"
           cy="40"
-          className="drop-shadow-[0_0_5px_rgba(255,0,85,0.8)]"
+          className="drop-shadow-[0_0_3px_rgba(255,0,85,0.5)]"
         />
         {/* Income Circle (Green) - Overlay */}
         <circle
@@ -193,12 +193,9 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
           r={normalizedRadius}
           cx="40"
           cy="40"
-          className="drop-shadow-[0_0_5px_rgba(10,255,104,0.8)] transition-all duration-1000 ease-out"
+          className="drop-shadow-[0_0_3px_rgba(10,255,104,0.5)] transition-all duration-1000 ease-out"
         />
       </svg>
-      <div className="absolute flex flex-col items-center justify-center">
-        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Balanço</span>
-      </div>
     </div>
   );
 };
@@ -236,8 +233,8 @@ export const DraggableModuleWrapper = ({ children, id, index, onMove }: { childr
       onDrop={handleDrop}
       className="relative group transition-transform duration-200 ease-in-out"
     >
-      <div className="absolute -left-5 top-6 opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white transition-opacity z-10">
-        <GripVertical size={20} />
+      <div className="absolute -left-4 top-4 opacity-0 group-hover:opacity-30 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white transition-opacity z-10">
+        <GripVertical size={16} />
       </div>
       {children}
     </div>

@@ -37,95 +37,95 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   };
 
   return (
-    <div className="mb-10">
-      {/* Hero Balance Card - Centralized & Bigger */}
-      <div className="mb-8 transform hover:scale-[1.01] transition-transform duration-500">
-        <Card className="border-2 border-neon-yellow/20 bg-gradient-to-b from-neon-yellow/5 to-transparent flex flex-col items-center justify-center py-10 px-6 shadow-[0_0_50px_rgba(255,230,0,0.05)] relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-yellow/50 to-transparent"></div>
+    <div className="mb-6">
+      {/* Hero Balance Card - Compact & Refined */}
+      <div className="mb-4 transform hover:scale-[1.005] transition-transform duration-500">
+        <Card className="border border-neon-yellow/20 bg-gradient-to-b from-neon-yellow/5 to-transparent flex flex-row items-center justify-between py-4 px-6 shadow-[0_0_30px_rgba(255,230,0,0.02)] relative overflow-hidden h-32">
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-neon-yellow/30 to-transparent"></div>
             
-            <div className="flex items-center gap-3 mb-4 opacity-80">
-                <div className="p-2 bg-neon-yellow/10 rounded-full text-neon-yellow shadow-[0_0_15px_rgba(255,230,0,0.2)]">
-                   <Coins size={28} />
+            <div className="flex flex-col gap-1 z-10">
+                <div className="flex items-center gap-2 mb-1 opacity-80">
+                    <div className="p-1.5 bg-neon-yellow/10 rounded-full text-neon-yellow">
+                       <Coins size={16} />
+                    </div>
+                    <h3 className="text-neon-yellow text-[10px] uppercase tracking-[0.2em] font-extrabold">Saldo Previsto</h3>
                 </div>
-                <h3 className="text-neon-yellow text-sm uppercase tracking-[0.3em] font-extrabold drop-shadow-[0_0_10px_rgba(255,230,0,0.5)]">Saldo Previsto</h3>
+                <p className="text-xs text-slate-500 font-medium">Entradas — Saídas</p>
             </div>
             
-            <div className="text-center relative z-10">
-                <p className={`text-6xl sm:text-7xl md:text-8xl font-black drop-shadow-[0_0_30px_rgba(255,230,0,0.15)] tracking-tighter ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
-                <span className="text-3xl font-bold mr-3 opacity-50 align-top mt-4 inline-block tracking-normal">R$</span>
+            <div className="text-right relative z-10">
+                <p className={`text-4xl sm:text-5xl font-black tracking-tight ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
+                <span className="text-lg font-bold mr-1 opacity-50 align-top mt-1 inline-block">R$</span>
                 {fmt(balance)}
-                </p>
-                <div className="h-1 w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent mx-auto mt-6 mb-2"></div>
-                <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">
-                    Entradas — Saídas
                 </p>
             </div>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-        {/* Total Income - Green */}
-        <Card className="relative overflow-hidden group border-t-4 border-t-neon-green/50 flex flex-col justify-between p-6 hover:bg-white/5 transition-colors">
-          <div className="absolute -right-10 -top-10 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 rounded-full bg-neon-green blur-2xl w-40 h-40"></div>
-          <div className="flex justify-between items-start mb-6 relative z-10">
-            <div>
-              <h3 className="text-slate-400 text-xs uppercase tracking-[0.2em] font-bold">Entradas</h3>
-            </div>
-            <div className="p-2 bg-neon-green/10 rounded-lg text-neon-green shadow-[0_0_15px_rgba(10,255,104,0.15)]">
-              <TrendingUp size={24} />
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+        {/* Total Income - Compact */}
+        <Card className="relative overflow-hidden group border-t-2 border-t-neon-green/50 flex flex-col justify-center p-4 hover:bg-white/5 transition-colors h-32">
+          <div className="absolute -right-8 -top-8 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 rounded-full bg-neon-green blur-2xl w-32 h-32"></div>
+          
+          <div className="flex justify-between items-center mb-2 relative z-10">
+              <h3 className="text-slate-400 text-[10px] uppercase tracking-[0.15em] font-bold">Entradas</h3>
+              <div className="p-1.5 bg-neon-green/10 rounded-md text-neon-green">
+                <TrendingUp size={14} />
+              </div>
           </div>
-          <p className="text-4xl sm:text-5xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] tracking-tight">
-            <span className="text-lg text-slate-500 font-bold align-top mr-1">R$</span>
+          
+          <p className="text-2xl sm:text-3xl font-black text-white tracking-tight relative z-10">
+            <span className="text-xs text-slate-500 font-bold align-top mr-1">R$</span>
             {fmt(totalIncome)}
           </p>
         </Card>
 
-        {/* Center Interactive Chart */}
-        <Card className="flex flex-col items-center justify-center py-6 bg-black/40 border-neon-blue/20 cursor-pointer hover:bg-white/5 transition-colors group relative min-h-[220px]" >
-           <div className="absolute top-3 right-3 opacity-30 group-hover:opacity-100 transition-opacity flex gap-2">
-               <div className={`p-1 rounded ${viewMode === 0 ? 'bg-neon-blue/20 text-neon-blue' : 'text-slate-600'}`}><PieChart size={14} /></div>
-               <div className={`p-1 rounded ${viewMode === 1 ? 'bg-neon-blue/20 text-neon-blue' : 'text-slate-600'}`}><BarChart3 size={14} /></div>
-               <div className={`p-1 rounded ${viewMode === 2 ? 'bg-neon-blue/20 text-neon-blue' : 'text-slate-600'}`}><Percent size={14} /></div>
-           </div>
-           
-           <div onClick={toggleView} className="w-full h-full flex flex-col items-center justify-center">
+        {/* Center Interactive Chart - Compact */}
+        <Card className="flex flex-col items-center justify-center py-2 px-4 bg-black/40 border-neon-blue/20 cursor-pointer hover:bg-white/5 transition-colors group relative h-32" >
+           <div onClick={toggleView} className="w-full h-full flex flex-row items-center justify-between gap-4">
+               
+               {/* Toggle Icons */}
+               <div className="flex flex-col gap-1 absolute right-2 top-2 opacity-30 group-hover:opacity-100 transition-opacity">
+                   <div className={`p-0.5 rounded ${viewMode === 0 ? 'text-neon-blue' : 'text-slate-700'}`}><PieChart size={10} /></div>
+                   <div className={`p-0.5 rounded ${viewMode === 1 ? 'text-neon-blue' : 'text-slate-700'}`}><BarChart3 size={10} /></div>
+               </div>
+
                {/* Mode 0: Donut */}
                {viewMode === 0 && (
-                   <div className="animate-in fade-in zoom-in duration-300 flex flex-col items-center">
-                    <div className="scale-125 mb-4">
+                   <>
+                    <div className="scale-75 origin-left">
                         <DonutChart income={totalIncome} expense={totalOutflow} />
                     </div>
-                    <div className="flex gap-4 mt-2 text-[10px] font-bold uppercase tracking-widest">
-                        <div className="flex items-center gap-1.5 text-neon-green">
-                            <div className="w-2 h-2 rounded-full bg-neon-green shadow-[0_0_5px_currentColor]"></div> Entradas
+                    <div className="flex flex-col gap-1 text-[9px] font-bold uppercase tracking-wider text-right flex-1 pr-4">
+                        <div className="flex items-center justify-end gap-1.5 text-neon-green">
+                            Entradas <div className="w-1.5 h-1.5 rounded-full bg-neon-green"></div> 
                         </div>
-                        <div className="flex items-center gap-1.5 text-neon-red">
-                            <div className="w-2 h-2 rounded-full bg-neon-red shadow-[0_0_5px_currentColor]"></div> Saídas
+                        <div className="flex items-center justify-end gap-1.5 text-neon-red">
+                             Saídas <div className="w-1.5 h-1.5 rounded-full bg-neon-red"></div>
                         </div>
                     </div>
-                   </div>
+                   </>
                )}
 
                {/* Mode 1: Bars */}
                {viewMode === 1 && (
-                   <div className="w-full px-6 flex flex-col gap-6 animate-in slide-in-from-bottom-2 duration-300">
-                       <div className="space-y-2">
-                           <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-neon-green">
+                   <div className="w-full flex flex-col gap-3 pr-2">
+                       <div className="space-y-1">
+                           <div className="flex justify-between text-[9px] font-bold uppercase text-neon-green">
                                <span>Entradas</span>
                                <span>{((totalIncome / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span>
                            </div>
-                           <div className="w-full h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                               <div style={{ width: `${(totalIncome / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-green shadow-[0_0_10px_currentColor] rounded-full transition-all duration-1000"></div>
+                           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                               <div style={{ width: `${(totalIncome / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-green shadow-[0_0_5px_currentColor] rounded-full"></div>
                            </div>
                        </div>
-                       <div className="space-y-2">
-                           <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-neon-red">
+                       <div className="space-y-1">
+                           <div className="flex justify-between text-[9px] font-bold uppercase text-neon-red">
                                <span>Saídas</span>
                                <span>{((totalOutflow / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span>
                            </div>
-                           <div className="w-full h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                               <div style={{ width: `${(totalOutflow / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-red shadow-[0_0_10px_currentColor] rounded-full transition-all duration-1000"></div>
+                           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                               <div style={{ width: `${(totalOutflow / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-red shadow-[0_0_5px_currentColor] rounded-full"></div>
                            </div>
                        </div>
                    </div>
@@ -133,41 +133,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
                {/* Mode 2: Text Ratio */}
                {viewMode === 2 && (
-                   <div className="text-center animate-in zoom-in duration-300">
-                       <h4 className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mb-2">Comprometimento da Renda</h4>
-                       <div className={`text-6xl font-black tracking-tighter drop-shadow-lg ${totalOutflow > totalIncome ? 'text-neon-red' : 'text-neon-blue'}`}>
-                           {((totalOutflow / (totalIncome || 1)) * 100).toFixed(1)}<span className="text-3xl align-top">%</span>
+                   <div className="text-center w-full">
+                       <h4 className="text-slate-500 text-[9px] uppercase tracking-[0.1em] font-bold mb-0">Comprometimento</h4>
+                       <div className={`text-4xl font-black tracking-tighter ${totalOutflow > totalIncome ? 'text-neon-red' : 'text-neon-blue'}`}>
+                           {((totalOutflow / (totalIncome || 1)) * 100).toFixed(0)}<span className="text-xl align-top">%</span>
                        </div>
-                       <p className="text-xs text-slate-500 mt-2 font-medium">do total arrecadado</p>
                    </div>
                )}
            </div>
-           
-           <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-4 group-hover:text-neon-blue transition-colors">
-               {viewMode === 0 && "Visualização: Rosca"}
-               {viewMode === 1 && "Visualização: Barras"}
-               {viewMode === 2 && "Visualização: Índice"}
-           </div>
         </Card>
 
-        {/* Total Outflow - Red */}
-        <Card className="relative overflow-hidden group border-t-4 border-t-neon-red/50 flex flex-col justify-between p-6 hover:bg-white/5 transition-colors">
-          <div className="absolute -right-10 -top-10 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 rounded-full bg-neon-red blur-2xl w-40 h-40"></div>
-          <div className="flex justify-between items-start mb-6 relative z-10">
-            <div>
-              <h3 className="text-slate-400 text-xs uppercase tracking-[0.2em] font-bold">Saídas</h3>
-            </div>
-            <div className="p-2 bg-neon-red/10 rounded-lg text-neon-red shadow-[0_0_15px_rgba(255,0,85,0.15)]">
-              <TrendingDown size={24} />
+        {/* Total Outflow - Compact */}
+        <Card className="relative overflow-hidden group border-t-2 border-t-neon-red/50 flex flex-col justify-center p-4 hover:bg-white/5 transition-colors h-32">
+          <div className="absolute -right-8 -top-8 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 rounded-full bg-neon-red blur-2xl w-32 h-32"></div>
+          
+          <div className="flex justify-between items-center mb-2 relative z-10">
+            <h3 className="text-slate-400 text-[10px] uppercase tracking-[0.15em] font-bold">Saídas</h3>
+            <div className="p-1.5 bg-neon-red/10 rounded-md text-neon-red">
+              <TrendingDown size={14} />
             </div>
           </div>
-          <p className="text-4xl sm:text-5xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] tracking-tight">
-            <span className="text-lg text-slate-500 font-bold align-top mr-1">R$</span>
+
+          <p className="text-2xl sm:text-3xl font-black text-white tracking-tight relative z-10">
+            <span className="text-xs text-slate-500 font-bold align-top mr-1">R$</span>
             {fmt(totalOutflow)}
           </p>
-          <div className="mt-4 flex flex-wrap gap-2 relative z-10">
-            <Badge color="red">Fixas: {fmt(totalFixedExpenses)}</Badge>
-            <Badge color="red">Parc: {fmt(totalInstallmentMonthly)}</Badge>
+          
+          <div className="mt-2 flex gap-1 relative z-10 opacity-70">
+             <span className="text-[9px] text-neon-red font-bold bg-neon-red/10 px-1.5 py-0.5 rounded">F: {((totalFixedExpenses/totalOutflow||1)*100).toFixed(0)}%</span>
+             <span className="text-[9px] text-neon-red font-bold bg-neon-red/10 px-1.5 py-0.5 rounded">P: {((totalInstallmentMonthly/totalOutflow||1)*100).toFixed(0)}%</span>
           </div>
         </Card>
       </div>

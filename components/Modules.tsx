@@ -410,12 +410,17 @@ export const CustomSectionModule: React.FC<{
     setEditingId(null);
   };
 
+  const handleTitleEdit = (newTitle: string) => {
+    onUpdate({ ...section, title: newTitle.toUpperCase() });
+  };
+
   return (
     <CollapsibleCard 
       title={section.title} 
       totalValue={`R$ ${fmt(total)}`}
       color="red"
       icon={<FolderOpen size={18} />}
+      onEditTitle={handleTitleEdit}
     >
       <div className="flex justify-end mb-2">
         <button onClick={onDeleteSection} className="text-[10px] text-neon-red hover:underline flex items-center gap-1"><Trash2 size={12}/> Excluir Sessão</button>
@@ -790,7 +795,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   };
 
   return (
-    <CollapsibleCard title="Parcelados" totalValue={`R$ ${fmt(monthlyTotal)}/mês`} color="red" icon={<Calendar size={18} />}>
+    <CollapsibleCard title="Parcelados" totalValue={`R$ ${fmt(monthlyTotal)}`} color="red" icon={<Calendar size={18} />}>
       <AddForm onAdd={handleAdd}>
         {/* NEW SMART LAYOUT */}
         <div className="flex flex-col gap-3">
@@ -923,30 +928,32 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
+  const [closing, setClosing] = useState('');
+  const [due, setDue] = useState('');
+  const [currentVal, setCurrentVal] = useState('');
 
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editLimit, setEditLimit] = useState('');
+  const [editClosing, setEditClosing] = useState('');
+  const [editDue, setEditDue] = useState('');
+  const [editCurrentVal, setEditCurrentVal] = useState('');
 
-  const totalLimit = data.creditCards.reduce((acc, c) => acc + c.limit, 0);
+  const totalInvoice = data.creditCards.reduce((acc, c) => acc + c.currentInvoiceValue, 0);
 
   const handleAdd = () => {
-    if (!name || !limit) return;
+    if (!name) return;
     const item: CreditCard = {
       id: Math.random().toString(36).substr(2, 9),
       name,
-      limit: parseFloat(limit),
-      currentInvoiceValue: 0, // Default to 0 as user removed input
-      closingDay: 1,
-      dueDay: 10
+      limit: parseFloat(limit) || 0,
+      closingDay: parseInt(closing) || 1,
+      dueDay: parseInt(due) || 10,
+      currentInvoiceValue: parseFloat(currentVal) || 0
     };
-    
-    // Add AND Sort by limit descending immediately
-    const newList = [...data.creditCards, item].sort((a, b) => b.limit - a.limit);
-    
-    onUpdate({ ...data, creditCards: newList });
-    setName(''); setLimit('');
+    onUpdate({ ...data, creditCards: [...data.creditCards, item] });
+    setName(''); setLimit(''); setClosing(''); setDue(''); setCurrentVal('');
   };
 
   const handleMove = (from: number, to: number) => {
@@ -955,84 +962,104 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
     onUpdate({ ...data, creditCards: list });
   };
 
-  const startEdit = (card: CreditCard) => {
-    setEditingId(card.id);
-    setEditName(card.name);
-    setEditLimit(card.limit.toString());
+  const startEdit = (item: CreditCard) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditLimit(item.limit.toString());
+    setEditClosing(item.closingDay.toString());
+    setEditDue(item.dueDay.toString());
+    setEditCurrentVal(item.currentInvoiceValue.toString());
   };
 
   const saveEdit = () => {
     if (!editingId) return;
-    const updatedCards = data.creditCards.map(c => {
-      if (c.id === editingId) {
-        return { ...c, name: editName, limit: parseFloat(editLimit) || 0 };
+    const updatedList = data.creditCards.map(item => {
+      if (item.id === editingId) {
+        return { 
+          ...item, 
+          name: editName, 
+          limit: parseFloat(editLimit) || 0,
+          closingDay: parseInt(editClosing) || 1,
+          dueDay: parseInt(editDue) || 10,
+          currentInvoiceValue: parseFloat(editCurrentVal) || 0
+        };
       }
-      return c;
+      return item;
     });
-    // Sort again by limit just in case
-    updatedCards.sort((a, b) => b.limit - a.limit);
-    
-    onUpdate({ ...data, creditCards: updatedCards });
+    onUpdate({ ...data, creditCards: updatedList });
     setEditingId(null);
   };
 
   return (
-    <CollapsibleCard title="Limites de Cartões" totalValue={`Total: R$ ${fmt(totalLimit)}`} color="blue" icon={<CCIcon size={18} />}>
+    <CollapsibleCard title="Cartões de Crédito" totalValue={`R$ ${fmt(totalInvoice)}`} color="pink" icon={<CCIcon size={18} />}>
       <AddForm onAdd={handleAdd}>
-         <div className="grid grid-cols-2 gap-3">
-           <Input placeholder="Nome do Banco" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-           <Input type="number" placeholder="Limite (R$)" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+         <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+               <Input placeholder="Nome do Cartão" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+               <Input type="number" placeholder="Limite Total" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+               <Input type="number" placeholder="Dia Fech." value={closing} onChange={e => setClosing(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+               <Input type="number" placeholder="Dia Venc." value={due} onChange={e => setDue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+               <Input type="number" placeholder="Fatura Atual" value={currentVal} onChange={e => setCurrentVal(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+            </div>
          </div>
       </AddForm>
 
       <div className="flex flex-col gap-2">
-        {data.creditCards.map((card, idx) => (
-            <DraggableRow key={card.id} listId="cc" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-blue/50 flex flex-col gap-1.5">
-               {editingId === card.id ? (
-                 <div className="flex flex-col gap-2 w-full">
+         {data.creditCards.map((item, idx) => (
+           <DraggableRow key={item.id} listId="cards" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-pink/50 block">
+              {editingId === item.id ? (
+                 <div className="flex flex-col gap-2">
+                    <input 
+                      value={editName} 
+                      onChange={e => setEditName(e.target.value)} 
+                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-pink outline-none w-full font-bold h-8"
+                      placeholder="Nome"
+                      autoFocus
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                       <input type="number" value={editLimit} onChange={e => setEditLimit(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8" placeholder="Limite" />
+                       <input type="number" value={editCurrentVal} onChange={e => setEditCurrentVal(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8" placeholder="Fatura" />
+                    </div>
                     <div className="flex items-center gap-2">
-                       <input 
-                         value={editName} 
-                         onChange={e => setEditName(e.target.value)} 
-                         onKeyDown={(e) => handleEnter(e, saveEdit)}
-                         className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-blue outline-none w-full font-bold h-8"
-                         placeholder="Banco"
-                         autoFocus
-                       />
-                       <div className="flex gap-1">
-                          <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
-                          <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
+                       <span className="text-[10px] text-slate-500">Fech:</span>
+                       <input type="number" value={editClosing} onChange={e => setEditClosing(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-12 h-8" />
+                       <span className="text-[10px] text-slate-500">Venc:</span>
+                       <input type="number" value={editDue} onChange={e => setEditDue(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-12 h-8" />
+                       
+                       <div className="flex gap-1 ml-auto">
+                           <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
+                           <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                       <span className="uppercase text-[9px] text-slate-500 font-bold shrink-0">LIMITE: R$</span>
-                       <input 
-                         type="number"
-                         value={editLimit} 
-                         onChange={e => setEditLimit(e.target.value)} 
-                         onKeyDown={(e) => handleEnter(e, saveEdit)}
-                         className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-neon-blue font-mono font-bold focus:border-neon-blue outline-none w-full h-8"
-                         placeholder="0.00"
-                       />
-                    </div>
                  </div>
-               ) : (
-                 <>
-                   <div className="flex justify-between items-center">
-                     <span className="font-bold text-white text-sm">{card.name}</span>
-                     <div className="flex gap-1">
-                       <ActionButton onClick={() => startEdit(card)} icon={<Pencil size={14} />} />
-                       <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+              ) : (
+                <>
+                  <div className="flex justify-between items-start">
+                     <div>
+                        <p className="font-bold text-white text-sm">{item.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">Limite: <span className="text-slate-200">R$ {fmt(item.limit)}</span></p>
                      </div>
-                   </div>
-                   <div className="flex justify-between text-xs text-slate-300">
-                     <span className="uppercase text-[9px] tracking-widest font-bold text-slate-500">Limite Disponível</span>
-                     <span className="font-mono text-neon-blue font-bold">R$ {fmt(card.limit)}</span>
-                   </div>
-                 </>
-               )}
-            </DraggableRow>
-          ))}
+                     <div className="text-right">
+                        <p className="font-extrabold text-neon-pink text-sm">R$ {fmt(item.currentInvoiceValue)}</p>
+                        <p className="text-[10px] text-slate-500">Fatura Atual</p>
+                     </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-white/5 flex justify-between items-center">
+                     <div className="flex gap-3 text-[10px] font-bold text-slate-400">
+                        <span className="bg-white/5 px-2 py-0.5 rounded">Fecha: dia {item.closingDay}</span>
+                        <span className="bg-white/5 px-2 py-0.5 rounded">Vence: dia {item.dueDay}</span>
+                     </div>
+                     <div className="flex gap-1">
+                        <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={12} />} />
+                        <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(i => i.id !== item.id) })} icon={<Trash2 size={12} />} color="text-slate-500 hover:text-neon-red" />
+                     </div>
+                  </div>
+                </>
+              )}
+           </DraggableRow>
+         ))}
       </div>
     </CollapsibleCard>
   );
@@ -1049,7 +1076,6 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   const [editType, setEditType] = useState<PixKey['type']>('CPF');
   const [editKey, setEditKey] = useState('');
   const [editBeneficiary, setEditBeneficiary] = useState('');
-
 
   const handleAdd = () => {
     if (!key) return;
@@ -1079,21 +1105,22 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
 
   const saveEdit = () => {
     if (!editingId) return;
-    const updatedItems = data.pixKeys.map(item => {
+    const updatedList = data.pixKeys.map(item => {
       if (item.id === editingId) {
         return { ...item, type: editType, key: editKey, beneficiary: editBeneficiary };
       }
       return item;
     });
-    onUpdate({ ...data, pixKeys: updatedItems });
+    onUpdate({ ...data, pixKeys: updatedList });
     setEditingId(null);
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    // Could add toast here but for now just basic copy
   };
 
-  const options = [
+  const pixTypes = [
     { value: 'CPF', label: 'CPF' },
     { value: 'CNPJ', label: 'CNPJ' },
     { value: 'Telefone', label: 'Telefone' },
@@ -1102,74 +1129,55 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   ];
 
   return (
-    <CollapsibleCard title="Registros de Chaves Pix" totalValue={`${data.pixKeys.length} chaves`} color="pink" icon={<Zap size={18} />}>
+    <CollapsibleCard title="Chaves Pix" color="yellow" icon={<Zap size={18} />}>
        <AddForm onAdd={handleAdd}>
-         <div className="flex flex-col gap-3">
-           <div className="grid grid-cols-12 gap-3">
-             <div className="col-span-4">
-               <Select options={options} value={type} onChange={e => setType(e.target.value as any)} />
+          <div className="flex flex-col gap-2">
+             <div className="flex gap-2">
+                <div className="w-1/3">
+                  <Select options={pixTypes} value={type} onChange={e => setType(e.target.value as any)} />
+                </div>
+                <div className="w-2/3">
+                  <Input placeholder="Chave Pix" value={key} onChange={e => setKey(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+                </div>
              </div>
-             <div className="col-span-8">
-               <Input placeholder="Chave Pix" value={key} onChange={e => setKey(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-             </div>
-           </div>
-           <div>
-             <Input placeholder="Nome da Pessoa / Beneficiário" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-           </div>
-         </div>
+             <Input placeholder="Beneficiário (opcional)" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+          </div>
        </AddForm>
+
        <div className="flex flex-col gap-2">
           {data.pixKeys.map((item, idx) => (
-            <DraggableRow key={item.id} listId="pix" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-pink/50">
-               {editingId === item.id ? (
-                 <div className="flex flex-col w-full gap-2">
-                    <div className="flex gap-2">
-                       <select 
-                          value={editType} 
-                          onChange={e => setEditType(e.target.value as any)}
-                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-pink outline-none w-1/3 h-8"
-                       >
-                         {options.map(opt => <option key={opt.value} value={opt.value} className="bg-neon-surface text-white">{opt.label}</option>)}
-                       </select>
-                       <input 
-                          value={editKey} 
-                          onChange={e => setEditKey(e.target.value)} 
-                          onKeyDown={(e) => handleEnter(e, saveEdit)}
-                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-pink outline-none w-full h-8"
-                          placeholder="Chave Pix"
-                       />
-                       <div className="flex items-center shrink-0">
+             <DraggableRow key={item.id} listId="pix" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-yellow/50 block">
+                {editingId === item.id ? (
+                   <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                         <select value={editType} onChange={e => setEditType(e.target.value as any)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-1/3 h-8">
+                            {pixTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                         </select>
+                         <input value={editKey} onChange={e => setEditKey(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-2/3 h-8" />
+                      </div>
+                      <input value={editBeneficiary} onChange={e => setEditBeneficiary(e.target.value)} placeholder="Beneficiário" className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8" />
+                      <div className="flex justify-end gap-1">
                           <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
                           <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
-                       </div>
-                    </div>
-                    <input 
-                      value={editBeneficiary} 
-                      onChange={e => setEditBeneficiary(e.target.value)} 
-                      onKeyDown={(e) => handleEnter(e, saveEdit)}
-                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-xs text-slate-300 focus:border-neon-pink outline-none w-full h-8"
-                      placeholder="Beneficiário (Opcional)"
-                    />
-                 </div>
-               ) : (
-                 <>
-                   <div className="flex flex-col w-full overflow-hidden">
-                     <div className="flex items-center gap-2 mb-1">
-                        <Badge color="pink">{item.type}</Badge>
-                        {item.beneficiary && <span className="text-[10px] text-slate-300 font-bold uppercase truncate">{item.beneficiary}</span>}
-                     </div>
-                     <div className="flex items-center gap-2">
-                       <span className="font-bold text-white text-sm truncate">{item.key}</span>
-                       <ActionButton onClick={() => copyToClipboard(item.key)} icon={<Copy size={12} />} color="text-neon-blue hover:text-white" />
-                     </div>
+                      </div>
                    </div>
-                   <div className="flex items-center gap-1 ml-2 shrink-0">
-                     <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
-                     <ActionButton onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(i => i.id !== item.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                ) : (
+                   <div className="flex items-center justify-between">
+                      <div className="overflow-hidden">
+                         <div className="flex items-center gap-2">
+                            <Badge color="yellow">{item.type}</Badge>
+                            {item.beneficiary && <span className="text-[10px] text-slate-400 font-bold uppercase truncate">{item.beneficiary}</span>}
+                         </div>
+                         <p className="text-white text-sm font-mono mt-1 truncate pr-2">{item.key}</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                         <ActionButton onClick={() => copyToClipboard(item.key)} icon={<Copy size={14} />} color="text-neon-yellow hover:text-white" />
+                         <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
+                         <ActionButton onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(i => i.id !== item.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                      </div>
                    </div>
-                 </>
-               )}
-            </DraggableRow>
+                )}
+             </DraggableRow>
           ))}
        </div>
     </CollapsibleCard>

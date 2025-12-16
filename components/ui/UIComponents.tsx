@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Check, X } from 'lucide-react';
 
 export const Card = ({ children, className = "", onClick }: { children?: React.ReactNode, className?: string, onClick?: () => void }) => (
   <div onClick={onClick} className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
@@ -13,16 +13,42 @@ export const CollapsibleCard = ({
   color = 'blue', 
   children, 
   defaultOpen = false,
-  icon
+  icon,
+  onEditTitle
 }: { 
   title: string, 
   totalValue?: string, 
   color?: 'blue' | 'green' | 'red' | 'yellow' | 'pink' | 'white', 
   children?: React.ReactNode, 
   defaultOpen?: boolean,
-  icon?: React.ReactNode
+  icon?: React.ReactNode,
+  onEditTitle?: (newTitle: string) => void
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setEditValue(title);
+  }, [title]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const handleSaveTitle = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (editValue.trim()) {
+      onEditTitle?.(editValue.trim());
+      setIsEditing(false);
+    } else {
+      setEditValue(title); // Revert if empty
+      setIsEditing(false);
+    }
+  };
 
   const colors = {
     blue: "border-neon-blue/30 shadow-neon-blue/5 hover:border-neon-blue/60",
@@ -45,14 +71,53 @@ export const CollapsibleCard = ({
   return (
     <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-xl transition-all duration-300 ${colors[color]} ${isOpen ? 'shadow-md' : 'shadow-sm'}`}>
       <div 
-        onClick={() => setIsOpen(!isOpen)} 
         className="p-3 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors"
+        onClick={(e) => {
+            // Only toggle if not editing and not clicking input
+            if (!isEditing && !(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
+                setIsOpen(!isOpen);
+            }
+        }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 mr-4">
           {icon && <div className={`${textColors[color]}`}>{icon}</div>}
-          <h3 className="text-sm font-bold text-white tracking-wide uppercase drop-shadow-sm">{title}</h3>
+          
+          {isEditing ? (
+            <div className="flex items-center gap-1 flex-1" onClick={e => e.stopPropagation()}>
+                <input 
+                    ref={inputRef}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if(e.key === 'Enter') handleSaveTitle();
+                        if(e.key === 'Escape') {
+                            setEditValue(title);
+                            setIsEditing(false);
+                        }
+                    }}
+                    onBlur={() => handleSaveTitle()}
+                    className="bg-black/50 border border-white/20 rounded px-2 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full max-w-[200px] h-7"
+                />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group">
+                <h3 className="text-sm font-bold text-white tracking-wide uppercase drop-shadow-sm truncate max-w-[150px] sm:max-w-[300px]">{title}</h3>
+                {onEditTitle && (
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-white p-1"
+                    >
+                        <Pencil size={12} />
+                    </button>
+                )}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3 shrink-0">
           {totalValue && (
             <span className={`font-mono font-bold text-sm ${textColors[color]} drop-shadow-[0_0_3px_currentColor]`}>
               {totalValue}

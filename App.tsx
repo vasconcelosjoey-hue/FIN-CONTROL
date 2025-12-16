@@ -5,7 +5,7 @@ import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Dashboard } from './components/Dashboard';
 import { IncomeModule, FixedExpenseModule, InstallmentModule, CreditCardModule, PixModule, CustomSectionModule, RadarModule } from './components/Modules';
-import { Share2, RefreshCw, ShieldCheck, Plus, Command } from 'lucide-react';
+import { RefreshCw, ShieldCheck, Plus } from 'lucide-react';
 import { Button, DraggableModuleWrapper } from './components/ui/UIComponents';
 
 function App() {
@@ -13,7 +13,6 @@ function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<string | null>(null);
-  const [smartInput, setSmartInput] = useState('');
 
   // Initial Load
   useEffect(() => {
@@ -53,11 +52,6 @@ function App() {
           setData(initialData);
           setLoading(false);
           unsubscribeData = subscribeToData(user.uid, (newData) => {
-             // Handle external updates (Firebase)
-             // We need to be careful not to overwrite local state if we are the ones updating, 
-             // but subscribeToData usually filters local writes or we just accept server truth.
-             // For this "local storage priority" request, this is less critical, 
-             // but keeping it for when auth is actually used.
             if (!newData.modulesOrder) {
                 const customIds = newData.customSections?.map(s => s.id) || [];
                 newData.modulesOrder = ['fixed', 'installments', ...customIds];
@@ -88,7 +82,7 @@ function App() {
     }
   }, []);
 
-  // Auto-Save Effect: Whenever data or userId changes, persist to storage.
+  // Auto-Save Effect
   useEffect(() => {
     if (userId && !loading) {
       saveData(userId, data);
@@ -97,77 +91,6 @@ function App() {
 
   const handleUpdate = (newData: FinancialData) => {
     setData(newData);
-    // Auto-save effect handles the persistence
-  };
-
-  const handleSmartCommand = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!smartInput.trim()) return;
-
-    const lowerInput = smartInput.toLowerCase();
-    const valueMatch = smartInput.match(/(\d+([.,]\d+)?)/);
-    const value = valueMatch ? parseFloat(valueMatch[1].replace(',', '.')) : 0;
-    
-    // Remove value from string to get description
-    const description = smartInput.replace(valueMatch ? valueMatch[0] : '', '').replace(/entrada|gasto|cartão|pagar|receber/gi, '').trim() || "Nova Transação";
-
-    const newData = { ...data };
-    let addedType = '';
-    let foundSection = false;
-
-    // 1. Check Custom Sections first (Priority match)
-    // We check if any section title is present in the input string
-    if (newData.customSections) {
-      for (let i = 0; i < newData.customSections.length; i++) {
-        const section = newData.customSections[i];
-        if (lowerInput.includes(section.title.toLowerCase())) {
-          section.items.push({
-             id: Math.random().toString(36).substr(2, 9),
-             name: description.replace(new RegExp(section.title, "gi"), "").trim() || "Item",
-             value: value,
-             date: new Date().toISOString().split('T')[0]
-          });
-          addedType = section.title;
-          foundSection = true;
-          break;
-        }
-      }
-    }
-
-    if (!foundSection) {
-      if (lowerInput.includes('entrada') || lowerInput.includes('receber')) {
-        newData.incomes = [...newData.incomes, {
-          id: Math.random().toString(36).substr(2, 9),
-          name: description,
-          value: value,
-          expectedDate: new Date().toISOString().split('T')[0]
-        }];
-        addedType = 'Entrada';
-      } else if (lowerInput.includes('cartão') || lowerInput.includes('credito')) {
-        // Add to first credit card found or alert
-        if (newData.creditCards.length > 0) {
-          newData.creditCards[0].currentInvoiceValue += value;
-          addedType = 'Cartão (Fatura)';
-        } else {
-          setNotification('ERRO: Crie um cartão primeiro');
-          return;
-        }
-      } else {
-         // Default to "Contas Pessoais" (Fixed Expenses)
-         newData.fixedExpenses = [...newData.fixedExpenses, {
-           id: Math.random().toString(36).substr(2, 9),
-           name: description,
-           value: value,
-           dueDate: new Date().toISOString().split('T')[0]
-         }];
-         addedType = 'Contas Pessoais';
-      }
-    }
-
-    handleUpdate(newData);
-    setSmartInput('');
-    setNotification(`ADICIONADO EM: ${addedType.toUpperCase()}`);
-    setTimeout(() => setNotification(null), 3000);
   };
 
   const createNewSection = () => {
@@ -218,13 +141,6 @@ function App() {
     handleUpdate({ ...data, modulesOrder: newOrder });
   };
 
-  const copyShareLink = () => {
-    const url = window.location.origin + window.location.pathname;
-    navigator.clipboard.writeText(url);
-    setNotification('LINK DE ACESSO COPIADO');
-    setTimeout(() => setNotification(null), 3000);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-neon-blue gap-4 relative overflow-hidden">
@@ -272,7 +188,7 @@ function App() {
 
   return (
     <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white">
-      {/* Navbar & Smart Input */}
+      {/* Navbar */}
       <nav className="border-b border-white/5 bg-neon-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -280,27 +196,8 @@ function App() {
               FIN<span className="text-neon-blue/80 mx-0.5">/</span><span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">CONTROLE</span>
             </h1>
             
-            {/* Smart Command Bar */}
-            <form onSubmit={handleSmartCommand} className="w-full max-w-xl relative group">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-neon-blue transition-colors">
-                <Command size={16} />
-              </div>
-              <input 
-                type="text" 
-                value={smartInput}
-                onChange={(e) => setSmartInput(e.target.value)}
-                placeholder="Digite: 'Entrada 500 projeto' ou 'Gasto 100 mercado'..." 
-                className="w-full bg-black/40 border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm font-semibold text-white focus:outline-none focus:border-neon-blue focus:shadow-[0_0_15px_rgba(0,243,255,0.15)] transition-all placeholder:text-slate-600"
-              />
-              <button type="submit" className="absolute inset-y-0 right-2 flex items-center">
-                 <div className="bg-white/10 hover:bg-neon-blue/20 p-1 rounded-full transition-colors text-slate-400 hover:text-neon-blue">
-                   <Plus size={14} />
-                 </div>
-              </button>
-            </form>
-            
             <div className="flex items-center gap-2 shrink-0">
-               {/* Share button removed */}
+               {/* Placeholders for future tools */}
             </div>
           </div>
         </div>

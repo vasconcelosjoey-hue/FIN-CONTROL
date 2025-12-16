@@ -85,6 +85,14 @@ const ActionButton = ({ onClick, icon, color = "text-slate-500 hover:text-white"
   </button>
 );
 
+// Helper to handle ENTER key on inputs
+const handleEnter = (e: React.KeyboardEvent, action: () => void) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    action();
+  }
+};
+
 // --- Radar Module (No Radar) ---
 export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
@@ -138,8 +146,8 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
     <CollapsibleCard title="No Radar" totalValue={`R$ ${total.toFixed(2)}`} color="white" icon={<Target size={20} />}>
        <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-12 gap-3">
-          <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
+          <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          <div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
         </div>
       </AddForm>
 
@@ -151,6 +159,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
                   <input 
                     value={editName} 
                     onChange={e => setEditName(e.target.value)} 
+                    onKeyDown={(e) => handleEnter(e, saveEdit)}
                     className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-blue outline-none w-full"
                     placeholder="Nome"
                     autoFocus
@@ -159,6 +168,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
                     type="number" 
                     value={editValue} 
                     onChange={e => setEditValue(e.target.value)} 
+                    onKeyDown={(e) => handleEnter(e, saveEdit)}
                     className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-blue outline-none w-24"
                     placeholder="Val"
                   />
@@ -265,9 +275,9 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     >
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-5"><Input placeholder="Nome" value={newName} onChange={e => setNewName(e.target.value)} /></div>
-          <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={newValue} onChange={e => setNewValue(e.target.value)} /></div>
-          <div className="md:col-span-4"><Input type="text" placeholder="Data (ex: 15/10)" value={newDate} onChange={e => setNewDate(e.target.value)} /></div>
+          <div className="md:col-span-5"><Input placeholder="Nome" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={newValue} onChange={e => setNewValue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-4"><Input type="text" placeholder="Data (ex: 15/10)" value={newDate} onChange={e => setNewDate(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
         </div>
       </AddForm>
 
@@ -280,6 +290,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                 <input 
                   value={editName} 
                   onChange={e => setEditName(e.target.value)} 
+                  onKeyDown={(e) => handleEnter(e, saveEdit)}
                   className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-full"
                   placeholder="Nome"
                   autoFocus
@@ -287,6 +298,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                  <input 
                   value={editDate} 
                   onChange={e => setEditDate(e.target.value)} 
+                  onKeyDown={(e) => handleEnter(e, saveEdit)}
                   className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-green outline-none w-24 text-center"
                   placeholder="Data"
                 />
@@ -296,6 +308,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                     type="number"
                     value={editValue} 
                     onChange={e => setEditValue(e.target.value)} 
+                    onKeyDown={(e) => handleEnter(e, saveEdit)}
                     className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-24"
                     placeholder="Valor"
                   />
@@ -407,8 +420,8 @@ export const CustomSectionModule: React.FC<{
 
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-12 gap-3">
-          <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
+          <div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          <div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
         </div>
       </AddForm>
 
@@ -420,6 +433,7 @@ export const CustomSectionModule: React.FC<{
                   <input 
                     value={editName} 
                     onChange={e => setEditName(e.target.value)} 
+                    onKeyDown={(e) => handleEnter(e, saveEdit)}
                     className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full"
                     placeholder="Descrição"
                     autoFocus
@@ -430,6 +444,7 @@ export const CustomSectionModule: React.FC<{
                       type="number"
                       value={editValue} 
                       onChange={e => setEditValue(e.target.value)} 
+                      onKeyDown={(e) => handleEnter(e, saveEdit)}
                       className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-24"
                       placeholder="Valor"
                     />
@@ -521,9 +536,9 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
     <CollapsibleCard title="Contas Pessoais" totalValue={`R$ ${total.toFixed(2)}`} color="red" icon={<AlertCircle size={20} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} /></div>
-          <div className="md:col-span-4"><Input type="text" placeholder="Vencimento (Dia)" value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-4"><Input type="text" placeholder="Vencimento (Dia)" value={date} onChange={e => setDate(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -534,6 +549,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                  <input 
                     value={editName} 
                     onChange={e => setEditName(e.target.value)} 
+                    onKeyDown={(e) => handleEnter(e, saveEdit)}
                     className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full"
                     placeholder="Descrição"
                     autoFocus
@@ -541,6 +557,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                   <input 
                     value={editDate} 
                     onChange={e => setEditDate(e.target.value)} 
+                    onKeyDown={(e) => handleEnter(e, saveEdit)}
                     className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-24 text-center"
                     placeholder="Venc."
                   />
@@ -550,6 +567,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                       type="number"
                       value={editValue} 
                       onChange={e => setEditValue(e.target.value)} 
+                      onKeyDown={(e) => handleEnter(e, saveEdit)}
                       className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-24"
                       placeholder="Valor"
                     />
@@ -604,13 +622,13 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   }, 0);
 
   const handleAdd = () => {
-    if (!name || !monthlyVal || !count || !start) return;
+    if (!name || !monthlyVal || !count) return;
     const item: InstallmentExpense = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       monthlyValue: parseFloat(monthlyVal),
       installmentsCount: parseInt(count),
-      startMonth: start
+      startMonth: start || new Date().toISOString().slice(0, 7) // Default to current YYYY-MM
     };
     onUpdate({ ...data, installments: [...data.installments, item] });
     setName(''); setMonthlyVal(''); setCount(''); setStart('');
@@ -657,6 +675,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   // Helper to format YYYY-MM to JAN/YY
   const formatMonth = (ym: string) => {
     if (!ym) return '';
+    if (!ym.includes('-')) return ym;
     const [y, m] = ym.split('-');
     const date = new Date(parseInt(y), parseInt(m) - 1, 1);
     const monthName = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
@@ -666,6 +685,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   // Helper to add months
   const getEndMonth = (startYm: string, monthsToAdd: number) => {
     if (!startYm) return '';
+    if (!startYm.includes('-')) return '...';
     const [y, m] = startYm.split('-');
     const date = new Date(parseInt(y), parseInt(m) - 1, 1);
     date.setMonth(date.getMonth() + monthsToAdd - 1);
@@ -677,13 +697,37 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   return (
     <CollapsibleCard title="Parcelados" totalValue={`R$ ${monthlyTotal.toFixed(2)}/mês`} color="red" icon={<Calendar size={20} />}>
       <AddForm onAdd={handleAdd}>
-        <div className="grid grid-cols-2 gap-3 mb-2">
-          <Input placeholder="Item" value={name} onChange={e => setName(e.target.value)} />
-          <Input type="month" value={start} onChange={e => setStart(e.target.value)} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-           <Input type="number" placeholder="Valor Parcela (R$)" value={monthlyVal} onChange={e => setMonthlyVal(e.target.value)} />
-           <Input type="number" placeholder="Qtd. Parcelas" value={count} onChange={e => setCount(e.target.value)} />
+        {/* NEW SMART LAYOUT */}
+        <div className="flex flex-col gap-3">
+            <Input 
+                placeholder="Descrição do Gasto (ex: iPhone 15)" 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                onKeyDown={(e) => handleEnter(e, handleAdd)}
+            />
+            <div className="grid grid-cols-3 gap-3">
+               <Input 
+                 type="number" 
+                 placeholder="R$ Parcela" 
+                 value={monthlyVal} 
+                 onChange={e => setMonthlyVal(e.target.value)} 
+                 onKeyDown={(e) => handleEnter(e, handleAdd)}
+               />
+               <Input 
+                 type="number" 
+                 placeholder="Qtd" 
+                 value={count} 
+                 onChange={e => setCount(e.target.value)} 
+                 onKeyDown={(e) => handleEnter(e, handleAdd)}
+               />
+               <Input 
+                 type="text" 
+                 placeholder="Início (MM/AA)" 
+                 value={start} 
+                 onChange={e => setStart(e.target.value)} 
+                 onKeyDown={(e) => handleEnter(e, handleAdd)}
+               />
+            </div>
         </div>
       </AddForm>
       
@@ -699,35 +743,40 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
             <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50 block">
               {editingId === item.id ? (
                  <div className="flex flex-col gap-2">
-                    <div className="grid grid-cols-2 gap-2">
-                        <input 
-                          value={editName} 
-                          onChange={e => setEditName(e.target.value)} 
-                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full"
-                          placeholder="Nome"
-                          autoFocus
-                        />
-                        <input 
-                          type="month"
-                          value={editStart} 
-                          onChange={e => setEditStart(e.target.value)} 
-                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-full"
-                        />
-                    </div>
+                    {/* EDIT MODE: NEW LAYOUT */}
+                    <input 
+                      value={editName} 
+                      onChange={e => setEditName(e.target.value)} 
+                      onKeyDown={(e) => handleEnter(e, saveEdit)}
+                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full font-bold mb-1"
+                      placeholder="Nome"
+                      autoFocus
+                    />
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-500 uppercase">Val/Mês:</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">R$</span>
                         <input 
                           type="number"
                           value={editMonthlyVal} 
                           onChange={e => setEditMonthlyVal(e.target.value)} 
+                          onKeyDown={(e) => handleEnter(e, saveEdit)}
                           className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-20"
                         />
-                        <span className="text-xs font-bold text-slate-500 uppercase">Qtd:</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">x</span>
                          <input 
                           type="number"
                           value={editCount} 
                           onChange={e => setEditCount(e.target.value)} 
+                          onKeyDown={(e) => handleEnter(e, saveEdit)}
                           className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-14"
+                        />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Em:</span>
+                        <input 
+                          type="text"
+                          value={editStart} 
+                          onChange={e => setEditStart(e.target.value)} 
+                          onKeyDown={(e) => handleEnter(e, saveEdit)}
+                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-20"
+                          placeholder="MM/AA"
                         />
                         <div className="flex gap-1 ml-auto">
                            <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
@@ -826,8 +875,8 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
     <CollapsibleCard title="Limites de Cartões" totalValue={`Total: R$ ${totalLimit.toFixed(2)}`} color="blue" icon={<CCIcon size={20} />}>
       <AddForm onAdd={handleAdd}>
          <div className="grid grid-cols-2 gap-2">
-           <Input placeholder="Nome do Banco" value={name} onChange={e => setName(e.target.value)} />
-           <Input type="number" placeholder="Limite (R$)" value={limit} onChange={e => setLimit(e.target.value)} />
+           <Input placeholder="Nome do Banco" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+           <Input type="number" placeholder="Limite (R$)" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
          </div>
       </AddForm>
 
@@ -840,6 +889,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                        <input 
                          value={editName} 
                          onChange={e => setEditName(e.target.value)} 
+                         onKeyDown={(e) => handleEnter(e, saveEdit)}
                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-blue outline-none w-full font-bold"
                          placeholder="Banco"
                          autoFocus
@@ -855,6 +905,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                          type="number"
                          value={editLimit} 
                          onChange={e => setEditLimit(e.target.value)} 
+                         onKeyDown={(e) => handleEnter(e, saveEdit)}
                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-neon-blue font-mono font-bold focus:border-neon-blue outline-none w-full"
                          placeholder="0.00"
                        />
@@ -954,11 +1005,11 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
                <Select options={options} value={type} onChange={e => setType(e.target.value as any)} />
              </div>
              <div className="col-span-8">
-               <Input placeholder="Chave Pix" value={key} onChange={e => setKey(e.target.value)} />
+               <Input placeholder="Chave Pix" value={key} onChange={e => setKey(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
              </div>
            </div>
            <div>
-             <Input placeholder="Nome da Pessoa / Beneficiário" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} />
+             <Input placeholder="Nome da Pessoa / Beneficiário" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
            </div>
          </div>
        </AddForm>
@@ -978,6 +1029,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
                        <input 
                           value={editKey} 
                           onChange={e => setEditKey(e.target.value)} 
+                          onKeyDown={(e) => handleEnter(e, saveEdit)}
                           className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-pink outline-none w-full"
                           placeholder="Chave Pix"
                        />
@@ -989,6 +1041,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
                     <input 
                       value={editBeneficiary} 
                       onChange={e => setEditBeneficiary(e.target.value)} 
+                      onKeyDown={(e) => handleEnter(e, saveEdit)}
                       className="bg-black/40 border border-white/20 rounded px-2 py-1 text-xs text-slate-300 focus:border-neon-pink outline-none w-full"
                       placeholder="Beneficiário (Opcional)"
                     />

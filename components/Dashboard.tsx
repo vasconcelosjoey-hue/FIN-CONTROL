@@ -18,21 +18,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
   const totalFixedExpenses = data.fixedExpenses.reduce((acc, curr) => acc + curr.value, 0);
   
+  // Calculate total monthly installments
+  // Agora soma TODOS os parcelados listados, independente da data, para bater com o valor visualizado no módulo
   const totalInstallmentMonthly = data.installments.reduce((acc, curr) => {
-    const start = new Date(curr.startMonth + "-01");
-    const now = new Date();
-    // Normalize to first day of month to avoid issues
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    const end = new Date(start);
-    end.setMonth(start.getMonth() + curr.installmentsCount);
-    
-    if (currentMonth >= start && currentMonth < end) {
-       // Use monthlyValue if available, otherwise fallback to legacy calc
-       const val = curr.monthlyValue || (curr.totalValue ? curr.totalValue / curr.installmentsCount : 0);
-       return acc + val;
-    }
-    return acc;
+     const val = curr.monthlyValue || (curr.totalValue ? curr.totalValue / curr.installmentsCount : 0);
+     return acc + val;
   }, 0);
 
   const totalOutflow = totalFixedExpenses + totalInstallmentMonthly + totalCustomSections;

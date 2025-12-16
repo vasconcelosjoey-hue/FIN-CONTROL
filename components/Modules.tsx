@@ -194,6 +194,12 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   const [newValue, setNewValue] = useState('');
   const [newDate, setNewDate] = useState('');
 
+  // Editing State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editValue, setEditValue] = useState('');
+  const [editDate, setEditDate] = useState('');
+
   // No filtering - Show all incomes
   const incomes = data.incomes;
   const totalValue = incomes.reduce((acc, curr) => acc + curr.value, 0);
@@ -226,6 +232,30 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     onUpdate({...data, incomes: allIncomes});
   };
 
+  const startEdit = (item: Income) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditValue(item.value.toString());
+    setEditDate(item.expectedDate);
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    const updatedIncomes = data.incomes.map(item => {
+      if (item.id === editingId) {
+        return { 
+          ...item, 
+          name: editName, 
+          value: parseFloat(editValue) || 0,
+          expectedDate: editDate 
+        };
+      }
+      return item;
+    });
+    onUpdate({ ...data, incomes: updatedIncomes });
+    setEditingId(null);
+  };
+
   return (
     <CollapsibleCard 
       title="Entradas Vigentes" 
@@ -245,22 +275,57 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         {incomes.length === 0 && <p className="text-slate-500 text-center text-sm py-4 italic">Nenhum registro.</p>}
         {incomes.map((item, idx) => (
           <DraggableRow key={item.id} listId="incomes" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green">
-                <ArrowRight size={12} className="transform -rotate-45" />
+            {editingId === item.id ? (
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                <input 
+                  value={editName} 
+                  onChange={e => setEditName(e.target.value)} 
+                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-full"
+                  placeholder="Nome"
+                  autoFocus
+                />
+                 <input 
+                  value={editDate} 
+                  onChange={e => setEditDate(e.target.value)} 
+                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-green outline-none w-24 text-center"
+                  placeholder="Data"
+                />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                   <span className="text-neon-green font-bold text-sm">R$</span>
+                   <input 
+                    type="number"
+                    value={editValue} 
+                    onChange={e => setEditValue(e.target.value)} 
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-24"
+                    placeholder="Valor"
+                  />
+                  <div className="flex gap-1 shrink-0">
+                    <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
+                    <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-white text-sm">{item.name}</p>
-                <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">{item.expectedDate}</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
-              <span className="font-extrabold text-neon-green text-base">R$ {item.value.toFixed(2)}</span>
-              <div className="flex items-center gap-1">
-                 <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
-                 <ActionButton onClick={() => handleRemove(item.id)} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green">
+                    <ArrowRight size={12} className="transform -rotate-45" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{item.name}</p>
+                    <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">{item.expectedDate}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
+                  <span className="font-extrabold text-neon-green text-base">R$ {item.value.toFixed(2)}</span>
+                  <div className="flex items-center gap-1">
+                     <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                     <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
+                     <ActionButton onClick={() => handleRemove(item.id)} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                  </div>
+                </div>
+              </>
+            )}
           </DraggableRow>
         ))}
       </div>
@@ -280,6 +345,11 @@ export const CustomSectionModule: React.FC<{
 }) => {
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
+
+  // Editing State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editValue, setEditValue] = useState('');
 
   const total = section.items.reduce((acc, i) => acc + i.value, 0);
 
@@ -306,6 +376,24 @@ export const CustomSectionModule: React.FC<{
     onUpdate({ ...section, items: newItems });
   };
 
+  const startEdit = (item: SectionItem) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditValue(item.value.toString());
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    const updatedItems = section.items.map(item => {
+      if (item.id === editingId) {
+        return { ...item, name: editName, value: parseFloat(editValue) || 0 };
+      }
+      return item;
+    });
+    onUpdate({ ...section, items: updatedItems });
+    setEditingId(null);
+  };
+
   return (
     <CollapsibleCard 
       title={section.title} 
@@ -327,16 +415,45 @@ export const CustomSectionModule: React.FC<{
       <div className="flex flex-col gap-2">
          {section.items.map((item, idx) => (
            <DraggableRow key={item.id} listId={section.id} index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
-             <div className="flex-1">
-                <span className="font-bold text-white text-sm">{item.name}</span>
-             </div>
-              <div className="flex items-center gap-3">
-                <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
-                <div className="flex items-center gap-1">
-                   <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
-                   <ActionButton onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)})} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+             {editingId === item.id ? (
+                <div className="flex items-center gap-2 w-full">
+                  <input 
+                    value={editName} 
+                    onChange={e => setEditName(e.target.value)} 
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full"
+                    placeholder="Descrição"
+                    autoFocus
+                  />
+                  <div className="flex items-center gap-2 shrink-0">
+                     <span className="text-neon-red font-bold text-sm">R$</span>
+                     <input 
+                      type="number"
+                      value={editValue} 
+                      onChange={e => setEditValue(e.target.value)} 
+                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-24"
+                      placeholder="Valor"
+                    />
+                    <div className="flex gap-1">
+                      <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
+                      <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
+                    </div>
+                  </div>
                 </div>
-              </div>
+             ) : (
+               <>
+                 <div className="flex-1">
+                    <span className="font-bold text-white text-sm">{item.name}</span>
+                 </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                    <div className="flex items-center gap-1">
+                       <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                       <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
+                       <ActionButton onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)})} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                    </div>
+                  </div>
+               </>
+             )}
            </DraggableRow>
          ))}
       </div>
@@ -349,6 +466,12 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [date, setDate] = useState('');
+
+  // Editing State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editValue, setEditValue] = useState('');
+  const [editDate, setEditDate] = useState('');
 
   const total = data.fixedExpenses.reduce((acc, i) => acc + i.value, 0);
 
@@ -375,6 +498,25 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
     onUpdate({ ...data, fixedExpenses: list });
   };
 
+  const startEdit = (item: FixedExpense) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditValue(item.value.toString());
+    setEditDate(item.dueDate);
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    const updatedList = data.fixedExpenses.map(item => {
+      if (item.id === editingId) {
+        return { ...item, name: editName, value: parseFloat(editValue) || 0, dueDate: editDate };
+      }
+      return item;
+    });
+    onUpdate({ ...data, fixedExpenses: updatedList });
+    setEditingId(null);
+  };
+
   return (
     <CollapsibleCard title="Contas Pessoais" totalValue={`R$ ${total.toFixed(2)}`} color="red" icon={<AlertCircle size={20} />}>
       <AddForm onAdd={handleAdd}>
@@ -387,17 +529,52 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       <div className="flex flex-col gap-2">
         {data.fixedExpenses.map((item, idx) => (
           <DraggableRow key={item.id} listId="fixed" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50">
-             <div className="flex-1">
-               <p className="font-bold text-white text-sm">{item.name}</p>
-               <p className="text-[10px] text-slate-400">Venc: {item.dueDate}</p>
-             </div>
-             <div className="flex items-center gap-3">
-               <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
-               <div className="flex items-center gap-1">
-                  <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
-                  <ActionButton onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+             {editingId === item.id ? (
+               <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                 <input 
+                    value={editName} 
+                    onChange={e => setEditName(e.target.value)} 
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full"
+                    placeholder="Descrição"
+                    autoFocus
+                  />
+                  <input 
+                    value={editDate} 
+                    onChange={e => setEditDate(e.target.value)} 
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-24 text-center"
+                    placeholder="Venc."
+                  />
+                  <div className="flex items-center gap-2 shrink-0">
+                     <span className="text-neon-red font-bold text-sm">R$</span>
+                     <input 
+                      type="number"
+                      value={editValue} 
+                      onChange={e => setEditValue(e.target.value)} 
+                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-24"
+                      placeholder="Valor"
+                    />
+                    <div className="flex gap-1">
+                      <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
+                      <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
+                    </div>
+                  </div>
                </div>
-             </div>
+             ) : (
+               <>
+                 <div className="flex-1">
+                   <p className="font-bold text-white text-sm">{item.name}</p>
+                   <p className="text-[10px] text-slate-400">Venc: {item.dueDate}</p>
+                 </div>
+                 <div className="flex items-center gap-3">
+                   <span className="font-extrabold text-white text-sm">R$ {item.value.toFixed(2)}</span>
+                   <div className="flex items-center gap-1">
+                      <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                      <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
+                      <ActionButton onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                   </div>
+                 </div>
+               </>
+             )}
           </DraggableRow>
         ))}
       </div>
@@ -411,6 +588,14 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   const [monthlyVal, setMonthlyVal] = useState('');
   const [count, setCount] = useState('');
   const [start, setStart] = useState('');
+
+  // Editing State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editMonthlyVal, setEditMonthlyVal] = useState('');
+  const [editCount, setEditCount] = useState('');
+  const [editStart, setEditStart] = useState('');
+
 
   // Calculate monthly total
   const monthlyTotal = data.installments.reduce((acc, curr) => {
@@ -440,6 +625,33 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
     const list = [...data.installments];
     list.splice(to, 0, list.splice(from, 1)[0]);
     onUpdate({ ...data, installments: list });
+  };
+
+  const startEdit = (item: InstallmentExpense) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    const val = item.monthlyValue || (item.totalValue ? item.totalValue / item.installmentsCount : 0);
+    setEditMonthlyVal(val.toString());
+    setEditCount(item.installmentsCount.toString());
+    setEditStart(item.startMonth);
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    const updatedList = data.installments.map(item => {
+      if (item.id === editingId) {
+        return { 
+          ...item, 
+          name: editName, 
+          monthlyValue: parseFloat(editMonthlyVal), 
+          installmentsCount: parseInt(editCount),
+          startMonth: editStart
+        };
+      }
+      return item;
+    });
+    onUpdate({ ...data, installments: updatedList });
+    setEditingId(null);
   };
 
   // Helper to format YYYY-MM to JAN/YY
@@ -485,23 +697,66 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 
            return (
             <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50 block">
-              <div className="flex flex-col sm:flex-row justify-between w-full items-start sm:items-center">
-                <div className="text-white text-sm font-medium">
-                  <span className="font-bold text-white">{item.name}</span>
-                  <span className="text-slate-400 mx-2">—</span> 
-                  <span className="font-bold text-neon-red">{val.toFixed(0)}</span> 
-                  <span className="text-slate-500 mx-1">×</span> 
-                  <span className="text-white font-bold">{item.installmentsCount}</span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-bold tracking-wider bg-black/30 px-2 py-1 rounded mt-1 sm:mt-0 uppercase">
-                  {startFmt} <span className="text-neon-red">→</span> {endFmt}
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-white/5 w-full">
-                 <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Copy size={10} /> DUPLICAR</button>
-                 <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:text-white flex items-center gap-1 text-[10px]"><Trash2 size={10} /> REMOVER</button>
-              </div>
+              {editingId === item.id ? (
+                 <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <input 
+                          value={editName} 
+                          onChange={e => setEditName(e.target.value)} 
+                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full"
+                          placeholder="Nome"
+                          autoFocus
+                        />
+                        <input 
+                          type="month"
+                          value={editStart} 
+                          onChange={e => setEditStart(e.target.value)} 
+                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-full"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Val/Mês:</span>
+                        <input 
+                          type="number"
+                          value={editMonthlyVal} 
+                          onChange={e => setEditMonthlyVal(e.target.value)} 
+                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-20"
+                        />
+                        <span className="text-xs font-bold text-slate-500 uppercase">Qtd:</span>
+                         <input 
+                          type="number"
+                          value={editCount} 
+                          onChange={e => setEditCount(e.target.value)} 
+                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-14"
+                        />
+                        <div className="flex gap-1 ml-auto">
+                           <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
+                           <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
+                        </div>
+                    </div>
+                 </div>
+              ) : (
+                <>
+                  <div className="flex flex-col sm:flex-row justify-between w-full items-start sm:items-center">
+                    <div className="text-white text-sm font-medium">
+                      <span className="font-bold text-white">{item.name}</span>
+                      <span className="text-slate-400 mx-2">—</span> 
+                      <span className="font-bold text-neon-red">{val.toFixed(0)}</span> 
+                      <span className="text-slate-500 mx-1">×</span> 
+                      <span className="text-white font-bold">{item.installmentsCount}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold tracking-wider bg-black/30 px-2 py-1 rounded mt-1 sm:mt-0 uppercase">
+                      {startFmt} <span className="text-neon-red">→</span> {endFmt}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-white/5 w-full">
+                     <button onClick={() => startEdit(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Pencil size={10} /> EDITAR</button>
+                     <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Copy size={10} /> DUPLICAR</button>
+                     <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:text-white flex items-center gap-1 text-[10px]"><Trash2 size={10} /> REMOVER</button>
+                  </div>
+                </>
+              )}
             </DraggableRow>
            );
         })}

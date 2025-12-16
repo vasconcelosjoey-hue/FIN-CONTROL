@@ -161,9 +161,9 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
                <div className="flex items-center gap-2 w-full">
                   <input 
                     value={editName} 
-                    onChange={e => setEditName(e.target.value)} 
+                    onChange={e => setEditName(e.target.value.toUpperCase())} 
                     onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-blue outline-none w-full h-8"
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-blue outline-none w-full h-8 uppercase"
                     placeholder="Nome"
                     autoFocus
                   />
@@ -292,17 +292,17 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                 <input 
                   value={editName} 
-                  onChange={e => setEditName(e.target.value)} 
+                  onChange={e => setEditName(e.target.value.toUpperCase())} 
                   onKeyDown={(e) => handleEnter(e, saveEdit)}
-                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-full h-8"
+                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-full h-8 uppercase"
                   placeholder="Nome"
                   autoFocus
                 />
                  <input 
                   value={editDate} 
-                  onChange={e => setEditDate(e.target.value)} 
+                  onChange={e => setEditDate(e.target.value.toUpperCase())} 
                   onKeyDown={(e) => handleEnter(e, saveEdit)}
-                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-green outline-none w-24 text-center h-8"
+                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-green outline-none w-24 text-center h-8 uppercase"
                   placeholder="Data"
                 />
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -352,7 +352,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
 // --- Custom Section Module (Generic) ---
 export const CustomSectionModule: React.FC<{ 
   section: CustomSection, 
-  onUpdate: (updatedSection: CustomSection) => void,
+  onUpdate: (updatedSection: CustomSection) => void, 
   onDeleteSection: () => void 
 }> = ({ 
   section, 
@@ -440,9 +440,9 @@ export const CustomSectionModule: React.FC<{
                 <div className="flex items-center gap-2 w-full">
                   <input 
                     value={editName} 
-                    onChange={e => setEditName(e.target.value)} 
+                    onChange={e => setEditName(e.target.value.toUpperCase())} 
                     onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full h-8"
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full h-8 uppercase"
                     placeholder="Descrição"
                     autoFocus
                   />
@@ -556,17 +556,17 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                  <input 
                     value={editName} 
-                    onChange={e => setEditName(e.target.value)} 
+                    onChange={e => setEditName(e.target.value.toUpperCase())} 
                     onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full h-8"
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full h-8 uppercase"
                     placeholder="Descrição"
                     autoFocus
                   />
                   <input 
                     value={editDate} 
-                    onChange={e => setEditDate(e.target.value)} 
+                    onChange={e => setEditDate(e.target.value.toUpperCase())} 
                     onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-24 text-center h-8"
+                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-24 text-center h-8 uppercase"
                     placeholder="Venc."
                   />
                   <div className="flex items-center gap-2 shrink-0">
@@ -846,9 +846,9 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                     {/* EDIT MODE: NEW LAYOUT */}
                     <input 
                       value={editName} 
-                      onChange={e => setEditName(e.target.value)} 
+                      onChange={e => setEditName(e.target.value.toUpperCase())} 
                       onKeyDown={(e) => handleEnter(e, saveEdit)}
-                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full font-bold mb-1 h-8"
+                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full font-bold mb-1 h-8 uppercase"
                       placeholder="Nome"
                       autoFocus
                     />
@@ -873,9 +873,9 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                         <input 
                           type="text"
                           value={editStart} 
-                          onChange={e => setEditStart(e.target.value)} 
+                          onChange={e => setEditStart(e.target.value.toUpperCase())} 
                           onKeyDown={(e) => handleEnter(e, saveEdit)}
-                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-20 h-8"
+                          className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-20 h-8 uppercase"
                           placeholder="MM/AA"
                         />
                         <div className="flex gap-1 ml-auto">
@@ -1013,8 +1013,8 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                  <div className="flex flex-col gap-2">
                     <input 
                       value={editName} 
-                      onChange={e => setEditName(e.target.value)} 
-                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-pink outline-none w-full font-bold h-8"
+                      onChange={e => setEditName(e.target.value.toUpperCase())} 
+                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-pink outline-none w-full font-bold h-8 uppercase"
                       placeholder="Nome"
                       autoFocus
                     />
@@ -1153,9 +1153,9 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
                          <select value={editType} onChange={e => setEditType(e.target.value as any)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-1/3 h-8">
                             {pixTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                          </select>
-                         <input value={editKey} onChange={e => setEditKey(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-2/3 h-8" />
+                         <input value={editKey} onChange={e => setEditKey(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-2/3 h-8 uppercase" />
                       </div>
-                      <input value={editBeneficiary} onChange={e => setEditBeneficiary(e.target.value)} placeholder="Beneficiário" className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8" />
+                      <input value={editBeneficiary} onChange={e => setEditBeneficiary(e.target.value.toUpperCase())} placeholder="Beneficiário" className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8 uppercase" />
                       <div className="flex justify-end gap-1">
                           <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
                           <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />

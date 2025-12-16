@@ -87,7 +87,7 @@ export const CollapsibleCard = ({
                 <input 
                     ref={inputRef}
                     value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
+                    onChange={(e) => setEditValue(e.target.value.toUpperCase())}
                     onKeyDown={(e) => {
                         if(e.key === 'Enter') handleSaveTitle();
                         if(e.key === 'Escape') {
@@ -96,7 +96,7 @@ export const CollapsibleCard = ({
                         }
                     }}
                     onBlur={() => handleSaveTitle()}
-                    className="bg-black/50 border border-white/20 rounded px-2 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full max-w-[200px] h-7"
+                    className="bg-black/50 border border-white/20 rounded px-2 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full max-w-[200px] h-7 uppercase"
                 />
             </div>
           ) : (
@@ -163,13 +163,17 @@ export const Button = ({ onClick, children, variant = 'primary', className = "",
   );
 };
 
-export const Input = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) => (
+export const Input = ({ label, onChange, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) => (
   <div className="flex flex-col gap-1 w-full group">
     {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
     <input 
       className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-medium text-sm
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
-                 transition-all placeholder:text-slate-600 placeholder:text-xs w-full h-9"
+                 transition-all placeholder:text-slate-600 placeholder:text-xs w-full h-9 uppercase"
+      onChange={(e) => {
+          e.target.value = e.target.value.toUpperCase();
+          onChange?.(e);
+      }}
       {...props}
     />
   </div>

@@ -18,19 +18,32 @@ function App() {
   useEffect(() => {
     let unsubscribeData: () => void = () => {};
 
-    const initLocalMode = () => {
-      const localId = "local_user";
-      setUserId(localId);
-      loadData(localId).then(d => {
+    const normalizeData = (d: FinancialData) => {
         // Migration Logic
         if (!d.modulesOrder) {
              const customIds = d.customSections?.map(s => s.id) || [];
              d.modulesOrder = ['fixed', 'installments', ...customIds];
         }
+        if (!d.incomeModulesOrder) {
+            d.incomeModulesOrder = ['incomes'];
+            // If we have custom sections without type, we assume they are expenses (legacy)
+            // But if we wanted to be robust, we'd check their IDs against modulesOrder.
+            // For now, new sections will have types.
+            d.customSections?.forEach(s => {
+                if (!s.type) s.type = 'expense';
+            });
+        }
         if (!d.radarItems) {
           d.radarItems = [];
         }
-        setData(d);
+        return d;
+    };
+
+    const initLocalMode = () => {
+      const localId = "local_user";
+      setUserId(localId);
+      loadData(localId).then(d => {
+        setData(normalizeData(d));
         setLoading(false);
       });
     };
@@ -40,26 +53,10 @@ function App() {
         if (user) {
           setUserId(user.uid);
           const initialData = await loadData(user.uid);
-          // Ensure modulesOrder exists for legacy data
-          if (!initialData.modulesOrder) {
-             const customIds = initialData.customSections?.map(s => s.id) || [];
-             initialData.modulesOrder = ['fixed', 'installments', ...customIds];
-          }
-          // Ensure radarItems exists for legacy data
-          if (!initialData.radarItems) {
-            initialData.radarItems = [];
-          }
-          setData(initialData);
+          setData(normalizeData(initialData));
           setLoading(false);
           unsubscribeData = subscribeToData(user.uid, (newData) => {
-            if (!newData.modulesOrder) {
-                const customIds = newData.customSections?.map(s => s.id) || [];
-                newData.modulesOrder = ['fixed', 'installments', ...customIds];
-            }
-            if (!newData.radarItems) {
-              newData.radarItems = [];
-            }
-            setData(newData);
+            setData(normalizeData(newData));
           });
         } else {
           // If auth exists but no user, try anon sign in, or fall back to local if that fails
@@ -93,27 +90,30 @@ function App() {
     setData(newData);
   };
 
-  const createNewSection = () => {
-    const title = prompt("Nome da nova sessão (ex: CBMC Mensalidade):");
+  const createNewSection = (type: 'income' | 'expense') => {
+    const title = prompt(`Nome da nova sessão de ${type === 'income' ? 'Entrada' : 'Saída'} (ex: Extras):`);
     if (title) {
       const newSectionId = Math.random().toString(36).substr(2, 9);
       const newSection: CustomSection = {
         id: newSectionId,
         title: title.toUpperCase(),
-        items: []
+        items: [],
+        type: type
       };
       
       const sections = data.customSections || [];
-      const currentOrder = data.modulesOrder || ['fixed', 'installments'];
       
-      // Add new section and put it at the top of the order
-      const newOrder = [...currentOrder, newSectionId];
+      let updatedData = { ...data, customSections: [...sections, newSection] };
 
-      handleUpdate({ 
-          ...data, 
-          customSections: [...sections, newSection],
-          modulesOrder: newOrder
-      });
+      if (type === 'expense') {
+          const currentOrder = data.modulesOrder || ['fixed', 'installments'];
+          updatedData.modulesOrder = [...currentOrder, newSectionId];
+      } else {
+          const currentOrder = data.incomeModulesOrder || ['incomes'];
+          updatedData.incomeModulesOrder = [...currentOrder, newSectionId];
+      }
+
+      handleUpdate(updatedData);
     }
   };
 
@@ -122,7 +122,8 @@ function App() {
       handleUpdate({
           ...data, 
           customSections: data.customSections.filter(s => s.id !== id),
-          modulesOrder: data.modulesOrder?.filter(oid => oid !== id)
+          modulesOrder: data.modulesOrder?.filter(oid => oid !== id),
+          incomeModulesOrder: data.incomeModulesOrder?.filter(oid => oid !== id)
       });
     }
   };
@@ -134,11 +135,18 @@ function App() {
     });
   };
 
-  const handleModuleReorder = (fromIndex: number, toIndex: number) => {
+  const handleExpenseModuleReorder = (fromIndex: number, toIndex: number) => {
     const newOrder = [...(data.modulesOrder || [])];
     const [moved] = newOrder.splice(fromIndex, 1);
     newOrder.splice(toIndex, 0, moved);
     handleUpdate({ ...data, modulesOrder: newOrder });
+  };
+
+  const handleIncomeModuleReorder = (fromIndex: number, toIndex: number) => {
+    const newOrder = [...(data.incomeModulesOrder || [])];
+    const [moved] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, moved);
+    handleUpdate({ ...data, incomeModulesOrder: newOrder });
   };
 
   if (loading) {
@@ -154,7 +162,7 @@ function App() {
      if (moduleId === 'fixed') {
          return (
              <React.Fragment key="fixed">
-                 <DraggableModuleWrapper id="fixed" index={index} onMove={handleModuleReorder}>
+                 <DraggableModuleWrapper id="fixed" index={index} onMove={handleExpenseModuleReorder}>
                      <FixedExpenseModule data={data} onUpdate={handleUpdate} />
                  </DraggableModuleWrapper>
              </React.Fragment>
@@ -162,7 +170,7 @@ function App() {
      } else if (moduleId === 'installments') {
          return (
              <React.Fragment key="installments">
-                 <DraggableModuleWrapper id="installments" index={index} onMove={handleModuleReorder}>
+                 <DraggableModuleWrapper id="installments" index={index} onMove={handleExpenseModuleReorder}>
                      <InstallmentModule data={data} onUpdate={handleUpdate} />
                  </DraggableModuleWrapper>
              </React.Fragment>
@@ -172,7 +180,36 @@ function App() {
          if (section) {
              return (
                  <React.Fragment key={section.id}>
-                     <DraggableModuleWrapper id={section.id} index={index} onMove={handleModuleReorder}>
+                     <DraggableModuleWrapper id={section.id} index={index} onMove={handleExpenseModuleReorder}>
+                         <CustomSectionModule 
+                            section={section} 
+                            onUpdate={updateSection} 
+                            onDeleteSection={() => deleteSection(section.id)}
+                         />
+                     </DraggableModuleWrapper>
+                 </React.Fragment>
+             );
+         }
+     }
+     return null;
+  });
+
+  // Determine rendering order for Income Column
+  const incomeModules = (data.incomeModulesOrder || ['incomes']).map((moduleId, index) => {
+     if (moduleId === 'incomes') {
+         return (
+             <React.Fragment key="incomes">
+                 <DraggableModuleWrapper id="incomes" index={index} onMove={handleIncomeModuleReorder}>
+                     <IncomeModule data={data} onUpdate={handleUpdate} />
+                 </DraggableModuleWrapper>
+             </React.Fragment>
+         );
+     } else {
+         const section = data.customSections?.find(s => s.id === moduleId);
+         if (section) {
+             return (
+                 <React.Fragment key={section.id}>
+                     <DraggableModuleWrapper id={section.id} index={index} onMove={handleIncomeModuleReorder}>
                          <CustomSectionModule 
                             section={section} 
                             onUpdate={updateSection} 
@@ -221,7 +258,11 @@ function App() {
           {/* Column 1: Incomes (Green) */}
           <div className="flex-1 w-full flex flex-col gap-4">
              <h3 className="text-xs font-extrabold text-neon-green uppercase tracking-widest pl-1 border-l-2 border-neon-green/30 pl-3">Fluxo de Entradas</h3>
-             <IncomeModule data={data} onUpdate={handleUpdate} />
+             {incomeModules}
+             
+             <button onClick={() => createNewSection('income')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-500 font-bold hover:border-neon-green/50 hover:text-neon-green hover:bg-neon-green/5 transition-all flex items-center justify-center gap-2">
+               <Plus size={20} /> Nova Sessão de Entrada
+             </button>
           </div>
 
           {/* Column 2: Expenses (Red) - Reorderable */}
@@ -232,8 +273,8 @@ function App() {
              
              {expenseModules}
 
-             <button onClick={createNewSection} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-500 font-bold hover:border-neon-red/50 hover:text-neon-red hover:bg-neon-red/5 transition-all flex items-center justify-center gap-2">
-               <Plus size={20} /> Nova Sessão Personalizada
+             <button onClick={() => createNewSection('expense')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-500 font-bold hover:border-neon-red/50 hover:text-neon-red hover:bg-neon-red/5 transition-all flex items-center justify-center gap-2">
+               <Plus size={20} /> Nova Sessão de Saída
              </button>
           </div>
         </div>

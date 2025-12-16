@@ -25,6 +25,7 @@ export interface CustomSection {
   id: string;
   title: string;
   items: SectionItem[];
+  type: 'income' | 'expense'; // Distinguishes between income and expense sections
 }
 
 export interface InstallmentExpense {
@@ -68,6 +69,7 @@ export interface FinancialData {
   pixKeys: PixKey[];
   radarItems: RadarItem[]; // New "No Radar" items
   modulesOrder?: string[]; // Order of modules in the expense column
+  incomeModulesOrder?: string[]; // Order of modules in the income column
   settings?: {
     userName?: string;
   };
@@ -76,10 +78,11 @@ export interface FinancialData {
 export const INITIAL_DATA: FinancialData = {
   incomes: [],
   fixedExpenses: [],
-  customSections: [], // Start empty, user can add "CBMC MENSALIDADE"
+  customSections: [], 
   installments: [],
   creditCards: [],
   pixKeys: [],
   radarItems: [],
-  modulesOrder: ['fixed', 'installments'], // Default order
+  modulesOrder: ['fixed', 'installments'], // Default expense order
+  incomeModulesOrder: ['incomes'], // Default income order
 };

@@ -30,9 +30,10 @@ export interface CustomSection {
 export interface InstallmentExpense {
   id: string;
   name: string;
-  totalValue: number;
+  monthlyValue: number; // Changed from totalValue to reflect monthly input
   installmentsCount: number;
   startMonth: string; // YYYY-MM
+  totalValue?: number; // Keep optional for legacy data compatibility
 }
 
 export interface CreditCard {

@@ -21,11 +21,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   const totalInstallmentMonthly = data.installments.reduce((acc, curr) => {
     const start = new Date(curr.startMonth + "-01");
     const now = new Date();
+    // Normalize to first day of month to avoid issues
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
     const end = new Date(start);
     end.setMonth(start.getMonth() + curr.installmentsCount);
     
-    if (now >= start && now < end) {
-      return acc + (curr.totalValue / curr.installmentsCount);
+    if (currentMonth >= start && currentMonth < end) {
+       // Use monthlyValue if available, otherwise fallback to legacy calc
+       const val = curr.monthlyValue || (curr.totalValue ? curr.totalValue / curr.installmentsCount : 0);
+       return acc + val;
     }
     return acc;
   }, 0);

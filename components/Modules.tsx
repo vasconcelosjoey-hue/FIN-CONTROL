@@ -405,30 +405,30 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   );
 };
 
-// --- Installment Module ---
+// --- Installment Module (Redesigned) ---
 export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
-  const [total, setTotal] = useState('');
+  const [monthlyVal, setMonthlyVal] = useState('');
   const [count, setCount] = useState('');
   const [start, setStart] = useState('');
 
   // Calculate monthly total
   const monthlyTotal = data.installments.reduce((acc, curr) => {
-      const installmentValue = curr.totalValue / curr.installmentsCount;
-      return acc + installmentValue; 
+      const val = curr.monthlyValue || (curr.totalValue ? curr.totalValue / curr.installmentsCount : 0);
+      return acc + val;
   }, 0);
 
   const handleAdd = () => {
-    if (!name || !total || !count || !start) return;
+    if (!name || !monthlyVal || !count || !start) return;
     const item: InstallmentExpense = {
       id: Math.random().toString(36).substr(2, 9),
       name,
-      totalValue: parseFloat(total),
+      monthlyValue: parseFloat(monthlyVal),
       installmentsCount: parseInt(count),
       startMonth: start
     };
     onUpdate({ ...data, installments: [...data.installments, item] });
-    setName(''); setTotal(''); setCount(''); setStart('');
+    setName(''); setMonthlyVal(''); setCount(''); setStart('');
   };
 
   const handleDuplicate = (item: InstallmentExpense) => {
@@ -442,34 +442,65 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
     onUpdate({ ...data, installments: list });
   };
 
+  // Helper to format YYYY-MM to JAN/YY
+  const formatMonth = (ym: string) => {
+    if (!ym) return '';
+    const [y, m] = ym.split('-');
+    const date = new Date(parseInt(y), parseInt(m) - 1, 1);
+    const monthName = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
+    return `${monthName}/${y.slice(2)}`;
+  };
+
+  // Helper to add months
+  const getEndMonth = (startYm: string, monthsToAdd: number) => {
+    if (!startYm) return '';
+    const [y, m] = startYm.split('-');
+    const date = new Date(parseInt(y), parseInt(m) - 1, 1);
+    date.setMonth(date.getMonth() + monthsToAdd - 1);
+    const endY = date.getFullYear();
+    const endM = date.getMonth() + 1;
+    return `${endY}-${endM.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <CollapsibleCard title="Parcelados" totalValue={`~ R$ ${monthlyTotal.toFixed(2)}/mês`} color="red" icon={<Calendar size={20} />}>
+    <CollapsibleCard title="Parcelados" totalValue={`R$ ${monthlyTotal.toFixed(2)}/mês`} color="red" icon={<Calendar size={20} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-2 gap-3 mb-2">
           <Input placeholder="Item" value={name} onChange={e => setName(e.target.value)} />
           <Input type="month" value={start} onChange={e => setStart(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
-           <Input type="number" placeholder="Total (R$)" value={total} onChange={e => setTotal(e.target.value)} />
+           <Input type="number" placeholder="Valor Parcela (R$)" value={monthlyVal} onChange={e => setMonthlyVal(e.target.value)} />
            <Input type="number" placeholder="Qtd. Parcelas" value={count} onChange={e => setCount(e.target.value)} />
         </div>
       </AddForm>
       
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {data.installments.map((item, idx) => {
-           const installmentValue = item.totalValue / item.installmentsCount;
+           // Fallback for legacy data
+           const val = item.monthlyValue || (item.totalValue ? item.totalValue / item.installmentsCount : 0);
+           const startFmt = formatMonth(item.startMonth);
+           const endYm = getEndMonth(item.startMonth, item.installmentsCount);
+           const endFmt = formatMonth(endYm);
+
            return (
             <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-red/50 block">
-              <div className="flex justify-between w-full">
-                <span className="font-bold text-white text-sm">{item.name}</span>
-                <span className="font-extrabold text-white text-sm">R$ {installmentValue.toFixed(2)}/mês</span>
+              <div className="flex flex-col sm:flex-row justify-between w-full items-start sm:items-center">
+                <div className="text-white text-sm font-medium">
+                  <span className="font-bold text-white">{item.name}</span>
+                  <span className="text-slate-400 mx-2">—</span> 
+                  <span className="font-bold text-neon-red">{val.toFixed(0)}</span> 
+                  <span className="text-slate-500 mx-1">×</span> 
+                  <span className="text-white font-bold">{item.installmentsCount}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-bold tracking-wider bg-black/30 px-2 py-1 rounded mt-1 sm:mt-0 uppercase">
+                  {startFmt} <span className="text-neon-red">→</span> {endFmt}
+                </div>
               </div>
-              <div className="flex justify-between text-[10px] text-slate-400 mt-1 w-full">
-                 <span>{item.installmentsCount}x de R$ {installmentValue.toFixed(2)}</span>
-                 <div className="flex gap-2">
-                    <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1"><Copy size={10} /> Duplicar</button>
-                    <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:underline">Remover</button>
-                 </div>
+              
+              <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-white/5 w-full">
+                 <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Copy size={10} /> DUPLICAR</button>
+                 <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:text-white flex items-center gap-1 text-[10px]"><Trash2 size={10} /> REMOVER</button>
               </div>
             </DraggableRow>
            );

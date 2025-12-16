@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target, Pencil, X, CalendarCheck } from 'lucide-react';
+import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target, Pencil, X, CalendarCheck, Search } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-3 pt-2 border-t border-white/5">
@@ -928,19 +928,15 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
-  const [closing, setClosing] = useState('');
-  const [due, setDue] = useState('');
-  const [currentVal, setCurrentVal] = useState('');
 
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editLimit, setEditLimit] = useState('');
-  const [editClosing, setEditClosing] = useState('');
-  const [editDue, setEditDue] = useState('');
-  const [editCurrentVal, setEditCurrentVal] = useState('');
 
-  const totalInvoice = data.creditCards.reduce((acc, c) => acc + c.currentInvoiceValue, 0);
+  // Sort: Highest limit first
+  const sortedCards = [...data.creditCards].sort((a, b) => b.limit - a.limit);
+  const totalLimit = sortedCards.reduce((acc, c) => acc + c.limit, 0);
 
   const handleAdd = () => {
     if (!name) return;
@@ -948,27 +944,29 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
       id: Math.random().toString(36).substr(2, 9),
       name,
       limit: parseFloat(limit) || 0,
-      closingDay: parseInt(closing) || 1,
-      dueDay: parseInt(due) || 10,
-      currentInvoiceValue: parseFloat(currentVal) || 0
+      closingDay: 1, // Default unused
+      dueDay: 10, // Default unused
+      currentInvoiceValue: 0 // Default unused
     };
+    // Add AND Sort desc is handled by render, but let's just append to data
     onUpdate({ ...data, creditCards: [...data.creditCards, item] });
-    setName(''); setLimit(''); setClosing(''); setDue(''); setCurrentVal('');
+    setName(''); setLimit('');
   };
 
+  // We are removing explicit re-order because sorting is automatic now (by limit desc)
   const handleMove = (from: number, to: number) => {
-    const list = [...data.creditCards];
-    list.splice(to, 0, list.splice(from, 1)[0]);
-    onUpdate({ ...data, creditCards: list });
+    // No-op or we can allow manual override, but request asked for "Always organize descending order"
+    // So drag and drop might be disabled or just ineffective if sorting overrides.
+    // Let's implement manual reorder on the *underlying* data, but the render will still sort. 
+    // Actually, if the requirement is "Always sort by descending limit", we should just ignore drag or re-sort after edit.
+    // For now, I will keep the drag interface but sorting will visually override it on next render if we use `sortedCards` directly.
+    // To respect the user request perfectly: we will force sort on every update.
   };
 
   const startEdit = (item: CreditCard) => {
     setEditingId(item.id);
     setEditName(item.name);
     setEditLimit(item.limit.toString());
-    setEditClosing(item.closingDay.toString());
-    setEditDue(item.dueDay.toString());
-    setEditCurrentVal(item.currentInvoiceValue.toString());
   };
 
   const saveEdit = () => {
@@ -979,35 +977,28 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
           ...item, 
           name: editName, 
           limit: parseFloat(editLimit) || 0,
-          closingDay: parseInt(editClosing) || 1,
-          dueDay: parseInt(editDue) || 10,
-          currentInvoiceValue: parseFloat(editCurrentVal) || 0
         };
       }
       return item;
     });
+    // Force sort descending by limit immediately on save
+    updatedList.sort((a, b) => b.limit - a.limit);
+    
     onUpdate({ ...data, creditCards: updatedList });
     setEditingId(null);
   };
 
   return (
-    <CollapsibleCard title="Cartões de Crédito" totalValue={`R$ ${fmt(totalInvoice)}`} color="pink" icon={<CCIcon size={18} />}>
+    <CollapsibleCard title="Cartões de Crédito" totalValue={`R$ ${fmt(totalLimit)}`} color="pink" icon={<CCIcon size={18} />}>
       <AddForm onAdd={handleAdd}>
-         <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-2 gap-2">
-               <Input placeholder="Nome do Cartão" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-               <Input type="number" placeholder="Limite Total" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-               <Input type="number" placeholder="Dia Fech." value={closing} onChange={e => setClosing(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-               <Input type="number" placeholder="Dia Venc." value={due} onChange={e => setDue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-               <Input type="number" placeholder="Fatura Atual" value={currentVal} onChange={e => setCurrentVal(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
-            </div>
+         <div className="grid grid-cols-2 gap-2">
+            <Input placeholder="Nome do Cartão" value={name} onChange={e => setName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
+            <Input type="number" placeholder="Limite Total" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} />
          </div>
       </AddForm>
 
       <div className="flex flex-col gap-2">
-         {data.creditCards.map((item, idx) => (
+         {sortedCards.map((item, idx) => (
            <DraggableRow key={item.id} listId="cards" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-pink/50 block">
               {editingId === item.id ? (
                  <div className="flex flex-col gap-2">
@@ -1018,16 +1009,15 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                       placeholder="Nome"
                       autoFocus
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                       <input type="number" value={editLimit} onChange={e => setEditLimit(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8" placeholder="Limite" />
-                       <input type="number" value={editCurrentVal} onChange={e => setEditCurrentVal(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8" placeholder="Fatura" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] text-slate-500">Fech:</span>
-                       <input type="number" value={editClosing} onChange={e => setEditClosing(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-12 h-8" />
-                       <span className="text-[10px] text-slate-500">Venc:</span>
-                       <input type="number" value={editDue} onChange={e => setEditDue(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-12 h-8" />
-                       
+                    <div className="flex gap-2 items-center">
+                       <span className="text-xs font-bold text-slate-500 uppercase">Limite: R$</span>
+                       <input 
+                         type="number" 
+                         value={editLimit} 
+                         onChange={e => setEditLimit(e.target.value)} 
+                         className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white h-8 w-full" 
+                         placeholder="Limite" 
+                       />
                        <div className="flex gap-1 ml-auto">
                            <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
                            <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
@@ -1036,24 +1026,19 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                  </div>
               ) : (
                 <>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center">
                      <div>
                         <p className="font-bold text-white text-sm">{item.name}</p>
-                        <p className="text-[10px] text-slate-400 font-medium">Limite: <span className="text-slate-200">R$ {fmt(item.limit)}</span></p>
                      </div>
-                     <div className="text-right">
-                        <p className="font-extrabold text-neon-pink text-sm">R$ {fmt(item.currentInvoiceValue)}</p>
-                        <p className="text-[10px] text-slate-500">Fatura Atual</p>
-                     </div>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-white/5 flex justify-between items-center">
-                     <div className="flex gap-3 text-[10px] font-bold text-slate-400">
-                        <span className="bg-white/5 px-2 py-0.5 rounded">Fecha: dia {item.closingDay}</span>
-                        <span className="bg-white/5 px-2 py-0.5 rounded">Vence: dia {item.dueDay}</span>
-                     </div>
-                     <div className="flex gap-1">
-                        <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={12} />} />
-                        <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(i => i.id !== item.id) })} icon={<Trash2 size={12} />} color="text-slate-500 hover:text-neon-red" />
+                     <div className="text-right flex items-center gap-4">
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Limite Total</p>
+                            <p className="font-extrabold text-neon-pink text-sm">R$ {fmt(item.limit)}</p>
+                        </div>
+                        <div className="flex gap-1">
+                            <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={12} />} />
+                            <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(i => i.id !== item.id) })} icon={<Trash2 size={12} />} color="text-slate-500 hover:text-neon-red" />
+                        </div>
                      </div>
                   </div>
                 </>
@@ -1070,12 +1055,21 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   const [type, setType] = useState<PixKey['type']>('CPF');
   const [key, setKey] = useState('');
   const [beneficiary, setBeneficiary] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editType, setEditType] = useState<PixKey['type']>('CPF');
   const [editKey, setEditKey] = useState('');
   const [editBeneficiary, setEditBeneficiary] = useState('');
+
+  const totalKeys = data.pixKeys.length;
+
+  // Filter keys
+  const filteredKeys = data.pixKeys.filter(item => {
+    const term = searchTerm.toUpperCase();
+    return item.key.toUpperCase().includes(term) || (item.beneficiary || '').toUpperCase().includes(term);
+  });
 
   const handleAdd = () => {
     if (!key) return;
@@ -1091,6 +1085,8 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   };
 
   const handleMove = (from: number, to: number) => {
+    // Only allow move if NOT searching, to keep indices sane
+    if (searchTerm) return;
     const list = [...data.pixKeys];
     list.splice(to, 0, list.splice(from, 1)[0]);
     onUpdate({ ...data, pixKeys: list });
@@ -1129,7 +1125,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   ];
 
   return (
-    <CollapsibleCard title="Chaves Pix" color="yellow" icon={<Zap size={18} />}>
+    <CollapsibleCard title="Chaves Pix" totalValue={`${totalKeys} Chaves`} color="yellow" icon={<Zap size={18} />}>
        <AddForm onAdd={handleAdd}>
           <div className="flex flex-col gap-2">
              <div className="flex gap-2">
@@ -1144,8 +1140,23 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
           </div>
        </AddForm>
 
-       <div className="flex flex-col gap-2">
-          {data.pixKeys.map((item, idx) => (
+       {/* Search Bar */}
+       <div className="relative mb-3 group">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-neon-yellow transition-colors">
+            <Search size={14} />
+          </div>
+          <input 
+             type="text"
+             className="w-full bg-black/40 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-neon-yellow transition-all uppercase placeholder:normal-case"
+             placeholder="Buscar chave ou nome..."
+             value={searchTerm}
+             onChange={(e) => setSearchTerm(e.target.value)}
+          />
+       </div>
+
+       <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+          {filteredKeys.length === 0 && <p className="text-center text-xs text-slate-500 py-2">Nenhuma chave encontrada.</p>}
+          {filteredKeys.map((item, idx) => (
              <DraggableRow key={item.id} listId="pix" index={idx} onMove={handleMove} className="p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-yellow/50 block">
                 {editingId === item.id ? (
                    <div className="flex flex-col gap-2">

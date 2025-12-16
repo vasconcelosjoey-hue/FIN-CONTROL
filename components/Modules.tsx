@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target, Pencil, X, Save } from 'lucide-react';
+import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target, Pencil, X, CalendarCheck } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-4 pt-4 border-t border-white/5">
@@ -621,14 +621,65 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       return acc + val;
   }, 0);
 
+  // --- Helper: Parse Month Input (e.g. "JAN" -> "2024-01") ---
+  const parseMonthInput = (input: string): string => {
+      if (!input) return new Date().toISOString().slice(0, 7);
+      
+      const cleanInput = input.trim().toUpperCase();
+      const monthMap: {[key: string]: string} = {
+          'JAN': '01', 'FEV': '02', 'MAR': '03', 'ABR': '04', 'MAI': '05', 'JUN': '06',
+          'JUL': '07', 'AGO': '08', 'SET': '09', 'OUT': '10', 'NOV': '11', 'DEZ': '12'
+      };
+
+      // Try to find a month abbreviation
+      let monthPart = '';
+      let yearPart = new Date().getFullYear().toString();
+
+      // Check if user entered just a month (e.g. "JAN") or "JAN/25"
+      for (const [abbr, num] of Object.entries(monthMap)) {
+          if (cleanInput.startsWith(abbr)) {
+              monthPart = num;
+              // Check for year
+              const split = cleanInput.split(/[\/\s-]/); // split by slash, space or dash
+              if (split.length > 1) {
+                  let y = split[1];
+                  if (y.length === 2) y = "20" + y;
+                  if (y.length === 4) yearPart = y;
+              }
+              break;
+          }
+      }
+
+      if (monthPart) {
+          return `${yearPart}-${monthPart}`;
+      }
+
+      // Fallback: If user typed numbers e.g. "10/24"
+      if (cleanInput.includes('/')) {
+         const parts = cleanInput.split('/');
+         if (parts.length === 2) {
+             let m = parts[0].padStart(2, '0');
+             let y = parts[1];
+             if (y.length === 2) y = "20" + y;
+             return `${y}-${m}`;
+         }
+      }
+
+      return input; // return as is if no parsing match (let native validation handle or fail)
+  };
+
   const handleAdd = () => {
     if (!name || !monthlyVal || !count) return;
+    
+    // Parse the start month
+    const startYm = parseMonthInput(start);
+
     const item: InstallmentExpense = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       monthlyValue: parseFloat(monthlyVal),
       installmentsCount: parseInt(count),
-      startMonth: start || new Date().toISOString().slice(0, 7) // Default to current YYYY-MM
+      startMonth: startYm
     };
     onUpdate({ ...data, installments: [...data.installments, item] });
     setName(''); setMonthlyVal(''); setCount(''); setStart('');
@@ -645,12 +696,51 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
     onUpdate({ ...data, installments: list });
   };
 
+  // --- Logic to Pay/Advance a Month ---
+  const handleAdvanceMonth = (item: InstallmentExpense) => {
+      // 1. Check if this is the last installment
+      if (item.installmentsCount <= 1) {
+          // Remove the item completely
+          if (confirm(`Pagar a última parcela de ${item.name} e remover da lista?`)) {
+              onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) });
+          }
+          return;
+      }
+
+      // 2. Decrement count
+      const newCount = item.installmentsCount - 1;
+
+      // 3. Increment Start Month
+      let newStartMonth = item.startMonth;
+      if (item.startMonth && item.startMonth.includes('-')) {
+          const [y, m] = item.startMonth.split('-').map(Number);
+          const date = new Date(y, m - 1, 1); // JS Month is 0-indexed
+          date.setMonth(date.getMonth() + 1);
+          
+          const newY = date.getFullYear();
+          const newM = (date.getMonth() + 1).toString().padStart(2, '0');
+          newStartMonth = `${newY}-${newM}`;
+      }
+
+      // 4. Update
+      const updatedList = data.installments.map(i => {
+          if (i.id === item.id) {
+              return { ...i, installmentsCount: newCount, startMonth: newStartMonth };
+          }
+          return i;
+      });
+      onUpdate({ ...data, installments: updatedList });
+  };
+
   const startEdit = (item: InstallmentExpense) => {
     setEditingId(item.id);
     setEditName(item.name);
     const val = item.monthlyValue || (item.totalValue ? item.totalValue / item.installmentsCount : 0);
     setEditMonthlyVal(val.toString());
     setEditCount(item.installmentsCount.toString());
+    
+    // Convert YYYY-MM back to readable JAN/YY for editing convenience if preferred, 
+    // but standard MM/YY is safer for re-parsing. Let's keep raw or format slightly.
     setEditStart(item.startMonth);
   };
 
@@ -658,12 +748,14 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
     if (!editingId) return;
     const updatedList = data.installments.map(item => {
       if (item.id === editingId) {
+        // Try to parse the edited start date again
+        const parsedStart = parseMonthInput(editStart);
         return { 
           ...item, 
           name: editName, 
           monthlyValue: parseFloat(editMonthlyVal), 
           installmentsCount: parseInt(editCount),
-          startMonth: editStart
+          startMonth: parsedStart
         };
       }
       return item;
@@ -722,7 +814,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                />
                <Input 
                  type="text" 
-                 placeholder="Início (MM/AA)" 
+                 placeholder="Início (ex: JAN)" 
                  value={start} 
                  onChange={e => setStart(e.target.value)} 
                  onKeyDown={(e) => handleEnter(e, handleAdd)}
@@ -799,10 +891,20 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                     </div>
                   </div>
                   
-                  <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-white/5 w-full">
-                     <button onClick={() => startEdit(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Pencil size={10} /> EDITAR</button>
-                     <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Copy size={10} /> DUPLICAR</button>
-                     <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:text-white flex items-center gap-1 text-[10px]"><Trash2 size={10} /> REMOVER</button>
+                  <div className="flex justify-end items-center gap-2 mt-2 pt-2 border-t border-white/5 w-full">
+                     <button 
+                        onClick={() => handleAdvanceMonth(item)}
+                        className="mr-auto px-3 py-1 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded hover:bg-neon-green/20 hover:text-white transition-colors text-[10px] font-bold flex items-center gap-1.5"
+                     >
+                        <CalendarCheck size={12} />
+                        PAGAR 1 MÊS
+                     </button>
+
+                     <div className="flex gap-2">
+                        <button onClick={() => startEdit(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Pencil size={10} /> EDITAR</button>
+                        <button onClick={() => handleDuplicate(item)} className="text-slate-400 hover:text-white flex items-center gap-1 text-[10px]"><Copy size={10} /> DUPLICAR</button>
+                        <button onClick={() => onUpdate({ ...data, installments: data.installments.filter(i => i.id !== item.id) })} className="text-neon-red hover:text-white flex items-center gap-1 text-[10px]"><Trash2 size={10} /> REMOVER</button>
+                     </div>
                   </div>
                 </>
               )}

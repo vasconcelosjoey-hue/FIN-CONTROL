@@ -323,16 +323,16 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green">
+                <div className="flex items-center justify-start gap-3 flex-1 min-w-0">
+                  <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green shrink-0">
                     <ArrowRight size={12} className="transform -rotate-45" />
                   </div>
-                  <div>
-                    <p className="font-bold text-white text-sm">{item.name}</p>
+                  <div className="flex flex-col items-start min-w-0">
+                    <p className="font-bold text-white text-sm truncate w-full text-left">{item.name}</p>
                     <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">{item.expectedDate}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
+                <div className="flex items-center justify-end gap-4 ml-4 shrink-0">
                   <span className="font-extrabold text-neon-green text-base">R$ {fmt(item.value)}</span>
                   <div className="flex items-center gap-1">
                      <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />

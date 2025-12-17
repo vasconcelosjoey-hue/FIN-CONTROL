@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
@@ -271,7 +272,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
 
   return (
     <CollapsibleCard 
-      title="Entradas Vigentes" 
+      title="ENTRADAS" 
       totalValue={`R$ ${fmt(totalValue)}`}
       color="green"
       icon={<Wallet size={18}/>}
@@ -279,6 +280,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-5"><Input placeholder="Nome" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
+          {/* Corrected: replaced 'setValue' with 'setNewValue' to correctly update the local state for a new income entry */}
           <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={newValue} onChange={e => setNewValue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-4"><Input type="text" placeholder="Data (ex: 15/10)" value={newDate} onChange={e => setNewDate(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
         </div>
@@ -287,7 +289,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <div className="flex flex-col gap-2">
         {incomes.length === 0 && <p className="text-slate-500 text-center text-sm py-4 italic">Nenhum registro.</p>}
         {incomes.map((item, idx) => (
-          <DraggableRow key={item.id} listId="incomes" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group">
+          <DraggableRow key={item.id} listId="incomes" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group gap-3 sm:gap-0">
             {editingId === item.id ? (
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                 <input 
@@ -323,16 +325,16 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-start gap-3 flex-1 min-w-0">
+                <div className="flex items-center justify-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
                   <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green shrink-0">
                     <ArrowRight size={12} className="transform -rotate-45" />
                   </div>
-                  <div className="flex flex-col items-start min-w-0">
+                  <div className="flex flex-col items-start min-w-0 flex-1">
                     <p className="font-bold text-white text-sm truncate w-full text-left">{item.name}</p>
                     <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">{item.expectedDate}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-4 ml-4 shrink-0">
+                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 w-full sm:w-auto">
                   <span className="font-extrabold text-neon-green text-base">R$ {fmt(item.value)}</span>
                   <div className="flex items-center gap-1">
                      <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
@@ -555,7 +557,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       </AddForm>
       <div className="flex flex-col gap-2">
         {data.fixedExpenses.map((item, idx) => (
-          <DraggableRow key={item.id} listId="fixed" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50">
+          <DraggableRow key={item.id} listId="fixed" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50 gap-2 sm:gap-0">
              {editingId === item.id ? (
                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                  <input 
@@ -591,11 +593,11 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                </div>
              ) : (
                <>
-                 <div className="flex-1">
+                 <div className="flex-1 w-full sm:w-auto">
                    <p className="font-bold text-white text-sm">{item.name}</p>
-                   <p className="text-[10px] text-slate-400">Venc: {item.dueDate}</p>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Venc: {item.dueDate}</p>
                  </div>
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto">
                    <span className="font-extrabold text-white text-sm">R$ {fmt(item.value)}</span>
                    <div className="flex items-center gap-1">
                       <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
@@ -612,7 +614,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   );
 };
 
-// --- Installment Module (Fixed: Color Red and Pagar Button restored) ---
+// --- Installment Module ---
 export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState('');
@@ -621,7 +623,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editVal, setEditVal] = useState('');
+  const [editValue, setEditValue] = useState('');
   const [editQtd, setEditQtd] = useState('');
   const [editStart, setEditStart] = useState('');
 
@@ -655,7 +657,6 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       onUpdate({...data, installments: list});
   };
 
-  // Logic to Pay/Advance a Month
   const handleAdvanceMonth = (item: InstallmentExpense) => {
       if (item.installmentsCount <= 1) {
           if (confirm(`Pagar a última parcela de ${item.name} e remover?`)) {
@@ -664,7 +665,6 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
           return;
       }
 
-      // Decrement count and increment start month
       const newCount = item.installmentsCount - 1;
       let newStartMonth = item.startMonth;
       if (item.startMonth && item.startMonth.includes('-')) {
@@ -688,7 +688,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   const startEdit = (item: InstallmentExpense) => {
       setEditingId(item.id);
       setEditName(item.name);
-      setEditVal(item.monthlyValue.toString());
+      setEditValue(item.monthlyValue.toString());
       setEditQtd(item.installmentsCount.toString());
       setEditStart(item.startMonth);
   };
@@ -700,7 +700,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
               return {
                   ...i,
                   name: editName,
-                  monthlyValue: parseFloat(editVal) || 0,
+                  monthlyValue: parseFloat(editValue) || 0,
                   installmentsCount: parseInt(editQtd) || 1,
                   startMonth: editStart
               };
@@ -723,11 +723,11 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
          </AddForm>
          <div className="flex flex-col gap-2">
              {data.installments.map((item, idx) => (
-                 <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50">
+                 <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50 gap-3 sm:gap-0">
                      {editingId === item.id ? (
                         <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                            <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-full h-8 uppercase" placeholder="Nome" />
-                           <input value={editVal} type="number" onChange={e => setEditVal(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-20 h-8" placeholder="Val" />
+                           <input value={editValue} type="number" onChange={e => setEditValue(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-20 h-8" placeholder="Val" />
                            <input value={editQtd} type="number" onChange={e => setEditQtd(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-16 h-8" placeholder="Qtd" />
                            <input value={editStart} onChange={e => setEditStart(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-24 h-8" placeholder="Início" />
                            <div className="flex gap-1 shrink-0">
@@ -737,14 +737,14 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                         </div>
                      ) : (
                          <>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 w-full sm:w-auto">
                                 <p className="font-bold text-white text-sm truncate">{item.name}</p>
                                 <div className="flex gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                     <span>{item.installmentsCount}x</span>
                                     <span>Início: {item.startMonth}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto">
                                 <span className="font-extrabold text-white text-sm">R$ {fmt(item.monthlyValue)}</span>
                                 <div className="flex items-center gap-1">
                                     <button 
@@ -835,7 +835,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
     };
 
     return (
-        <CollapsibleCard title="Cartões de Crédito" totalValue={`Fat. R$ ${fmt(totalInvoice)}`} color="pink" icon={<CCIcon size={18} />}>
+        <CollapsibleCard title="LIMITES" totalValue={`Fat. R$ ${fmt(totalInvoice)}`} color="pink" icon={<CCIcon size={18} />}>
             <AddForm onAdd={handleAdd}>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
                     <div className="md:col-span-4"><Input placeholder="Nome" value={name} onChange={e => setName(e.target.value)} /></div>
@@ -864,24 +864,24 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                             </div>
                         ) : (
                             <>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-bold text-white tracking-wide">{card.name}</h4>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex justify-between items-start mb-2 gap-2">
+                                    <h4 className="font-bold text-white tracking-wide truncate">{card.name}</h4>
+                                    <div className="flex gap-1 shrink-0">
                                         <ActionButton onClick={() => startEdit(card)} icon={<Pencil size={14}/>} />
                                         <ActionButton onClick={() => handleRemove(card.id)} icon={<Trash2 size={14}/>} color="text-red-500" />
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-end">
+                                <div className="flex justify-between items-end flex-wrap gap-2">
                                     <div>
-                                        <p className="text-[10px] text-slate-400 uppercase">Fatura Atual</p>
-                                        <p className="text-xl font-bold text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p>
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Fatura Atual</p>
+                                        <p className="text-lg sm:text-xl font-bold text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] text-slate-400 uppercase">Limite</p>
-                                        <p className="text-sm font-medium text-slate-200">R$ {fmt(card.limit)}</p>
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Limite Total</p>
+                                        <p className="text-xs sm:text-sm font-medium text-slate-200">R$ {fmt(card.limit)}</p>
                                     </div>
                                 </div>
-                                <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-[10px] text-slate-400 font-medium">
+                                <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                                     <span>Fecha dia {card.closingDay}</span>
                                     <span>Vence dia {card.dueDay}</span>
                                 </div>
@@ -946,15 +946,15 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
             </AddForm>
             <div className="flex flex-col gap-2">
                 {data.pixKeys.map((pk, idx) => (
-                    <DraggableRow key={pk.id} listId="pixKeys" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-blue/50 group">
+                    <DraggableRow key={pk.id} listId="pixKeys" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-blue/50 group gap-3">
                         <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <Badge color="blue">{pk.type}</Badge>
-                                {pk.beneficiary && <span className="text-xs text-slate-300 font-bold truncate">{pk.beneficiary}</span>}
+                                {pk.beneficiary && <span className="text-[10px] text-slate-300 font-bold truncate uppercase tracking-tight">{pk.beneficiary}</span>}
                             </div>
                             <p className="text-sm font-mono text-white truncate select-all">{pk.key}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 shrink-0">
                             <ActionButton onClick={() => {
                                 navigator.clipboard.writeText(pk.key);
                             }} icon={<Copy size={14} />} />

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Check, X } from 'lucide-react';
 
@@ -71,16 +72,15 @@ export const CollapsibleCard = ({
   return (
     <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-xl transition-all duration-300 ${colors[color]} ${isOpen ? 'shadow-md' : 'shadow-sm'}`}>
       <div 
-        className="p-3 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors"
+        className="p-3 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors gap-2"
         onClick={(e) => {
-            // Only toggle if not editing and not clicking input
             if (!isEditing && !(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
                 setIsOpen(!isOpen);
             }
         }}
       >
-        <div className="flex items-center gap-2 flex-1 mr-4">
-          {icon && <div className={`${textColors[color]}`}>{icon}</div>}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {icon && <div className={`${textColors[color]} shrink-0`}>{icon}</div>}
           
           {isEditing ? (
             <div className="flex items-center gap-1 flex-1" onClick={e => e.stopPropagation()}>
@@ -96,12 +96,12 @@ export const CollapsibleCard = ({
                         }
                     }}
                     onBlur={() => handleSaveTitle()}
-                    className="bg-black/50 border border-white/20 rounded px-2 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full max-w-[200px] h-7 uppercase"
+                    className="bg-black/50 border border-white/20 rounded px-2 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full h-7 uppercase"
                 />
             </div>
           ) : (
-            <div className="flex items-center gap-2 group">
-                <h3 className="text-sm font-bold text-white tracking-wide uppercase drop-shadow-sm truncate max-w-[150px] sm:max-w-[300px]">{title}</h3>
+            <div className="flex items-center gap-2 group min-w-0">
+                <h3 className="text-sm font-bold text-white tracking-wide uppercase drop-shadow-sm truncate">{title}</h3>
                 {onEditTitle && (
                     <button 
                         onClick={(e) => {
@@ -117,19 +117,18 @@ export const CollapsibleCard = ({
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {totalValue && (
-            <span className={`font-mono font-bold text-sm ${textColors[color]} drop-shadow-[0_0_3px_currentColor]`}>
+            <span className={`font-mono font-bold text-[11px] sm:text-sm ${textColors[color]} drop-shadow-[0_0_3px_currentColor] whitespace-nowrap`}>
               {totalValue}
             </span>
           )}
-          <div className="text-slate-500">
-            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          <div className="text-slate-500 shrink-0">
+            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </div>
       </div>
       
-      {/* Used inline style for max-height to ensure it overrides any CSS limits and allows massive lists */}
       <div 
         className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         style={{ maxHeight: isOpen ? '20000px' : '0px' }}
@@ -227,7 +226,7 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
       <svg
         height="100%"
         width="100%"
-        viewBox="0 0 80 80" // adjusted viewbox
+        viewBox="0 0 80 80"
         className="transform -rotate-90"
       >
         <circle
@@ -238,7 +237,6 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
           cx="40"
           cy="40"
         />
-        {/* Expense Circle (Red) - Base */}
         <circle
           stroke="#ff0055"
           fill="transparent"
@@ -251,7 +249,6 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
           cy="40"
           className="drop-shadow-[0_0_3px_rgba(255,0,85,0.5)]"
         />
-        {/* Income Circle (Green) - Overlay */}
         <circle
           stroke="#0aff68"
           fill="transparent"
@@ -271,22 +268,21 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
 
 export const DraggableModuleWrapper = ({ children, id, index, onMove }: { children?: React.ReactNode, id: string, index: number, onMove: (dragIndex: number, hoverIndex: number) => void }) => {
   const handleDragStart = (e: React.DragEvent) => {
-    // IMPORTANT: Tag this as a MODULE drag to avoid conflict with ROW drags
     e.dataTransfer.setData('type', 'MODULE');
     e.dataTransfer.setData('moduleIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Allow dropping
+    e.preventDefault();
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Stop bubbling
+    e.stopPropagation();
     
     const type = e.dataTransfer.getData('type');
-    if (type !== 'MODULE') return; // Ignore if it's a row being dropped
+    if (type !== 'MODULE') return;
 
     const fromIndex = parseInt(e.dataTransfer.getData('moduleIndex'));
     if (!isNaN(fromIndex) && fromIndex !== index) {

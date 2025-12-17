@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target, Pencil, X, CalendarCheck, Search } from 'lucide-react';
+import { Trash2, Plus, Calendar, AlertCircle, Copy, Check, X, CreditCard as CCIcon, ArrowRight, Zap, FolderOpen, CalendarDays, Wallet, GripVertical, Target, Pencil, CalendarCheck, Search } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-3 pt-2 border-t border-white/5">
@@ -280,7 +280,6 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-5"><Input placeholder="Nome" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
-          {/* Corrected: replaced 'setValue' with 'setNewValue' to correctly update the local state for a new income entry */}
           <div className="md:col-span-3"><Input type="number" placeholder="Valor" value={newValue} onChange={e => setNewValue(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-4"><Input type="text" placeholder="Data (ex: 15/10)" value={newDate} onChange={e => setNewDate(e.target.value)} onKeyDown={(e) => handleEnter(e, handleAdd)} /></div>
         </div>
@@ -767,22 +766,16 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   );
 };
 
-// --- Credit Card Module ---
+// --- Credit Card Module (Simplified: Bank and Limit Only) ---
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
     const [name, setName] = useState('');
     const [limit, setLimit] = useState('');
-    const [due, setDue] = useState('');
-    const [closing, setClosing] = useState('');
-    const [invoice, setInvoice] = useState('');
 
     const [editingId, setEditingId] = useState<string|null>(null);
     const [editName, setEditName] = useState('');
     const [editLimit, setEditLimit] = useState('');
-    const [editDue, setEditDue] = useState('');
-    const [editClosing, setEditClosing] = useState('');
-    const [editInvoice, setEditInvoice] = useState('');
 
-    const totalInvoice = data.creditCards.reduce((acc, c) => acc + c.currentInvoiceValue, 0);
+    const totalLimit = data.creditCards.reduce((acc, c) => acc + c.limit, 0);
 
     const handleAdd = () => {
         if(!name) return;
@@ -790,12 +783,12 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
             id: Math.random().toString(36).substr(2, 9),
             name,
             limit: parseFloat(limit) || 0,
-            dueDay: parseInt(due) || 10,
-            closingDay: parseInt(closing) || 3,
-            currentInvoiceValue: parseFloat(invoice) || 0
+            dueDay: 0, // Ignored in simplified version
+            closingDay: 0, // Ignored in simplified version
+            currentInvoiceValue: 0 // Ignored in simplified version
         };
         onUpdate({...data, creditCards: [...data.creditCards, item]});
-        setName(''); setLimit(''); setDue(''); setClosing(''); setInvoice('');
+        setName(''); setLimit('');
     };
     
     const handleRemove = (id: string) => onUpdate({...data, creditCards: data.creditCards.filter(c => c.id !== id)});
@@ -810,9 +803,6 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
         setEditingId(item.id);
         setEditName(item.name);
         setEditLimit(item.limit.toString());
-        setEditDue(item.dueDay.toString());
-        setEditClosing(item.closingDay.toString());
-        setEditInvoice(item.currentInvoiceValue.toString());
     }
 
     const saveEdit = () => {
@@ -822,27 +812,21 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                 return {
                     ...c,
                     name: editName,
-                    limit: parseFloat(editLimit) || 0,
-                    dueDay: parseInt(editDue) || 1,
-                    closingDay: parseInt(editClosing) || 1,
-                    currentInvoiceValue: parseFloat(editInvoice) || 0
+                    limit: parseFloat(editLimit) || 0
                 };
             }
             return c;
         });
-        onUpdate({...data, creditCards: updated});
+        onUpdate({...data, pixKeys: data.pixKeys, creditCards: updated});
         setEditingId(null);
     };
 
     return (
-        <CollapsibleCard title="LIMITES" totalValue={`Fat. R$ ${fmt(totalInvoice)}`} color="pink" icon={<CCIcon size={18} />}>
+        <CollapsibleCard title="LIMITES" totalValue={`Total Limites: R$ ${fmt(totalLimit)}`} color="pink" icon={<CCIcon size={18} />}>
             <AddForm onAdd={handleAdd}>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                    <div className="md:col-span-4"><Input placeholder="Nome" value={name} onChange={e => setName(e.target.value)} /></div>
-                    <div className="md:col-span-2"><Input type="number" placeholder="Limite" value={limit} onChange={e => setLimit(e.target.value)} /></div>
-                    <div className="md:col-span-2"><Input type="number" placeholder="Fatura" value={invoice} onChange={e => setInvoice(e.target.value)} /></div>
-                    <div className="md:col-span-2"><Input type="number" placeholder="Fecha" value={closing} onChange={e => setClosing(e.target.value)} /></div>
-                    <div className="md:col-span-2"><Input type="number" placeholder="Vence" value={due} onChange={e => setDue(e.target.value)} /></div>
+                    <div className="md:col-span-8"><Input placeholder="Nome do Banco" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+                    <div className="md:col-span-4"><Input type="number" placeholder="Valor do Limite" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
                 </div>
             </AddForm>
             <div className="flex flex-col gap-3">
@@ -850,48 +834,27 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                     <DraggableRow key={card.id} listId="creditCards" index={idx} onMove={handleMove} className="bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl p-4 relative group hover:border-neon-pink/50 transition-all">
                         {editingId === card.id ? (
                             <div className="flex flex-col gap-2">
-                                <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nome" />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Input value={editLimit} onChange={e => setEditLimit(e.target.value)} placeholder="Limite" />
-                                    <Input value={editInvoice} onChange={e => setEditInvoice(e.target.value)} placeholder="Fatura Atual" />
-                                    <Input value={editClosing} onChange={e => setEditClosing(e.target.value)} placeholder="Fechamento" />
-                                    <Input value={editDue} onChange={e => setEditDue(e.target.value)} placeholder="Vencimento" />
-                                </div>
+                                <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Banco" />
+                                <Input value={editLimit} type="number" onChange={e => setEditLimit(e.target.value)} placeholder="Limite" />
                                 <div className="flex justify-end gap-2 mt-2">
                                     <Button onClick={() => setEditingId(null)} variant="ghost">Cancelar</Button>
                                     <Button onClick={saveEdit} variant="primary">Salvar</Button>
                                 </div>
                             </div>
                         ) : (
-                            <>
-                                <div className="flex justify-between items-start mb-2 gap-2">
-                                    <h4 className="font-bold text-white tracking-wide truncate">{card.name}</h4>
-                                    <div className="flex gap-1 shrink-0">
-                                        <ActionButton onClick={() => startEdit(card)} icon={<Pencil size={14}/>} />
-                                        <ActionButton onClick={() => handleRemove(card.id)} icon={<Trash2 size={14}/>} color="text-red-500" />
+                            <div className="flex justify-between items-center gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="font-bold text-white tracking-wide truncate uppercase text-sm">{card.name}</h4>
+                                    <div className="mt-1">
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Limite Disponível</p>
+                                        <p className="text-xl font-bold text-neon-pink">R$ {fmt(card.limit)}</p>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-end flex-wrap gap-2">
-                                    <div>
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Fatura Atual</p>
-                                        <p className="text-lg sm:text-xl font-bold text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Limite Total</p>
-                                        <p className="text-xs sm:text-sm font-medium text-slate-200">R$ {fmt(card.limit)}</p>
-                                    </div>
+                                <div className="flex gap-1 shrink-0">
+                                    <ActionButton onClick={() => startEdit(card)} icon={<Pencil size={14}/>} />
+                                    <ActionButton onClick={() => handleRemove(card.id)} icon={<Trash2 size={14}/>} color="text-red-500" />
                                 </div>
-                                <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                    <span>Fecha dia {card.closingDay}</span>
-                                    <span>Vence dia {card.dueDay}</span>
-                                </div>
-                                <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-neon-pink shadow-[0_0_10px_currentColor]" 
-                                        style={{ width: `${Math.min((card.currentInvoiceValue / (card.limit || 1)) * 100, 100)}%` }}
-                                    ></div>
-                                </div>
-                            </>
+                            </div>
                         )}
                     </DraggableRow>
                 ))}

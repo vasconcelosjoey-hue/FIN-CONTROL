@@ -612,7 +612,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   );
 };
 
-// --- Installment Module ---
+// --- Installment Module (Fixed: Color Red and Pagar Button restored) ---
 export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState('');
@@ -655,6 +655,36 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       onUpdate({...data, installments: list});
   };
 
+  // Logic to Pay/Advance a Month
+  const handleAdvanceMonth = (item: InstallmentExpense) => {
+      if (item.installmentsCount <= 1) {
+          if (confirm(`Pagar a última parcela de ${item.name} e remover?`)) {
+              handleRemove(item.id);
+          }
+          return;
+      }
+
+      // Decrement count and increment start month
+      const newCount = item.installmentsCount - 1;
+      let newStartMonth = item.startMonth;
+      if (item.startMonth && item.startMonth.includes('-')) {
+          const [y, m] = item.startMonth.split('-').map(Number);
+          const date = new Date(y, m - 1, 1);
+          date.setMonth(date.getMonth() + 1);
+          const newY = date.getFullYear();
+          const newM = (date.getMonth() + 1).toString().padStart(2, '0');
+          newStartMonth = `${newY}-${newM}`;
+      }
+
+      const updated = data.installments.map(i => {
+          if (i.id === item.id) {
+              return { ...i, installmentsCount: newCount, startMonth: newStartMonth };
+          }
+          return i;
+      });
+      onUpdate({...data, installments: updated});
+  };
+
   const startEdit = (item: InstallmentExpense) => {
       setEditingId(item.id);
       setEditName(item.name);
@@ -682,7 +712,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   };
 
   return (
-      <CollapsibleCard title="Parcelamentos" totalValue={`R$ ${fmt(totalMonthly)}`} color="yellow" icon={<CalendarDays size={18} />}>
+      <CollapsibleCard title="Parcelamentos" totalValue={`R$ ${fmt(totalMonthly)}`} color="red" icon={<CalendarDays size={18} />}>
          <AddForm onAdd={handleAdd}>
              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                  <div className="md:col-span-5"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)}/></div>
@@ -693,7 +723,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
          </AddForm>
          <div className="flex flex-col gap-2">
              {data.installments.map((item, idx) => (
-                 <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-yellow/50">
+                 <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50">
                      {editingId === item.id ? (
                         <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                            <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-full h-8 uppercase" placeholder="Nome" />
@@ -709,7 +739,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                          <>
                             <div className="flex-1 min-w-0">
                                 <p className="font-bold text-white text-sm truncate">{item.name}</p>
-                                <div className="flex gap-3 text-[10px] text-slate-400">
+                                <div className="flex gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                     <span>{item.installmentsCount}x</span>
                                     <span>Início: {item.startMonth}</span>
                                 </div>
@@ -717,6 +747,12 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                             <div className="flex items-center gap-3 shrink-0">
                                 <span className="font-extrabold text-white text-sm">R$ {fmt(item.monthlyValue)}</span>
                                 <div className="flex items-center gap-1">
+                                    <button 
+                                      onClick={() => handleAdvanceMonth(item)}
+                                      className="mr-2 px-2 py-1 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold flex items-center gap-1.5"
+                                    >
+                                      <CalendarCheck size={12} /> PAGAR 1 MÊS
+                                    </button>
                                     <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
                                     <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
                                     <ActionButton onClick={() => handleRemove(item.id)} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />

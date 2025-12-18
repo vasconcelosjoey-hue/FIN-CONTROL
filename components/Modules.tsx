@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CreditCard, PixKey, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
@@ -202,19 +201,17 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
   );
 };
 
-// --- Income Module (Consolidated) ---
+// --- Income Module ---
 export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [newName, setNewName] = useState('');
   const [newValue, setNewValue] = useState('');
   const [newDate, setNewDate] = useState('');
 
-  // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editValue, setEditValue] = useState('');
   const [editDate, setEditDate] = useState('');
 
-  // No filtering - Show all incomes
   const incomes = data.incomes;
   const totalValue = incomes.reduce((acc, curr) => acc + curr.value, 0);
 
@@ -257,12 +254,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     if (!editingId) return;
     const updatedIncomes = data.incomes.map(item => {
       if (item.id === editingId) {
-        return { 
-          ...item, 
-          name: editName, 
-          value: parseFloat(editValue) || 0,
-          expectedDate: editDate 
-        };
+        return { ...item, name: editName, value: parseFloat(editValue) || 0, expectedDate: editDate };
       }
       return item;
     });
@@ -286,37 +278,16 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       </AddForm>
 
       <div className="flex flex-col gap-2">
-        {incomes.length === 0 && <p className="text-slate-500 text-center text-sm py-4 italic">Nenhum registro.</p>}
         {incomes.map((item, idx) => (
           <DraggableRow key={item.id} listId="incomes" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-green/50 hover:bg-white/10 transition-all group gap-3 sm:gap-0">
             {editingId === item.id ? (
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                <input 
-                  value={editName} 
-                  onChange={e => setEditName(e.target.value.toUpperCase())} 
-                  onKeyDown={(e) => handleEnter(e, saveEdit)}
-                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-full h-8 uppercase"
-                  placeholder="Nome"
-                  autoFocus
-                />
-                 <input 
-                  value={editDate} 
-                  onChange={e => setEditDate(e.target.value.toUpperCase())} 
-                  onKeyDown={(e) => handleEnter(e, saveEdit)}
-                  className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-green outline-none w-24 text-center h-8 uppercase"
-                  placeholder="Data"
-                />
+                <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-full h-8 uppercase" placeholder="Nome" autoFocus />
+                <input value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 w-24 text-center h-8 uppercase" placeholder="Data" />
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                    <span className="text-neon-green font-bold text-sm">R$</span>
-                   <input 
-                    type="number"
-                    value={editValue} 
-                    onChange={e => setEditValue(e.target.value)} 
-                    onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-green outline-none w-24 h-8"
-                    placeholder="Valor"
-                  />
-                  <div className="flex gap-1 shrink-0">
+                   <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-24 h-8" placeholder="Valor" />
+                   <div className="flex gap-1 shrink-0">
                     <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
                     <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
                   </div>
@@ -325,9 +296,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
             ) : (
               <>
                 <div className="flex items-center justify-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
-                  <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green shrink-0">
-                    <ArrowRight size={12} className="transform -rotate-45" />
-                  </div>
+                  <div className="p-1.5 bg-neon-green/10 rounded-full text-neon-green shrink-0"><ArrowRight size={12} className="transform -rotate-45" /></div>
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <p className="font-bold text-white text-sm truncate w-full text-left">{item.name}</p>
                     <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">{item.expectedDate}</p>
@@ -363,7 +332,6 @@ export const CustomSectionModule: React.FC<{
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
 
-  // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editValue, setEditValue] = useState('');
@@ -428,7 +396,9 @@ export const CustomSectionModule: React.FC<{
       onEditTitle={handleTitleEdit}
     >
       <div className="flex justify-end mb-2">
-        <button onClick={onDeleteSection} className={`text-[10px] ${neonColor} hover:underline flex items-center gap-1`}><Trash2 size={12}/> Excluir Sessão</button>
+        <button onClick={onDeleteSection} className={`text-[10px] ${neonColor} hover:underline font-bold flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity`}>
+          <Trash2 size={12}/> EXCLUIR SESSÃO
+        </button>
       </div>
 
       <AddForm onAdd={handleAdd}>
@@ -443,25 +413,11 @@ export const CustomSectionModule: React.FC<{
            <DraggableRow key={item.id} listId={section.id} index={idx} onMove={handleMove} className={`flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 ${hoverBorderColor}`}>
              {editingId === item.id ? (
                 <div className="flex items-center gap-2 w-full">
-                  <input 
-                    value={editName} 
-                    onChange={e => setEditName(e.target.value.toUpperCase())} 
-                    onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className={`bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-${color === 'green' ? 'neon-green' : 'neon-red'} outline-none w-full h-8 uppercase`}
-                    placeholder="Descrição"
-                    autoFocus
-                  />
+                  <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} className={`bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-${color === 'green' ? 'neon-green' : 'neon-red'} outline-none w-full h-8 uppercase`} placeholder="Descrição" autoFocus />
                   <div className="flex items-center gap-2 shrink-0">
                      <span className={`${neonColor} font-bold text-sm`}>R$</span>
-                     <input 
-                      type="number"
-                      value={editValue} 
-                      onChange={e => setEditValue(e.target.value)} 
-                      onKeyDown={(e) => handleEnter(e, saveEdit)}
-                      className={`bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-${color === 'green' ? 'neon-green' : 'neon-red'} outline-none w-24 h-8`}
-                      placeholder="Valor"
-                    />
-                    <div className="flex gap-1">
+                     <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className={`bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-${color === 'green' ? 'neon-green' : 'neon-red'} outline-none w-24 h-8`} placeholder="Valor" />
+                     <div className="flex gap-1">
                       <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
                       <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
                     </div>
@@ -489,13 +445,11 @@ export const CustomSectionModule: React.FC<{
   );
 };
 
-// --- Fixed Expense Module (Renamed to Contas Pessoais) ---
+// --- Outros módulos permanecem iguais... ---
 export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [date, setDate] = useState('');
-
-  // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editValue, setEditValue] = useState('');
@@ -513,17 +467,6 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
     };
     onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, item] });
     setName(''); setValue(''); setDate('');
-  };
-
-  const handleDuplicate = (item: FixedExpense) => {
-    const newItem = { ...item, id: Math.random().toString(36).substr(2, 9) };
-    onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, newItem] });
-  };
-
-  const handleMove = (from: number, to: number) => {
-    const list = [...data.fixedExpenses];
-    list.splice(to, 0, list.splice(from, 1)[0]);
-    onUpdate({ ...data, fixedExpenses: list });
   };
 
   const startEdit = (item: FixedExpense) => {
@@ -556,39 +499,23 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       </AddForm>
       <div className="flex flex-col gap-2">
         {data.fixedExpenses.map((item, idx) => (
-          <DraggableRow key={item.id} listId="fixed" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50 gap-2 sm:gap-0">
+          <DraggableRow key={item.id} listId="fixed" index={idx} onMove={(f, t) => {
+            const list = [...data.fixedExpenses];
+            list.splice(t, 0, list.splice(f, 1)[0]);
+            onUpdate({ ...data, fixedExpenses: list });
+          }} className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50 gap-2 sm:gap-0">
              {editingId === item.id ? (
                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                 <input 
-                    value={editName} 
-                    onChange={e => setEditName(e.target.value.toUpperCase())} 
-                    onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full h-8 uppercase"
-                    placeholder="Descrição"
-                    autoFocus
-                  />
-                  <input 
-                    value={editDate} 
-                    onChange={e => setEditDate(e.target.value.toUpperCase())} 
-                    onKeyDown={(e) => handleEnter(e, saveEdit)}
-                    className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 focus:border-neon-red outline-none w-24 text-center h-8 uppercase"
-                    placeholder="Venc."
-                  />
-                  <div className="flex items-center gap-2 shrink-0">
-                     <span className="text-neon-red font-bold text-sm">R$</span>
-                     <input 
-                      type="number"
-                      value={editValue} 
-                      onChange={e => setEditValue(e.target.value)} 
-                      onKeyDown={(e) => handleEnter(e, saveEdit)}
-                      className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-24 h-8"
-                      placeholder="Valor"
-                    />
+                 <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white focus:border-neon-red outline-none w-full h-8 uppercase" placeholder="Descrição" autoFocus />
+                 <input value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 w-24 text-center h-8 uppercase" placeholder="Venc." />
+                 <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-neon-red font-bold text-sm">R$</span>
+                    <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-24 h-8" placeholder="Valor" />
                     <div className="flex gap-1">
                       <ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" />
                       <ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" />
                     </div>
-                  </div>
+                 </div>
                </div>
              ) : (
                <>
@@ -599,7 +526,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto">
                    <span className="font-extrabold text-white text-sm">R$ {fmt(item.value)}</span>
                    <div className="flex items-center gap-1">
-                      <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                      <ActionButton onClick={() => onUpdate({...data, fixedExpenses: [...data.fixedExpenses, {...item, id: Math.random().toString(36).substr(2, 9)}]})} icon={<Copy size={14} />} />
                       <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
                       <ActionButton onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
                    </div>
@@ -613,13 +540,11 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   );
 };
 
-// --- Installment Module ---
 export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState('');
   const [qtd, setQtd] = useState('');
   const [start, setStart] = useState('');
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editValue, setEditValue] = useState('');
@@ -630,84 +555,31 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 
   const handleAdd = () => {
     if (!name || !val) return;
-    const item: InstallmentExpense = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: name,
-        monthlyValue: parseFloat(val),
-        installmentsCount: parseInt(qtd) || 12,
-        startMonth: start || new Date().toISOString().slice(0, 7)
-    };
+    const item: InstallmentExpense = { id: Math.random().toString(36).substr(2, 9), name, monthlyValue: parseFloat(val), installmentsCount: parseInt(qtd) || 12, startMonth: start || new Date().toISOString().slice(0, 7) };
     onUpdate({...data, installments: [...data.installments, item]});
     setName(''); setVal(''); setQtd(''); setStart('');
   };
 
-  const handleDuplicate = (item: InstallmentExpense) => {
-      const newItem = {...item, id: Math.random().toString(36).substr(2, 9)};
-      onUpdate({...data, installments: [...data.installments, newItem]});
-  };
-
-  const handleRemove = (id: string) => {
-      onUpdate({...data, installments: data.installments.filter(i => i.id !== id)});
-  };
-  
-  const handleMove = (from: number, to: number) => {
-      const list = [...data.installments];
-      list.splice(to, 0, list.splice(from, 1)[0]);
-      onUpdate({...data, installments: list});
-  };
-
   const handleAdvanceMonth = (item: InstallmentExpense) => {
-      if (item.installmentsCount <= 1) {
-          if (confirm(`Pagar a última parcela de ${item.name} e remover?`)) {
-              handleRemove(item.id);
-          }
-          return;
-      }
-
-      const newCount = item.installmentsCount - 1;
-      let newStartMonth = item.startMonth;
-      if (item.startMonth && item.startMonth.includes('-')) {
-          const [y, m] = item.startMonth.split('-').map(Number);
-          const date = new Date(y, m - 1, 1);
-          date.setMonth(date.getMonth() + 1);
-          const newY = date.getFullYear();
-          const newM = (date.getMonth() + 1).toString().padStart(2, '0');
-          newStartMonth = `${newY}-${newM}`;
-      }
-
-      const updated = data.installments.map(i => {
-          if (i.id === item.id) {
-              return { ...i, installmentsCount: newCount, startMonth: newStartMonth };
-          }
-          return i;
-      });
-      onUpdate({...data, installments: updated});
+    if (item.installmentsCount <= 1) { if (confirm(`Pagar a última parcela de ${item.name} e remover?`)) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}); return; }
+    const newCount = item.installmentsCount - 1;
+    let newStartMonth = item.startMonth;
+    if (item.startMonth && item.startMonth.includes('-')) {
+        const [y, m] = item.startMonth.split('-').map(Number);
+        const date = new Date(y, m - 1, 1); date.setMonth(date.getMonth() + 1);
+        newStartMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    }
+    onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? { ...i, installmentsCount: newCount, startMonth: newStartMonth } : i)});
   };
 
   const startEdit = (item: InstallmentExpense) => {
-      setEditingId(item.id);
-      setEditName(item.name);
-      setEditValue(item.monthlyValue.toString());
-      setEditQtd(item.installmentsCount.toString());
-      setEditStart(item.startMonth);
+    setEditingId(item.id); setEditName(item.name); setEditValue(item.monthlyValue.toString()); setEditQtd(item.installmentsCount.toString()); setEditStart(item.startMonth);
   };
 
   const saveEdit = () => {
-      if(!editingId) return;
-      const updated = data.installments.map(i => {
-          if(i.id === editingId) {
-              return {
-                  ...i,
-                  name: editName,
-                  monthlyValue: parseFloat(editValue) || 0,
-                  installmentsCount: parseInt(editQtd) || 1,
-                  startMonth: editStart
-              };
-          }
-          return i;
-      });
-      onUpdate({...data, installments: updated});
-      setEditingId(null);
+    if(!editingId) return;
+    onUpdate({...data, installments: data.installments.map(i => i.id === editingId ? { ...i, name: editName, monthlyValue: parseFloat(editValue) || 0, installmentsCount: parseInt(editQtd) || 1, startMonth: editStart } : i)});
+    setEditingId(null);
   };
 
   return (
@@ -722,7 +594,9 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
          </AddForm>
          <div className="flex flex-col gap-2">
              {data.installments.map((item, idx) => (
-                 <DraggableRow key={item.id} listId="installments" index={idx} onMove={handleMove} className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50 gap-3 sm:gap-0">
+                 <DraggableRow key={item.id} listId="installments" index={idx} onMove={(f,t) => {
+                    const list = [...data.installments]; list.splice(t, 0, list.splice(f, 1)[0]); onUpdate({...data, installments: list});
+                 }} className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-red/50 gap-3 sm:gap-0">
                      {editingId === item.id ? (
                         <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                            <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-full h-8 uppercase" placeholder="Nome" />
@@ -746,15 +620,10 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                             <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto">
                                 <span className="font-extrabold text-white text-sm">R$ {fmt(item.monthlyValue)}</span>
                                 <div className="flex items-center gap-1">
-                                    <button 
-                                      onClick={() => handleAdvanceMonth(item)}
-                                      className="mr-2 px-2 py-1 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold flex items-center gap-1.5"
-                                    >
-                                      <CalendarCheck size={12} /> PAGAR 1 MÊS
-                                    </button>
-                                    <ActionButton onClick={() => handleDuplicate(item)} icon={<Copy size={14} />} />
+                                    <button onClick={() => handleAdvanceMonth(item)} className="mr-2 px-2 py-1 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold flex items-center gap-1.5"><CalendarCheck size={12} /> PAGAR 1 MÊS</button>
+                                    <ActionButton onClick={() => onUpdate({...data, installments: [...data.installments, {...item, id: Math.random().toString(36).substr(2, 9)}]})} icon={<Copy size={14} />} />
                                     <ActionButton onClick={() => startEdit(item)} icon={<Pencil size={14} />} />
-                                    <ActionButton onClick={() => handleRemove(item.id)} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
+                                    <ActionButton onClick={() => onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)})} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
                                 </div>
                             </div>
                          </>
@@ -766,58 +635,21 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   );
 };
 
-// --- Credit Card Module (Simplified: Bank and Limit Only) ---
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-    const [name, setName] = useState('');
-    const [limit, setLimit] = useState('');
-
+    const [name, setName] = useState(''); const [limit, setLimit] = useState('');
     const [editingId, setEditingId] = useState<string|null>(null);
-    const [editName, setEditName] = useState('');
-    const [editLimit, setEditLimit] = useState('');
-
+    const [editName, setEditName] = useState(''); const [editLimit, setEditLimit] = useState('');
     const totalLimit = data.creditCards.reduce((acc, c) => acc + c.limit, 0);
 
     const handleAdd = () => {
         if(!name) return;
-        const item: CreditCard = {
-            id: Math.random().toString(36).substr(2, 9),
-            name,
-            limit: parseFloat(limit) || 0,
-            dueDay: 0, // Ignored in simplified version
-            closingDay: 0, // Ignored in simplified version
-            currentInvoiceValue: 0 // Ignored in simplified version
-        };
-        onUpdate({...data, creditCards: [...data.creditCards, item]});
+        onUpdate({...data, creditCards: [...data.creditCards, { id: Math.random().toString(36).substr(2, 9), name, limit: parseFloat(limit) || 0, dueDay: 0, closingDay: 0, currentInvoiceValue: 0 }]});
         setName(''); setLimit('');
     };
     
-    const handleRemove = (id: string) => onUpdate({...data, creditCards: data.creditCards.filter(c => c.id !== id)});
-    
-    const handleMove = (from: number, to: number) => {
-        const list = [...data.creditCards];
-        list.splice(to, 0, list.splice(from, 1)[0]);
-        onUpdate({ ...data, creditCards: list });
-    };
-
-    const startEdit = (item: CreditCard) => {
-        setEditingId(item.id);
-        setEditName(item.name);
-        setEditLimit(item.limit.toString());
-    }
-
     const saveEdit = () => {
         if(!editingId) return;
-        const updated = data.creditCards.map(c => {
-            if(c.id === editingId) {
-                return {
-                    ...c,
-                    name: editName,
-                    limit: parseFloat(editLimit) || 0
-                };
-            }
-            return c;
-        });
-        onUpdate({...data, pixKeys: data.pixKeys, creditCards: updated});
+        onUpdate({...data, creditCards: data.creditCards.map(c => c.id === editingId ? { ...c, name: editName, limit: parseFloat(editLimit) || 0 } : c)});
         setEditingId(null);
     };
 
@@ -831,7 +663,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
             </AddForm>
             <div className="flex flex-col gap-3">
                 {data.creditCards.map((card, idx) => (
-                    <DraggableRow key={card.id} listId="creditCards" index={idx} onMove={handleMove} className="bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl p-4 relative group hover:border-neon-pink/50 transition-all">
+                    <DraggableRow key={card.id} listId="creditCards" index={idx} onMove={(f,t) => { const list = [...data.creditCards]; list.splice(t,0,list.splice(f,1)[0]); onUpdate({...data, creditCards: list}); }} className="bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl p-4 relative group hover:border-neon-pink/50 transition-all">
                         {editingId === card.id ? (
                             <div className="flex flex-col gap-2">
                                 <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Banco" />
@@ -845,15 +677,9 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                             <div className="flex justify-between items-center gap-2">
                                 <div className="min-w-0 flex-1">
                                     <h4 className="font-bold text-white tracking-wide truncate uppercase text-sm">{card.name}</h4>
-                                    <div className="mt-1">
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Limite Disponível</p>
-                                        <p className="text-xl font-bold text-neon-pink">R$ {fmt(card.limit)}</p>
-                                    </div>
+                                    <div className="mt-1"><p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Limite Disponível</p><p className="text-xl font-bold text-neon-pink">R$ {fmt(card.limit)}</p></div>
                                 </div>
-                                <div className="flex gap-1 shrink-0">
-                                    <ActionButton onClick={() => startEdit(card)} icon={<Pencil size={14}/>} />
-                                    <ActionButton onClick={() => handleRemove(card.id)} icon={<Trash2 size={14}/>} color="text-red-500" />
-                                </div>
+                                <div className="flex gap-1 shrink-0"><ActionButton onClick={() => { setEditingId(card.id); setEditName(card.name); setEditLimit(card.limit.toString()); }} icon={<Pencil size={14}/>} /><ActionButton onClick={() => onUpdate({...data, creditCards: data.creditCards.filter(c => c.id !== card.id)})} icon={<Trash2 size={14}/>} color="text-red-500" /></div>
                             </div>
                         )}
                     </DraggableRow>
@@ -863,66 +689,30 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
     );
 };
 
-// --- Pix Module ---
 export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-    const [type, setType] = useState('CPF');
-    const [key, setKey] = useState('');
-    const [beneficiary, setBeneficiary] = useState('');
-
+    const [type, setType] = useState('CPF'); const [key, setKey] = useState(''); const [beneficiary, setBeneficiary] = useState('');
     const handleAdd = () => {
         if(!key) return;
-        const item: PixKey = {
-            id: Math.random().toString(36).substr(2, 9),
-            type: type as any,
-            key,
-            beneficiary,
-            active: true
-        };
-        onUpdate({...data, pixKeys: [...data.pixKeys, item]});
+        onUpdate({...data, pixKeys: [...data.pixKeys, { id: Math.random().toString(36).substr(2, 9), type: type as any, key, beneficiary, active: true }]});
         setKey(''); setBeneficiary('');
     };
-
-    const handleRemove = (id: string) => onUpdate({...data, pixKeys: data.pixKeys.filter(p => p.id !== id)});
-
-    const handleMove = (from: number, to: number) => {
-        const list = [...data.pixKeys];
-        list.splice(to, 0, list.splice(from, 1)[0]);
-        onUpdate({ ...data, pixKeys: list });
-    };
-
     return (
         <CollapsibleCard title="Chaves Pix" color="blue" icon={<Zap size={18} />}>
             <AddForm onAdd={handleAdd}>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                    <div className="md:col-span-3">
-                        <Select options={[
-                            {value: 'CPF', label: 'CPF'},
-                            {value: 'CNPJ', label: 'CNPJ'},
-                            {value: 'Telefone', label: 'Telefone'},
-                            {value: 'Email', label: 'Email'},
-                            {value: 'Aleatória', label: 'Aleatória'},
-                        ]} value={type} onChange={e => setType(e.target.value)} />
-                    </div>
+                    <div className="md:col-span-3"><Select options={[{value: 'CPF', label: 'CPF'},{value: 'CNPJ', label: 'CNPJ'},{value: 'Telefone', label: 'Telefone'},{value: 'Email', label: 'Email'},{value: 'Aleatória', label: 'Aleatória'}]} value={type} onChange={e => setType(e.target.value)} /></div>
                     <div className="md:col-span-5"><Input placeholder="Chave" value={key} onChange={e => setKey(e.target.value)} /></div>
                     <div className="md:col-span-4"><Input placeholder="Beneficiário (Opcional)" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} /></div>
                 </div>
             </AddForm>
             <div className="flex flex-col gap-2">
                 {data.pixKeys.map((pk, idx) => (
-                    <DraggableRow key={pk.id} listId="pixKeys" index={idx} onMove={handleMove} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-blue/50 group gap-3">
+                    <DraggableRow key={pk.id} listId="pixKeys" index={idx} onMove={(f,t) => { const list = [...data.pixKeys]; list.splice(t,0,list.splice(f,1)[0]); onUpdate({...data, pixKeys: list}); }} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-blue/50 group gap-3">
                         <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <Badge color="blue">{pk.type}</Badge>
-                                {pk.beneficiary && <span className="text-[10px] text-slate-300 font-bold truncate uppercase tracking-tight">{pk.beneficiary}</span>}
-                            </div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap"><Badge color="blue">{pk.type}</Badge>{pk.beneficiary && <span className="text-[10px] text-slate-300 font-bold truncate uppercase tracking-tight">{pk.beneficiary}</span>}</div>
                             <p className="text-sm font-mono text-white truncate select-all">{pk.key}</p>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                            <ActionButton onClick={() => {
-                                navigator.clipboard.writeText(pk.key);
-                            }} icon={<Copy size={14} />} />
-                            <ActionButton onClick={() => handleRemove(pk.id)} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" />
-                        </div>
+                        <div className="flex items-center gap-1 shrink-0"><ActionButton onClick={() => navigator.clipboard.writeText(pk.key)} icon={<Copy size={14} />} /><ActionButton onClick={() => onUpdate({...data, pixKeys: data.pixKeys.filter(p => p.id !== pk.id)})} icon={<Trash2 size={14} />} color="text-slate-500 hover:text-neon-red" /></div>
                     </DraggableRow>
                 ))}
             </div>

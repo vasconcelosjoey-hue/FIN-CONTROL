@@ -11,22 +11,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<0 | 1 | 2>(0); // 0: Donut, 1: Bars, 2: Text
 
   // Calculations
-  const totalIncome = data.incomes.reduce((acc, curr) => acc + curr.value, 0);
   
-  // Custom Sections Total
-  const totalCustomSections = data.customSections?.reduce((acc, section) => {
-      return acc + section.items.reduce((sAcc, item) => sAcc + item.value, 0);
-  }, 0) || 0;
+  // 1. Entradas (Padrão + Sessões Customizadas Verdes)
+  const baseIncome = data.incomes.reduce((acc, curr) => acc + curr.value, 0);
+  const customIncomeTotal = data.customSections
+    ?.filter(s => s.type === 'income')
+    .reduce((acc, s) => acc + s.items.reduce((iAcc, item) => iAcc + item.value, 0), 0) || 0;
+  
+  const totalIncome = baseIncome + customIncomeTotal;
 
+  // 2. Saídas (Contas Pessoais + Parcelamentos + Sessões Customizadas Vermelhas)
   const totalFixedExpenses = data.fixedExpenses.reduce((acc, curr) => acc + curr.value, 0);
   
-  // Calculate total monthly installments
   const totalInstallmentMonthly = data.installments.reduce((acc, curr) => {
-     const val = curr.monthlyValue || (curr.totalValue ? curr.totalValue / curr.installmentsCount : 0);
-     return acc + val;
+     return acc + (curr.monthlyValue || 0);
   }, 0);
 
-  const totalOutflow = totalFixedExpenses + totalInstallmentMonthly + totalCustomSections;
+  const customExpenseTotal = data.customSections
+    ?.filter(s => s.type === 'expense')
+    .reduce((acc, s) => acc + s.items.reduce((iAcc, item) => iAcc + item.value, 0), 0) || 0;
+
+  const totalOutflow = totalFixedExpenses + totalInstallmentMonthly + customExpenseTotal;
+  
   const balance = totalIncome - totalOutflow;
 
   // Formatting Helper (PT-BR)
@@ -38,7 +44,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
   return (
     <div className="mb-6">
-      {/* Hero Balance Card - Centralized & Evident */}
+      {/* Hero Balance Card */}
       <div className="mb-6 transform hover:scale-[1.01] transition-transform duration-500">
         <Card className="border-2 border-neon-yellow/30 bg-gradient-to-b from-neon-yellow/10 to-transparent flex flex-col items-center justify-center py-6 px-6 shadow-[0_0_40px_rgba(255,230,0,0.1)] relative overflow-hidden h-40">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-yellow/60 to-transparent"></div>
@@ -83,7 +89,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
           <Card className="flex flex-col items-center justify-center py-2 px-4 bg-black/40 border-neon-blue/30 hover:border-neon-blue/60 transition-all duration-300 h-full relative overflow-hidden" >
              <div className="w-full h-full flex flex-row items-center justify-between gap-4 relative z-10">
                  
-                 {/* Toggle Icons - Now with Glow */}
                  <div className="flex flex-col gap-2 absolute right-0 top-0 z-20">
                      <div className={`p-1.5 rounded-lg transition-all duration-300 ${viewMode === 0 ? 'bg-neon-blue text-black shadow-[0_0_15px_rgba(0,243,255,0.6)]' : 'text-slate-600 bg-white/5'}`}>
                         <PieChart size={12} />
@@ -96,7 +101,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                      </div>
                  </div>
 
-                 {/* Mode 0: Donut */}
                  {viewMode === 0 && (
                      <>
                       <div className="scale-90 origin-left pl-2">
@@ -113,7 +117,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                      </>
                  )}
 
-                 {/* Mode 1: Bars */}
                  {viewMode === 1 && (
                      <div className="w-full flex flex-col gap-4 pr-8 pl-2">
                          <div className="space-y-1">
@@ -137,7 +140,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                      </div>
                  )}
 
-                 {/* Mode 2: Text Ratio */}
                  {viewMode === 2 && (
                      <div className="text-center w-full pr-6">
                          <h4 className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mb-1">Comprometimento</h4>

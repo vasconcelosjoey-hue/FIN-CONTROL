@@ -266,7 +266,13 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
   );
 };
 
-export const DraggableModuleWrapper = ({ children, id, index, onMove }: { children?: React.ReactNode, id: string, index: number, onMove: (dragIndex: number, hoverIndex: number) => void }) => {
+// Use React.FC to properly handle React internal props like 'key' and ensure index is strictly treated as number
+export const DraggableModuleWrapper: React.FC<{ 
+  children?: React.ReactNode; 
+  id: string; 
+  index: number; 
+  onMove: (dragIndex: number, hoverIndex: number) => void;
+}> = ({ children, id, index, onMove }) => {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('type', 'MODULE');
     e.dataTransfer.setData('moduleIndex', index.toString());

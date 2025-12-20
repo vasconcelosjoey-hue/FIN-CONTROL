@@ -3,38 +3,45 @@ export interface Income {
   id: string;
   name: string;
   value: number;
-  expectedDate: string; // YYYY-MM-DD
+  expectedDate: string;
 }
 
 export interface FixedExpense {
   id: string;
   name: string;
   value: number;
-  dueDate: string; // YYYY-MM-DD
+  paidAmount?: number; // Novo campo para pagamento parcial
+  dueDate: string;
+  installmentsCount?: number;
+  startMonth?: string;
 }
 
-// Generic item for custom sections
 export interface SectionItem {
   id: string;
   name: string;
   value: number;
+  paidAmount?: number; // Novo campo para pagamento parcial
   date?: string;
+  installmentsCount?: number;
+  startMonth?: string;
 }
 
 export interface CustomSection {
   id: string;
   title: string;
   items: SectionItem[];
-  type: 'income' | 'expense'; // Distinguishes between income and expense sections
+  type: 'income' | 'expense';
+  structure: 'standard' | 'installment';
 }
 
 export interface InstallmentExpense {
   id: string;
   name: string;
-  monthlyValue: number; // Changed from totalValue to reflect monthly input
+  monthlyValue: number;
+  paidAmount?: number; // Novo campo para pagamento parcial
   installmentsCount: number;
-  startMonth: string; // YYYY-MM
-  totalValue?: number; // Keep optional for legacy data compatibility
+  startMonth: string;
+  totalValue?: number;
 }
 
 export interface CreditCard {
@@ -50,7 +57,7 @@ export interface PixKey {
   id: string;
   type: 'CPF' | 'CNPJ' | 'Telefone' | 'Email' | 'Aleatória';
   key: string;
-  beneficiary?: string; // New field
+  beneficiary?: string;
   active: boolean;
 }
 
@@ -62,14 +69,14 @@ export interface RadarItem {
 
 export interface FinancialData {
   incomes: Income[];
-  fixedExpenses: FixedExpense[]; // Renamed to "Contas Pessoais" in UI
-  customSections: CustomSection[]; // New dynamic sections (e.g. CBMC)
+  fixedExpenses: FixedExpense[];
+  customSections: CustomSection[];
   installments: InstallmentExpense[];
   creditCards: CreditCard[];
   pixKeys: PixKey[];
-  radarItems: RadarItem[]; // New "No Radar" items
-  modulesOrder?: string[]; // Order of modules in the expense column
-  incomeModulesOrder?: string[]; // Order of modules in the income column
+  radarItems: RadarItem[];
+  modulesOrder?: string[];
+  incomeModulesOrder?: string[];
   settings?: {
     userName?: string;
   };
@@ -83,6 +90,6 @@ export const INITIAL_DATA: FinancialData = {
   creditCards: [],
   pixKeys: [],
   radarItems: [],
-  modulesOrder: ['fixed', 'installments'], // Default expense order
-  incomeModulesOrder: ['incomes'], // Default income order
+  modulesOrder: ['fixed', 'installments'],
+  incomeModulesOrder: ['incomes'],
 };

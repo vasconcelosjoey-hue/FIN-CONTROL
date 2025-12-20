@@ -10,8 +10,8 @@ export interface FixedExpense {
   id: string;
   name: string;
   value: number;
-  paidAmount?: number; // Novo campo para pagamento parcial
-  dueDate: string;
+  paidAmount?: number;
+  dueDate: string; // Usado como data de início/referência no modo unificado
   installmentsCount?: number;
   startMonth?: string;
 }
@@ -20,7 +20,7 @@ export interface SectionItem {
   id: string;
   name: string;
   value: number;
-  paidAmount?: number; // Novo campo para pagamento parcial
+  paidAmount?: number;
   date?: string;
   installmentsCount?: number;
   startMonth?: string;
@@ -38,7 +38,7 @@ export interface InstallmentExpense {
   id: string;
   name: string;
   monthlyValue: number;
-  paidAmount?: number; // Novo campo para pagamento parcial
+  paidAmount?: number;
   installmentsCount: number;
   startMonth: string;
   totalValue?: number;

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, ArrowRight, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck, User } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-3 pt-2 border-t border-white/5">
@@ -535,16 +535,65 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
 };
 
 export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-    const [type, setType] = useState('CPF'); const [key, setKey] = useState('');
-    const handleAdd = () => { if(!key) return; onUpdate({...data, pixKeys: [...data.pixKeys, { id: Math.random().toString(36).substr(2, 9), type: type as any, key, active: true }]}); setKey(''); };
+    const [type, setType] = useState('CPF'); 
+    const [key, setKey] = useState('');
+    const [beneficiary, setBeneficiary] = useState('');
+
+    const handleAdd = () => { 
+        if(!key) return; 
+        onUpdate({
+            ...data, 
+            pixKeys: [...data.pixKeys, { 
+                id: Math.random().toString(36).substr(2, 9), 
+                type: type as any, 
+                key, 
+                beneficiary,
+                active: true 
+            }]
+        }); 
+        setKey(''); 
+        setBeneficiary('');
+    };
+
     return (
         <CollapsibleCard title="Chaves Pix" color="blue" icon={<Zap size={18} />}>
             <AddForm onAdd={handleAdd}>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2"><div className="md:col-span-4"><Select options={[{value: 'CPF', label: 'CPF'},{value: 'Telefone', label: 'Telefone'},{value: 'Email', label: 'Email'}]} value={type} onChange={e => setType(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div><div className="md:col-span-8"><Input placeholder="Chave" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div></div>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                    <div className="md:col-span-4">
+                        <Select label="Tipo" options={[{value: 'CPF', label: 'CPF'},{value: 'Telefone', label: 'Telefone'},{value: 'Email', label: 'Email'},{value: 'Aleatória', label: 'Aleatória'}]} value={type} onChange={e => setType(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+                    </div>
+                    <div className="md:col-span-8">
+                        <Input label="Chave" placeholder="Insira a chave" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+                    </div>
+                    <div className="md:col-span-12">
+                        <Input label="Beneficiário" placeholder="Nome do favorecido" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+                    </div>
+                </div>
             </AddForm>
-            <div className="flex flex-col gap-2">{data.pixKeys.map((pk, idx) => (
-                <DraggableRow key={pk.id} listId="pixKeys" index={idx} onMove={(f,t)=>{const l=[...data.pixKeys]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, pixKeys: l})}} className="justify-between p-3 bg-white/5 rounded-lg border border-white/5"><div className="flex-1 overflow-hidden"><Badge color="blue">{pk.type}</Badge><p className="text-sm font-mono text-white truncate mt-1">{pk.key}</p></div><ActionButton onClick={()=>navigator.clipboard.writeText(pk.key)} icon={<Copy size={14}/>}/><ActionButton onClick={()=>onUpdate({...data, pixKeys: data.pixKeys.filter(p=>p.id!==pk.id)})} icon={<Trash2 size={14}/>}/></DraggableRow>
-            ))}</div>
+            <div className="flex flex-col gap-2">
+                {data.pixKeys.map((pk, idx) => (
+                    <DraggableRow key={pk.id} listId="pixKeys" index={idx} onMove={(f,t)=>{const l=[...data.pixKeys]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, pixKeys: l})}} className="justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-blue/30">
+                        <div className="flex-1 overflow-hidden">
+                            <div className="flex items-center gap-2">
+                                <Badge color="blue">{pk.type}</Badge>
+                                {pk.beneficiary && (
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tight truncate flex items-center gap-1">
+                                        <User size={10} className="text-neon-blue" /> {pk.beneficiary}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-sm font-mono text-white truncate mt-1.5 selection:bg-neon-blue/30">{pk.key}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <ActionButton onClick={()=> {
+                                navigator.clipboard.writeText(pk.key);
+                                // Adicionar feedback visual básico se necessário
+                            }} icon={<Copy size={14}/>}/>
+                            <ActionButton onClick={()=>onUpdate({...data, pixKeys: data.pixKeys.filter(p=>p.id!==pk.id)})} icon={<Trash2 size={14}/>} color="text-slate-500 hover:text-neon-red" />
+                        </div>
+                    </DraggableRow>
+                ))}
+            </div>
         </CollapsibleCard>
     );
 };

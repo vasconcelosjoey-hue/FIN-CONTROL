@@ -51,6 +51,30 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
   );
 };
 
+// Componente utilitário para o Layout de Edição Responsivo
+const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, onCancel: () => void }> = ({ children, onSave, onCancel }) => (
+  <div className="w-full bg-black/40 p-3 rounded-lg border border-neon-blue/20 shadow-lg">
+    <div className="grid grid-cols-2 sm:flex sm:flex-row items-center gap-3 w-full">
+      {children}
+      <div className="col-span-2 sm:col-auto flex justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 mt-1 sm:mt-0 border-white/5">
+        <button onClick={onSave} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-neon-green/10 text-neon-green border border-neon-green/30 px-3 py-2 rounded-lg hover:bg-neon-green hover:text-black transition-all font-bold">
+          <Check size={18} /> <span className="sm:hidden">SALVAR</span>
+        </button>
+        <button onClick={onCancel} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-neon-red/10 text-neon-red border border-neon-red/30 px-3 py-2 rounded-lg hover:bg-neon-red hover:text-white transition-all font-bold">
+          <X size={18} /> <span className="sm:hidden">CANCELAR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const EditInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input 
+    {...props} 
+    className={`bg-black/60 border border-white/20 rounded-lg px-3 py-2 text-base text-white outline-none focus:border-neon-blue transition-all h-11 sm:h-9 w-full ${props.className || ''}`}
+  />
+);
+
 // --- Custom Section Module ---
 export const CustomSectionModule: React.FC<{ 
   section: CustomSection, 
@@ -140,13 +164,12 @@ export const CustomSectionModule: React.FC<{
            return (
              <DraggableRow key={item.id} listId={section.id} index={idx} onMove={(f, t) => { const l = [...section.items]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...section, items: l})}} className={`p-3 bg-white/5 rounded-lg border transition-all duration-300 ${isFullyPaid ? 'border-neon-green bg-neon-green/5' : 'border-white/5'} ${isIncome ? 'hover:border-neon-green/30' : 'hover:border-neon-red/30'}`}>
                {editingId === item.id ? (
-                  <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                    <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white flex-1 h-8 uppercase outline-none" placeholder="Descrição" autoFocus />
-                    <input value={editValue} type="number" onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-20 h-8 outline-none" placeholder="Total" />
-                    {!isIncome && <input value={editPaid} type="number" onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-neon-yellow w-20 h-8 outline-none" placeholder="Pago" />}
-                    <input value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 w-24 text-center h-8 outline-none" />
-                    <div className="flex gap-1 shrink-0"><ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" /><ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" /></div>
-                  </div>
+                  <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                    <EditInput className="col-span-2 sm:flex-1 uppercase" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Descrição" autoFocus />
+                    <EditInput type="number" className="sm:w-24" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Valor" />
+                    {!isIncome && <EditInput type="number" className="sm:w-20 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Pago" />}
+                    <EditInput className="sm:w-28 text-center" value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Referência" />
+                  </EditRowLayout>
                ) : (
                  <>
                    <div className="flex-1 min-w-0">
@@ -263,13 +286,12 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
           return (
             <DraggableRow key={item.id} listId="fixed" index={idx} onMove={(f,t) => { const l = [...data.fixedExpenses]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, fixedExpenses: l}) }} className={`justify-between p-3 bg-white/5 rounded-lg border transition-all duration-300 ${isFullyPaid ? 'border-neon-green bg-neon-green/5' : 'border-white/5'} hover:border-neon-red/30`}>
               {editingId === item.id ? (
-                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                  <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white flex-1 h-8 uppercase outline-none" />
-                  <input value={editValue} type="number" onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-20 h-8 outline-none" />
-                  <input value={editPaid} type="number" onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-neon-yellow w-20 h-8 outline-none" />
-                  <input value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 w-20 text-center h-8 outline-none" />
-                  <div className="flex gap-1"><ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" /><ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" /></div>
-                </div>
+                <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                  <EditInput className="col-span-2 sm:flex-1 uppercase" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Nome" autoFocus />
+                  <EditInput type="number" className="sm:w-24" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Valor" />
+                  <EditInput type="number" className="sm:w-20 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Pago" />
+                  <EditInput className="sm:w-24 text-center" value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Referência" />
+                </EditRowLayout>
               ) : (
                 <>
                   <div className="flex-1 min-w-0">
@@ -367,13 +389,12 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                  return (
                   <DraggableRow key={item.id} listId="installments" index={idx} onMove={(f,t) => {const l = [...data.installments]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, installments: l})}} className={`justify-between p-3 bg-white/5 rounded-lg border transition-all duration-300 ${isFullyPaid ? 'border-neon-green bg-neon-green/5' : 'border-white/5'} hover:border-neon-red/30`}>
                       {editingId === item.id ? (
-                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                           <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white flex-1 h-8 uppercase outline-none" />
-                           <input value={editValue} type="number" onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-20 h-8 outline-none" />
-                           <input value={editPaid} type="number" onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-neon-yellow w-20 h-8 outline-none" />
-                           <input value={editStart} onChange={e => setEditStart(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-24 h-8 outline-none" />
-                           <div className="flex gap-1"><ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green"/><ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red"/></div>
-                        </div>
+                        <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                           <EditInput className="col-span-2 sm:flex-1 uppercase" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Nome" autoFocus />
+                           <EditInput type="number" className="sm:w-24" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Mês" />
+                           <EditInput type="number" className="sm:w-20 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Pago" />
+                           <EditInput className="sm:w-28 text-center" value={editStart} onChange={e => setEditStart(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Início" />
+                        </EditRowLayout>
                       ) : (
                           <>
                             <div className="flex-1 min-w-0">
@@ -448,11 +469,11 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         {incomes.map((item, idx) => (
           <DraggableRow key={item.id} listId="incomes" index={idx} onMove={(f,t) => {const l = [...data.incomes]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, incomes: l})}} className="justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-neon-green/30 group">
             {editingId === item.id ? (
-              <div className="flex items-center gap-2 w-full">
-                <input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-full h-8 uppercase outline-none" placeholder="Nome" autoFocus />
-                <input value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-slate-300 w-24 text-center h-8 outline-none" placeholder="Data" />
-                <div className="flex items-center gap-2 shrink-0"><span className="text-neon-green font-bold text-sm">R$</span><input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-24 h-8 outline-none" /><div className="flex gap-1"><ActionButton onClick={saveEdit} icon={<Check size={14} />} color="text-neon-green" /><ActionButton onClick={() => setEditingId(null)} icon={<X size={14} />} color="text-neon-red" /></div></div>
-              </div>
+              <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                <EditInput className="col-span-2 sm:flex-1 uppercase" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Nome" autoFocus />
+                <EditInput className="sm:w-28 text-center" value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Data" />
+                <EditInput type="number" className="sm:w-32 text-neon-green font-bold" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="Valor" />
+              </EditRowLayout>
             ) : (
               <>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -483,7 +504,12 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
        <AddForm onAdd={handleAdd}><div className="grid grid-cols-12 gap-2"><div className="col-span-8"><Input placeholder="Descrição" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div><div className="col-span-4"><Input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div></div></AddForm>
        <div className="flex flex-col gap-2">{data.radarItems.map((item, idx) => (
          <DraggableRow key={item.id} listId="radar" index={idx} onMove={(f,t)=>{const l=[...data.radarItems]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, radarItems: l})}} className="justify-between p-3 bg-white/5 rounded-lg border border-white/5">
-           {editingId === item.id ? (<div className="flex items-center gap-2 w-full"><input value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, ()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);})} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-full h-8 outline-none"/><input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, ()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);})} className="bg-black/40 border border-white/20 rounded px-2 py-1 text-sm text-white w-24 h-8 outline-none"/><div className="flex gap-1"><ActionButton onClick={()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);}} icon={<Check size={14}/>}/><ActionButton onClick={()=>setEditingId(null)} icon={<X size={14}/>}/></div></div>) : (
+           {editingId === item.id ? (
+             <EditRowLayout onSave={()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);}} onCancel={() => setEditingId(null)}>
+               <EditInput className="col-span-2 sm:flex-1 uppercase" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, ()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);})} placeholder="Descrição" autoFocus />
+               <EditInput type="number" className="col-span-2 sm:col-auto sm:w-32" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, ()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);})} placeholder="Valor" />
+             </EditRowLayout>
+           ) : (
              <><div className="flex-1"><span className="font-bold text-white text-sm">{item.name}</span></div><div className="flex items-center gap-3"><span className="font-extrabold text-white text-sm">R$ {fmt(item.value)}</span><div className="flex items-center gap-1"><ActionButton onClick={()=>{setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString());}} icon={<Pencil size={14}/>}/><ActionButton onClick={()=>onUpdate({...data, radarItems: data.radarItems.filter(i=>i.id!==item.id)})} icon={<Trash2 size={14}/>}/></div></div></>
            )}
          </DraggableRow>

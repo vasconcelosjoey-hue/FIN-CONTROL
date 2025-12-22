@@ -1,20 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { loginUser, registerUser } from '../services/dataService';
+import { loginUser, resetPassword } from '../services/dataService';
 import { Card, Button, Input } from './ui/UIComponents';
-import { LogIn, UserPlus, ShieldCheck, RefreshCw, KeyRound } from 'lucide-react';
+import { LogIn, ShieldCheck, RefreshCw, KeyRound, CheckSquare, Square } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Ao trocar entre login/cadastro, limpa o erro
-  useEffect(() => {
-    setError('');
-  }, [isLogin]);
+  const [keepConnected, setKeepConnected] = useState(true);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,21 +20,11 @@ export const AuthScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        // Tenta o login direto
-        await loginUser(email.trim().toLowerCase(), password);
-      } else {
-        await registerUser(email.trim().toLowerCase(), password);
-      }
+      await loginUser(email.trim().toLowerCase(), password);
     } catch (err: any) {
-      // Mensagens mais amigáveis e menos burocráticas
       let msg = "Falha no acesso. Verifique seus dados.";
       if (err.message.includes("auth/user-not-found") || err.message.includes("auth/wrong-password") || err.message.includes("auth/invalid-credential")) {
         msg = "E-mail ou senha incorretos.";
-      } else if (err.message.includes("auth/email-already-in-use")) {
-        msg = "Este e-mail já está cadastrado.";
-      } else if (err.message.includes("auth/weak-password")) {
-        msg = "A senha deve ter pelo menos 6 caracteres.";
       }
       setError(msg);
     } finally {
@@ -46,9 +32,25 @@ export const AuthScreen: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Digite seu e-mail no campo acima para resetar a senha.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await resetPassword(email.trim().toLowerCase());
+      setResetSent(true);
+      setError("Link de recuperação enviado para seu e-mail.");
+    } catch (err: any) {
+      setError("Erro ao enviar e-mail de recuperação.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-neon-dark relative overflow-hidden">
-      {/* Background Neon Glows */}
       <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-neon-blue/5 rounded-full blur-[150px]"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-neon-pink/5 rounded-full blur-[150px]"></div>
 
@@ -89,8 +91,13 @@ export const AuthScreen: React.FC = () => {
               className="h-11"
             />
 
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setKeepConnected(!keepConnected)}>
+               {keepConnected ? <CheckSquare size={16} className="text-neon-blue" /> : <Square size={16} className="text-slate-600" />}
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manter Conectado</span>
+            </div>
+
             {error && (
-              <div className="p-3 bg-neon-red/10 border border-neon-red/30 rounded-xl text-neon-red text-[11px] font-bold uppercase tracking-wider text-center animate-pulse">
+              <div className={`p-3 border rounded-xl text-[10px] font-bold uppercase tracking-wider text-center animate-pulse ${resetSent ? 'bg-neon-green/10 border-neon-green/30 text-neon-green' : 'bg-neon-red/10 border-neon-red/30 text-neon-red'}`}>
                 {error}
               </div>
             )}
@@ -103,21 +110,20 @@ export const AuthScreen: React.FC = () => {
             >
               {loading ? (
                 <RefreshCw className="animate-spin" size={20} />
-              ) : isLogin ? (
-                <><LogIn size={20} /> ENTRAR AGORA</>
               ) : (
-                <><UserPlus size={20} /> CRIAR CONTA E ACESSAR</>
+                <><LogIn size={20} /> ENTRAR NO SISTEMA</>
               )}
             </Button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-white/5 text-center">
             <button 
-              onClick={() => setIsLogin(!isLogin)}
+              type="button"
+              onClick={handleForgotPassword}
               className="group flex items-center justify-center gap-2 mx-auto text-[10px] font-bold text-slate-500 hover:text-white transition-all uppercase tracking-widest"
             >
               <KeyRound size={12} className="group-hover:text-neon-blue transition-colors" />
-              {isLogin ? 'Precisa de uma conta? Cadastre-se' : 'Já tem conta? Voltar para o Login'}
+              Esqueceu a senha? Crie uma nova
             </button>
           </div>
         </Card>

@@ -96,7 +96,7 @@ export const CollapsibleCard = ({
                         }
                     }}
                     onBlur={() => handleSaveTitle()}
-                    className="bg-black/50 border border-white/20 rounded px-2 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full h-7 uppercase"
+                    className="bg-black/50 border border-white/20 rounded px-3 py-0.5 text-sm font-bold text-white focus:outline-none focus:border-neon-blue w-full h-7 uppercase"
                 />
             </div>
           ) : (
@@ -166,9 +166,9 @@ export const Input = ({ label, onChange, noUppercase = false, ...props }: React.
   <div className="flex flex-col gap-1 w-full group">
     {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
     <input 
-      className={`bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-medium text-sm
+      className={`bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white font-medium text-sm
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
-                 transition-all placeholder:text-slate-600 placeholder:text-xs w-full h-9 ${!noUppercase ? 'uppercase' : ''}`}
+                 transition-all placeholder:text-slate-600 placeholder:text-xs w-full h-10 ${!noUppercase ? 'uppercase' : ''}`}
       onChange={(e) => {
           if (!noUppercase) {
             e.target.value = e.target.value.toUpperCase();
@@ -184,9 +184,9 @@ export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<
   <div className="flex flex-col gap-1 w-full group">
     {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
     <select 
-      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-medium text-sm
+      className="bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white font-medium text-sm
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
-                 transition-all appearance-none w-full h-9"
+                 transition-all appearance-none w-full h-10"
       {...props}
     >
       {options.map(opt => <option key={opt.value} value={opt.value} className="bg-neon-surface text-slate-200 font-medium">{opt.label}</option>)}
@@ -275,6 +275,8 @@ export const DraggableModuleWrapper: React.FC<{
   onMove: (dragIndex: number, hoverIndex: number) => void;
 }> = ({ children, id, index, onMove }) => {
   const handleDragStart = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT') { e.preventDefault(); return; }
     e.dataTransfer.setData('type', 'MODULE');
     e.dataTransfer.setData('moduleIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';

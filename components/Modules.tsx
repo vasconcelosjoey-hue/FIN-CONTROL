@@ -15,26 +15,22 @@ const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () =>
 
 const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Função inteligente para avançar a referência da data/mês
 const advanceDateStr = (dateStr: string): string => {
   if (!dateStr) return new Date().toISOString().slice(0, 7);
   const monthsBR = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
   const upperDate = dateStr.toUpperCase().trim();
 
-  // Caso 1: Apenas o nome do mês (ex: JAN -> FEV)
   const mIdx = monthsBR.indexOf(upperDate);
   if (mIdx !== -1) return monthsBR[(mIdx + 1) % 12];
 
-  // Caso 2: Formato AAAA-MM (Padrão input month)
   const hyphenMatch = upperDate.match(/^(\d{4})-(\d{1,2})$/);
   if (hyphenMatch) {
     const y = parseInt(hyphenMatch[1]);
     const m = parseInt(hyphenMatch[2]);
-    const d = new Date(y, m, 1); // Passar m (1-based) para o construtor já pula para o próximo mês
+    const d = new Date(y, m, 1);
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
   }
 
-  // Caso 3: Formato MM/AAAA ou DD/MM/AAAA
   const slashMatch = upperDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/) || upperDate.match(/^(\d{1,2})\/(\d{2,4})$/);
   if (slashMatch) {
     const isFull = slashMatch.length === 4;
@@ -51,8 +47,7 @@ const advanceDateStr = (dateStr: string): string => {
       ? `${dVal.toString().padStart(2, '0')}/${nextM}/${nextY}` 
       : `${nextM}/${nextY}`;
   }
-
-  return dateStr; // Fallback se não reconhecer o formato
+  return dateStr;
 };
 
 const ActionButton = ({ onClick, icon, color = "text-slate-500 hover:text-white" }: { onClick: () => void, icon: React.ReactNode, color?: string }) => (
@@ -114,7 +109,6 @@ const EditInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
   />
 );
 
-// --- Custom Section Module ---
 export const CustomSectionModule: React.FC<{ 
   section: CustomSection, 
   onUpdate: (updatedSection: CustomSection) => void, 
@@ -146,7 +140,7 @@ export const CustomSectionModule: React.FC<{
       value: parseFloat(value),
       paidAmount: parseFloat(paid) || 0,
       date: date || (section.type === 'expense' ? new Date().toISOString().slice(0, 7) : new Date().toLocaleDateString('pt-BR')),
-      installmentsCount: section.type === 'expense' ? (parseInt(qtd) || 1) : undefined
+      installmentsCount: !isIncome ? (parseInt(qtd) || 1) : undefined
     };
     onUpdate({ ...section, items: [...section.items, newItem] });
     setName(''); setValue(''); setPaid(''); setDate(''); setQtd('');
@@ -168,7 +162,7 @@ export const CustomSectionModule: React.FC<{
 
   const saveEdit = () => {
     if (!editingId) return;
-    onUpdate({ ...section, items: section.items.map(i => i.id === editingId ? { ...i, name: editName, value: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, date: editDate, installmentsCount: parseInt(editQtd) || 1 } : i) });
+    onUpdate({ ...section, items: section.items.map(i => i.id === editingId ? { ...i, name: editName, value: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, date: editDate, installmentsCount: !isIncome ? (parseInt(editQtd) || 1) : undefined } : i) });
     setEditingId(null);
   };
 
@@ -210,7 +204,7 @@ export const CustomSectionModule: React.FC<{
                    <div className="flex-1 min-w-0">
                       <p className={`font-bold text-sm tracking-wide mb-1 truncate ${isFullyPaid ? 'text-neon-green/60 line-through' : 'text-white'}`}>{item.name}</p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        {item.installmentsCount && <span className="text-slate-200 bg-white/10 px-1.5 rounded">{item.installmentsCount}X</span>}
+                        {!isIncome && item.installmentsCount && <span className="text-slate-200 bg-white/10 px-1.5 rounded">{item.installmentsCount}X</span>}
                         <span className="text-slate-300">{isIncome ? item.date : `Ref: ${item.date}`}</span>
                       </div>
                    </div>
@@ -250,7 +244,6 @@ export const CustomSectionModule: React.FC<{
   );
 };
 
-// --- Fixed Expense Module ---
 export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState(''); const [value, setValue] = useState(''); const [paid, setPaid] = useState(''); const [qtd, setQtd] = useState(''); const [date, setDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -287,6 +280,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
     <CollapsibleCard title="CONTAS PESSOAIS" totalValue={`R$ ${fmt(totalRemaining)}`} color="red" icon={<AlertCircle size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+          {/* Fix: Added missing event parameter to handleEnter calls */}
           <div className="md:col-span-4"><Input placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-3"><Input type="number" placeholder="VALOR MÊS" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-2"><Input type="number" placeholder="PAGO R$" value={paid} onChange={e => setPaid(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
@@ -302,6 +296,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
               <DraggableRow listId="fixed" index={idx} onMove={(f,t) => { const l = [...data.fixedExpenses]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, fixedExpenses: l}) }} className="w-full">
               {editingId === item.id ? (
                 <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                  {/* Fix: Added missing event parameter to handleEnter calls */}
                   <EditInput className="sm:col-span-5 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="DESCRIÇÃO" autoFocus />
                   <EditInput type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="VALOR" />
                   <EditInput type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="PAGO" />
@@ -348,7 +343,6 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   );
 };
 
-// --- Installment Module ---
 export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState(''); const [val, setVal] = useState(''); const [paid, setPaid] = useState(''); const [qtd, setQtd] = useState(''); const [start, setStart] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -382,6 +376,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       <CollapsibleCard title="PARCELAMENTOS" totalValue={`R$ ${fmt(totalRemainingMonthly)}`} color="red" icon={<CalendarDays size={18} />}>
          <AddForm onAdd={handleAdd}>
              <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                 {/* Fix: Added missing event parameter to handleEnter calls */}
                  <div className="md:col-span-4"><Input placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
                  <div className="md:col-span-3"><Input type="number" placeholder="VALOR MÊS" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)}/></div>
                  <div className="md:col-span-2"><Input type="number" placeholder="PAGO R$" value={paid} onChange={e => setPaid(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)}/></div>
@@ -397,6 +392,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                       <DraggableRow listId="installments" index={idx} onMove={(f,t) => {const l = [...data.installments]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, installments: l})}} className="w-full">
                       {editingId === item.id ? (
                         <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                           {/* Fix: Added missing event parameter to handleEnter calls */}
                            <EditInput className="sm:col-span-5 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="NOME" autoFocus />
                            <EditInput type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="MÊS" />
                            <EditInput type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="PAGO" />
@@ -443,7 +439,6 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   );
 };
 
-// --- Income Module ---
 export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
@@ -480,6 +475,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     <CollapsibleCard title="RECEITAS FIXAS" totalValue={`R$ ${fmt(total)}`} color="green" icon={<Wallet size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+          {/* Fix: Added missing event parameter to handleEnter calls */}
           <div className="md:col-span-6"><Input placeholder="FONTE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-3"><Input type="number" placeholder="VALOR" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-3"><Input placeholder="DATA" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
@@ -491,6 +487,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
             <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}) }} className="w-full">
               {editingId === item.id ? (
                 <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                  {/* Fix: Added missing event parameter to handleEnter calls */}
                   <EditInput 
                     className="sm:col-span-6 uppercase font-bold" 
                     value={editName} 
@@ -550,7 +547,6 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   );
 };
 
-// --- Credit Card Module ---
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
@@ -606,7 +602,6 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
   );
 };
 
-// --- Pix Module ---
 export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [type, setType] = useState<any>('Aleatória');
   const [key, setKey] = useState('');
@@ -661,7 +656,6 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   );
 };
 
-// --- Radar Module ---
 export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState('');

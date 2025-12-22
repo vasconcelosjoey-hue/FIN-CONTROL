@@ -448,12 +448,32 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [date, setDate] = useState('');
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editValue, setEditValue] = useState('');
+  const [editDate, setEditDate] = useState('');
+
   const total = data.incomes.reduce((acc, i) => acc + i.value, 0);
 
   const handleAdd = () => {
     if (!name || !value) return;
     onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(value), expectedDate: date || new Date().toLocaleDateString('pt-BR') }] });
     setName(''); setValue(''); setDate('');
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    onUpdate({ 
+      ...data, 
+      incomes: data.incomes.map(i => i.id === editingId ? { 
+        ...i, 
+        name: editName, 
+        value: parseFloat(editValue) || 0, 
+        expectedDate: editDate 
+      } : i) 
+    });
+    setEditingId(null);
   };
 
   return (
@@ -467,18 +487,61 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       </AddForm>
       <div className="flex flex-col gap-2">
         {data.incomes.map((item, idx) => (
-          <div key={item.id} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/30">
+          <div key={item.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/30 transition-all">
             <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}) }} className="w-full">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex-1">
-                  <p className="font-bold text-sm text-white">{item.name}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">{item.expectedDate}</p>
+              {editingId === item.id ? (
+                <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                  <EditInput 
+                    className="sm:col-span-6 uppercase font-bold" 
+                    value={editName} 
+                    onChange={e => setEditName(e.target.value.toUpperCase())} 
+                    onKeyDown={e => handleEnter(e, saveEdit)} 
+                    placeholder="FONTE" 
+                    autoFocus 
+                  />
+                  <EditInput 
+                    type="number" 
+                    className="sm:col-span-3 font-black text-neon-green" 
+                    value={editValue} 
+                    onChange={e => setEditValue(e.target.value)} 
+                    onKeyDown={e => handleEnter(e, saveEdit)} 
+                    placeholder="VALOR" 
+                  />
+                  <EditInput 
+                    className="sm:col-span-3 text-center uppercase text-slate-400 font-bold" 
+                    value={editDate} 
+                    onChange={e => setEditDate(e.target.value.toUpperCase())} 
+                    onKeyDown={e => handleEnter(e, saveEdit)} 
+                    placeholder="DATA" 
+                  />
+                </EditRowLayout>
+              ) : (
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex-1">
+                    <p className="font-bold text-sm text-white tracking-wide">{item.name}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.expectedDate}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-black text-neon-green text-sm">R$ {fmt(item.value)}</span>
+                    <div className="flex items-center gap-1">
+                      <ActionButton 
+                        onClick={() => { 
+                          setEditingId(item.id); 
+                          setEditName(item.name); 
+                          setEditValue(item.value.toString()); 
+                          setEditDate(item.expectedDate); 
+                        }} 
+                        icon={<Pencil size={16} />} 
+                      />
+                      <ActionButton 
+                        onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) })} 
+                        icon={<Trash2 size={16} />} 
+                        color="text-slate-600 hover:text-neon-red" 
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-black text-neon-green text-sm">R$ {fmt(item.value)}</span>
-                  <ActionButton onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) })} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
-                </div>
-              </div>
+              )}
             </DraggableRow>
           </div>
         ))}

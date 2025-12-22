@@ -17,10 +17,14 @@ function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Ref para evitar loops de salvamento quando recebemos dados da nuvem
   const isInternalUpdate = useRef(false);
-  // Fix: Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout to avoid namespace errors in browser environments
+  const dataRef = useRef<FinancialData>(INITIAL_DATA);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mantém uma referência atualizada para uso em eventos de fechamento de página
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const normalizeData = (d: FinancialData) => {
     if (!d) return INITIAL_DATA;
@@ -36,32 +40,51 @@ function App() {
     return clean;
   };
 
-  // Função Central de Salvamento com Debounce
-  const persistData = useCallback(async (newData: FinancialData, immediate = false) => {
+  // Função robusta de salvamento
+  const persistData = useCallback(async (targetData: FinancialData, immediate = false) => {
     if (!userId) return;
     
     setIsSyncing(true);
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
     const performSave = async () => {
-      await saveData(userId, newData);
-      setIsSyncing(false);
-      isInternalUpdate.current = false;
+      try {
+        await saveData(userId, targetData);
+        setIsSyncing(false);
+        // Pequeno delay antes de permitir atualizações da nuvem para evitar "flicker" de dados antigos
+        setTimeout(() => {
+          isInternalUpdate.current = false;
+        }, 1500);
+      } catch (err) {
+        console.error("Erro ao salvar dados:", err);
+        setIsSyncing(false);
+      }
     };
 
     if (immediate) {
       await performSave();
     } else {
-      saveTimeoutRef.current = setTimeout(performSave, 1000);
+      saveTimeoutRef.current = setTimeout(performSave, 500); // Reduzido para 500ms para maior agilidade
     }
   }, [userId]);
 
-  // Função para atualizar estado local E disparar salvamento
+  // Handler de atualização que evita o problema de "stale data"
   const handleUpdate = useCallback((newData: FinancialData, immediate = false) => {
     isInternalUpdate.current = true;
     setData(newData);
     persistData(newData, immediate);
   }, [persistData]);
+
+  // Salva dados se o usuário fechar a aba ou der refresh enquanto sincroniza
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isSyncing && userId && dataRef.current) {
+        saveData(userId, dataRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isSyncing, userId]);
 
   useEffect(() => {
     let unsubscribeData: () => void = () => {};
@@ -72,15 +95,17 @@ function App() {
         setUserId(user.uid);
         setUserEmail(user.email);
         
-        // Carga inicial
         const initialData = await loadData(user.uid);
-        setData(normalizeData(initialData));
+        const normalized = normalizeData(initialData);
+        setData(normalized);
+        dataRef.current = normalized;
         
-        // Inscrição Real-time
         unsubscribeData = subscribeToData(user.uid, (cloudData) => {
-          // CRITICAL: Só atualiza se a mudança NÃO veio deste próprio dispositivo
+          // Só aceita dados da nuvem se não houver uma alteração local pendente
           if (!isInternalUpdate.current) {
-            setData(normalizeData(cloudData));
+            const normalizedCloud = normalizeData(cloudData);
+            setData(normalizedCloud);
+            dataRef.current = normalizedCloud;
             setIsSyncing(false);
           }
         });
@@ -112,14 +137,17 @@ function App() {
       structure: type === 'expense' ? 'installment' : 'standard'
     };
     
-    const sections = data.customSections || [];
-    let updatedData = { ...data, customSections: [...sections, newSection] };
+    const currentData = dataRef.current;
+    const sections = currentData.customSections || [];
+    const updatedSections = [...sections, newSection];
+    
+    let updatedData = { ...currentData, customSections: updatedSections };
 
     if (type === 'expense') {
-      const currentOrder = data.modulesOrder || ['fixed', 'installments'];
+      const currentOrder = currentData.modulesOrder || ['fixed', 'installments'];
       updatedData.modulesOrder = [...currentOrder, newSectionId];
     } else {
-      const currentOrder = data.incomeModulesOrder || ['incomes'];
+      const currentOrder = currentData.incomeModulesOrder || ['incomes'];
       updatedData.incomeModulesOrder = [...currentOrder, newSectionId];
     }
     handleUpdate(updatedData, true);
@@ -127,19 +155,21 @@ function App() {
 
   const deleteSection = (id: string) => {
     if(confirm("Deseja apagar esta sessão inteira?")) {
+      const currentData = dataRef.current;
       handleUpdate({
-        ...data, 
-        customSections: (data.customSections || []).filter(s => s.id !== id),
-        modulesOrder: (data.modulesOrder || []).filter(oid => oid !== id),
-        incomeModulesOrder: (data.incomeModulesOrder || []).filter(oid => oid !== id)
+        ...currentData, 
+        customSections: (currentData.customSections || []).filter(s => s.id !== id),
+        modulesOrder: (currentData.modulesOrder || []).filter(oid => oid !== id),
+        incomeModulesOrder: (currentData.incomeModulesOrder || []).filter(oid => oid !== id)
       }, true);
     }
   };
 
   const updateSection = (updatedSection: CustomSection) => {
+    const currentData = dataRef.current;
     handleUpdate({ 
-      ...data, 
-      customSections: (data.customSections || []).map(s => s.id === updatedSection.id ? updatedSection : s) 
+      ...currentData, 
+      customSections: (currentData.customSections || []).map(s => s.id === updatedSection.id ? updatedSection : s) 
     });
   };
 

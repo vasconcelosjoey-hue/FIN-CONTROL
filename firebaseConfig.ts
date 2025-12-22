@@ -1,33 +1,39 @@
-// Import the functions you need from the SDKs you need
+
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth } from "firebase/auth";
 
-// TODO: Replace the following with your app's Firebase project configuration
-// See: https://firebase.google.com/docs/web/setup#config-object
+/**
+ * CONFIGURAÇÃO PROFISSIONAL
+ * Valores atualizados com as credenciais do seu projeto 'financial-controller-joia'
+ */
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCc8RhjBVreMRa73AaywBMtDeYCqqssFao",
+  authDomain: "financial-controller-joia.firebaseapp.com",
+  projectId: "financial-controller-joia",
+  storageBucket: "financial-controller-joia.firebasestorage.app",
+  messagingSenderId: "406969627066",
+  appId: "1:406969627066:web:684ac27225416cc6fb6d83"
 };
 
-let app: FirebaseApp | undefined;
-let db: Firestore | undefined;
-let auth: Auth | undefined;
+let app: FirebaseApp;
+let db: Firestore;
+let auth: Auth;
 
-// Initialize Firebase only if config is present and valid-ish
-if (firebaseConfig.apiKey !== "YOUR_API_KEY" && !getApps().length) {
-  try {
+// Inicialização segura para ambientes React (evita re-inicialização em Hot Reload)
+try {
+  if (!getApps().length) {
     app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    console.log("Firebase initialized successfully");
-  } catch (error) {
-    console.error("Firebase initialization failed:", error);
+  } else {
+    app = getApps()[0];
   }
+  
+  db = getFirestore(app);
+  auth = getAuth(app);
+  
+  console.log("🚀 Cloud Sync: Ativo no projeto " + firebaseConfig.projectId);
+} catch (error) {
+  console.error("❌ Falha na conexão Cloud:", error);
 }
 
 export { db, auth };

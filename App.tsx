@@ -115,7 +115,7 @@ function App() {
     <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white">
       <nav className="border-b border-white/5 bg-neon-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-          <h1 className="font-extrabold text-xl tracking-tight">FIN<span className="text-neon-blue/80 mx-0.5">/</span><span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">CONTROLE</span></h1>
+          <h1 className="font-extrabold text-xl tracking-tight">FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">CONTROLER</span></h1>
         </div>
       </nav>
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -141,7 +141,7 @@ function App() {
            </div>
         </div>
       </main>
-      <footer className="mt-20 py-8 text-center text-slate-600 text-[10px] font-bold tracking-widest uppercase">FIN/CONTROLE • 2024</footer>
+      <footer className="mt-20 py-8 text-center text-slate-600 text-[10px] font-bold tracking-widest uppercase">FINANCIAL CONTROLER • 2024</footer>
     </div>
   );
 }

@@ -15,6 +15,46 @@ const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () =>
 
 const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Função inteligente para avançar a referência da data/mês
+const advanceDateStr = (dateStr: string): string => {
+  if (!dateStr) return new Date().toISOString().slice(0, 7);
+  const monthsBR = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+  const upperDate = dateStr.toUpperCase().trim();
+
+  // Caso 1: Apenas o nome do mês (ex: JAN -> FEV)
+  const mIdx = monthsBR.indexOf(upperDate);
+  if (mIdx !== -1) return monthsBR[(mIdx + 1) % 12];
+
+  // Caso 2: Formato AAAA-MM (Padrão input month)
+  const hyphenMatch = upperDate.match(/^(\d{4})-(\d{1,2})$/);
+  if (hyphenMatch) {
+    const y = parseInt(hyphenMatch[1]);
+    const m = parseInt(hyphenMatch[2]);
+    const d = new Date(y, m, 1); // Passar m (1-based) para o construtor já pula para o próximo mês
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+  }
+
+  // Caso 3: Formato MM/AAAA ou DD/MM/AAAA
+  const slashMatch = upperDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/) || upperDate.match(/^(\d{1,2})\/(\d{2,4})$/);
+  if (slashMatch) {
+    const isFull = slashMatch.length === 4;
+    const dVal = isFull ? parseInt(slashMatch[1]) : 1;
+    const mVal = isFull ? parseInt(slashMatch[2]) : parseInt(slashMatch[1]);
+    let yVal = isFull ? parseInt(slashMatch[3]) : parseInt(slashMatch[2]);
+    if (yVal < 100) yVal += 2000;
+    
+    const d = new Date(yVal, mVal, dVal);
+    const nextM = (d.getMonth() + 1).toString().padStart(2, '0');
+    const nextY = d.getFullYear();
+    
+    return isFull 
+      ? `${dVal.toString().padStart(2, '0')}/${nextM}/${nextY}` 
+      : `${nextM}/${nextY}`;
+  }
+
+  return dateStr; // Fallback se não reconhecer o formato
+};
+
 const ActionButton = ({ onClick, icon, color = "text-slate-500 hover:text-white" }: { onClick: () => void, icon: React.ReactNode, color?: string }) => (
   <button onClick={(e) => { e.stopPropagation(); onClick(); }} className={`${color} transition-colors p-2 rounded hover:bg-white/10 shrink-0`}>
     {icon}
@@ -122,10 +162,8 @@ export const CustomSectionModule: React.FC<{
       if (confirm(`Remover ${item.name}?`)) onUpdate({ ...section, items: section.items.filter(i => i.id !== item.id) });
       return;
     }
-    const dateStr = item.date || new Date().toISOString().slice(0, 7);
-    const [y, m] = dateStr.includes('-') ? dateStr.split('-').map(Number) : [new Date().getFullYear(), parseInt(dateStr) || 1];
-    const d = new Date(y, m - 1, 1); d.setMonth(d.getMonth() + 1);
-    onUpdate({ ...section, items: section.items.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, date: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`, paidAmount: 0 } : i) });
+    const nextDate = advanceDateStr(item.date || '');
+    onUpdate({ ...section, items: section.items.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, date: nextDate, paidAmount: 0 } : i) });
   };
 
   const saveEdit = () => {
@@ -172,8 +210,8 @@ export const CustomSectionModule: React.FC<{
                    <div className="flex-1 min-w-0">
                       <p className={`font-bold text-sm tracking-wide mb-1 truncate ${isFullyPaid ? 'text-neon-green/60 line-through' : 'text-white'}`}>{item.name}</p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        {item.installmentsCount && <span className="text-slate-500">{item.installmentsCount}X</span>}
-                        <span>{isIncome ? item.date : `Ref: ${item.date}`}</span>
+                        {item.installmentsCount && <span className="text-slate-200 bg-white/10 px-1.5 rounded">{item.installmentsCount}X</span>}
+                        <span className="text-slate-300">{isIncome ? item.date : `Ref: ${item.date}`}</span>
                       </div>
                    </div>
                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0">
@@ -235,9 +273,8 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       if (confirm(`Remover ${item.name}?`)) onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) });
       return;
     }
-    const [y, m] = (item.dueDate || new Date().toISOString().slice(0, 7)).split('-').map(Number);
-    const d = new Date(y, m - 1, 1); d.setMonth(d.getMonth() + 1);
-    onUpdate({ ...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, dueDate: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`, paidAmount: 0 } : i) });
+    const nextDate = advanceDateStr(item.dueDate || '');
+    onUpdate({ ...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, dueDate: nextDate, paidAmount: 0 } : i) });
   };
 
   const saveEdit = () => {
@@ -275,8 +312,8 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                   <div className="flex-1 min-w-0">
                       <p className={`font-bold text-sm tracking-wide mb-1 truncate ${isFullyPaid ? 'text-neon-green/60 line-through' : 'text-white'}`}>{item.name}</p>
                       <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        <span className="text-slate-500">{item.installmentsCount}X</span>
-                        <span>Ref: {item.dueDate}</span>
+                        <span className="text-slate-200 bg-white/10 px-1.5 rounded">{item.installmentsCount}X</span>
+                        <span className="text-slate-300">Ref: {item.dueDate}</span>
                       </div>
                   </div>
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0">
@@ -331,9 +368,8 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 
   const handleAdvanceMonth = (item: InstallmentExpense) => {
     if (item.installmentsCount <= 1) { if (confirm(`Remover ${item.name}?`)) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}); return; }
-    const [y, m] = item.startMonth.split('-').map(Number);
-    const date = new Date(y, m - 1, 1); date.setMonth(date.getMonth() + 1);
-    onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount - 1, startMonth: `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`, paidAmount: 0 } : i)});
+    const nextDate = advanceDateStr(item.startMonth || '');
+    onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount - 1, startMonth: nextDate, paidAmount: 0 } : i)});
   };
 
   const saveEdit = () => {
@@ -371,8 +407,8 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                             <div className="flex-1 min-w-0">
                                 <p className={`font-bold text-sm tracking-wide mb-1 truncate ${isFullyPaid ? 'text-neon-green/60 line-through' : 'text-white'}`}>{item.name}</p>
                                 <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                  <span className="text-slate-500">{item.installmentsCount}X</span>
-                                  <span>Início: {item.startMonth}</span>
+                                  <span className="text-slate-200 bg-white/10 px-1.5 rounded">{item.installmentsCount}X</span>
+                                  <span className="text-slate-300">Início: {item.startMonth}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0">
@@ -407,63 +443,42 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   );
 };
 
+// --- Income Module ---
 export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-  const [newName, setNewName] = useState(''); const [newValue, setNewValue] = useState(''); const [newDate, setNewDate] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState(''); const [editValue, setEditValue] = useState(''); const [editDate, setEditDate] = useState('');
-  const incomes = data.incomes;
-  const totalValue = incomes.reduce((acc, curr) => acc + curr.value, 0);
+  const [name, setName] = useState('');
+  const [value, setValue] = useState('');
+  const [date, setDate] = useState('');
+  const total = data.incomes.reduce((acc, i) => acc + i.value, 0);
 
   const handleAdd = () => {
-    if (!newName || !newValue) return;
-    onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name: newName, value: parseFloat(newValue), expectedDate: newDate || new Date().toLocaleDateString('pt-BR') }] });
-    setNewName(''); setNewValue(''); setNewDate('');
-  };
-
-  const saveEdit = () => {
-    if (!editingId) return;
-    onUpdate({ ...data, incomes: data.incomes.map(i => i.id === editingId ? { ...i, name: editName, value: parseFloat(editValue) || 0, expectedDate: editDate } : i) });
-    setEditingId(null);
+    if (!name || !value) return;
+    onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(value), expectedDate: date || new Date().toLocaleDateString('pt-BR') }] });
+    setName(''); setValue(''); setDate('');
   };
 
   return (
-    <CollapsibleCard title="ENTRADAS" totalValue={`R$ ${fmt(totalValue)}`} color="green" icon={<Wallet size={18}/>}>
+    <CollapsibleCard title="RECEITAS FIXAS" totalValue={`R$ ${fmt(total)}`} color="green" icon={<Wallet size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-          <div className="md:col-span-5"><Input placeholder="NOME" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-          <div className="md:col-span-3"><Input type="number" placeholder="VALOR" value={newValue} onChange={e => setNewValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-          <div className="md:col-span-4"><Input placeholder="DATA" value={newDate} onChange={e => setNewDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-6"><Input placeholder="FONTE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-3"><Input type="number" placeholder="VALOR" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+          <div className="md:col-span-3"><Input placeholder="DATA" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
-        {incomes.map((item, idx) => (
-          <div key={item.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/30 transition-all duration-300">
-            <DraggableRow listId="incomes" index={idx} onMove={(f,t) => {const l = [...data.incomes]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, incomes: l})}} className="w-full">
-            {editingId === item.id ? (
-              <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
-                <EditInput className="sm:col-span-6 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="NOME" autoFocus />
-                <EditInput className="sm:col-span-3 text-center" value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="DATA" />
-                <EditInput type="number" className="sm:col-span-3 text-neon-green font-black" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="VALOR" />
-              </EditRowLayout>
-            ) : (
-              <div className="flex items-center justify-between w-full gap-2">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="p-2 bg-neon-green/10 rounded-full text-neon-green shrink-0"><ArrowRight size={14} className="transform -rotate-45" /></div>
-                  <div className="flex flex-col min-w-0">
-                    <p className="font-bold text-white text-sm truncate tracking-wide">{item.name}</p>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.expectedDate}</p>
-                  </div>
+        {data.incomes.map((item, idx) => (
+          <div key={item.id} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/30">
+            <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}) }} className="w-full">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex-1">
+                  <p className="font-bold text-sm text-white">{item.name}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">{item.expectedDate}</p>
                 </div>
-                <div className="flex items-center justify-end gap-3 shrink-0">
-                  <span className="font-black text-neon-green text-base tracking-tight">R$ {fmt(item.value)}</span>
-                  <div className="flex items-center gap-1">
-                    <ActionButton onClick={() => onUpdate({...data, incomes: [...data.incomes, {...item, id: Math.random().toString(36).substr(2, 9)}]})} icon={<Copy size={16} />} />
-                    <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditDate(item.expectedDate); }} icon={<Pencil size={16} />} />
-                    <ActionButton onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) })} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-black text-neon-green text-sm">R$ {fmt(item.value)}</span>
+                  <ActionButton onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) })} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
                 </div>
               </div>
-            )}
             </DraggableRow>
           </div>
         ))}
@@ -472,110 +487,147 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   );
 };
 
-export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-  const [name, setName] = useState(''); const [value, setValue] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState(''); const [editValue, setEditValue] = useState('');
-  const total = data.radarItems.reduce((acc, i) => acc + i.value, 0);
-  const handleAdd = () => { if (!name || !value) return; onUpdate({ ...data, radarItems: [...data.radarItems, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(value) }] }); setName(''); setValue(''); };
+// --- Credit Card Module ---
+export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+  const [name, setName] = useState('');
+  const [limit, setLimit] = useState('');
+  const [closing, setClosing] = useState('');
+  const [due, setDue] = useState('');
+  const [invoice, setInvoice] = useState('');
+
+  const handleAdd = () => {
+    if (!name || !limit) return;
+    onUpdate({ ...data, creditCards: [...data.creditCards, { id: Math.random().toString(36).substr(2, 9), name, limit: parseFloat(limit), closingDay: parseInt(closing) || 1, dueDay: parseInt(due) || 1, currentInvoiceValue: parseFloat(invoice) || 0 }] });
+    setName(''); setLimit(''); setClosing(''); setDue(''); setInvoice('');
+  };
+
   return (
-    <CollapsibleCard title="NO RADAR" totalValue={`R$ ${fmt(total)}`} color="white" icon={<Target size={18} />}>
-       <AddForm onAdd={handleAdd}><div className="grid grid-cols-12 gap-2"><div className="col-span-8"><Input placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div><div className="col-span-4"><Input type="number" placeholder="VALOR" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div></div></AddForm>
-       <div className="flex flex-col gap-2">{data.radarItems.map((item, idx) => (
-         <div key={item.id} className="p-3 bg-white/5 rounded-xl border border-white/5">
-         <DraggableRow listId="radar" index={idx} onMove={(f,t)=>{const l=[...data.radarItems]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, radarItems: l})}} className="w-full">
-           {editingId === item.id ? (
-             <EditRowLayout onSave={()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);}} onCancel={() => setEditingId(null)}>
-               <EditInput className="sm:col-span-9 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, ()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);})} placeholder="DESCRIÇÃO" autoFocus />
-               <EditInput type="number" className="sm:col-span-3" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, ()=>{onUpdate({...data, radarItems: data.radarItems.map(i=>i.id===editingId?{...i,name:editName,value:parseFloat(editValue)||0}:i)}); setEditingId(null);})} placeholder="VALOR" />
-             </EditRowLayout>
-           ) : (
-             <div className="flex items-center justify-between w-full">
-               <div className="flex-1"><span className="font-bold text-white text-sm tracking-wide">{item.name}</span></div>
-               <div className="flex items-center gap-3">
-                 <span className="font-black text-white text-sm">R$ {fmt(item.value)}</span>
-                 <div className="flex items-center gap-1">
-                   <ActionButton onClick={()=>{setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString());}} icon={<Pencil size={16}/>}/>
-                   <ActionButton onClick={()=>onUpdate({...data, radarItems: data.radarItems.filter(i=>i.id!==item.id)})} icon={<Trash2 size={16}/>}/>
-                 </div>
-               </div>
-             </div>
-           )}
-         </DraggableRow>
-         </div>
-       ))}</div>
+    <CollapsibleCard title="CARTÕES DE CRÉDITO" color="pink" icon={<CCIcon size={18} />}>
+      <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2"><Input placeholder="NOME DO CARTÃO" value={name} onChange={e => setName(e.target.value)} /></div>
+          <Input type="number" placeholder="LIMITE" value={limit} onChange={e => setLimit(e.target.value)} />
+          <Input type="number" placeholder="FATURA ATUAL" value={invoice} onChange={e => setInvoice(e.target.value)} />
+          <Input type="number" placeholder="FECHAMENTO" value={closing} onChange={e => setClosing(e.target.value)} />
+          <Input type="number" placeholder="VENCIMENTO" value={due} onChange={e => setDue(e.target.value)} />
+        </div>
+      </AddForm>
+      <div className="flex flex-col gap-3">
+        {data.creditCards.map(card => {
+          const usedPercent = Math.min((card.currentInvoiceValue / card.limit) * 100, 100);
+          return (
+            <div key={card.id} className="p-4 bg-black/40 rounded-xl border border-white/10 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 h-1 bg-neon-pink shadow-neon-pink" style={{ width: `${usedPercent}%` }}></div>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-bold text-white text-sm">{card.name}</h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">FECH: {card.closingDay} | VENC: {card.dueDay}</p>
+                </div>
+                <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) })} icon={<Trash2 size={14} />} />
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-[8px] text-slate-500 font-bold uppercase">FATURA</p>
+                  <p className="text-sm font-black text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[8px] text-slate-500 font-bold uppercase">DISPONÍVEL</p>
+                  <p className="text-xs font-bold text-slate-300">R$ {fmt(card.limit - card.currentInvoiceValue)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </CollapsibleCard>
   );
 };
 
-export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-    const [name, setName] = useState(''); const [limit, setLimit] = useState('');
-    const totalLimit = data.creditCards.reduce((acc, c) => acc + c.limit, 0);
-    const handleAdd = () => { if(!name) return; onUpdate({...data, creditCards: [...data.creditCards, { id: Math.random().toString(36).substr(2, 9), name, limit: parseFloat(limit) || 0, dueDay: 0, closingDay: 0, currentInvoiceValue: 0 }]}); setName(''); setLimit(''); };
-    return (
-        <CollapsibleCard title="LIMITES" totalValue={`Total: R$ ${fmt(totalLimit)}`} color="pink" icon={<CCIcon size={18} />}>
-            <AddForm onAdd={handleAdd}>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2"><div className="md:col-span-8"><Input placeholder="BANCO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div><div className="md:col-span-4"><Input type="number" placeholder="LIMITE" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div></div>
-            </AddForm>
-            <div className="flex flex-col gap-3">{data.creditCards.map((card, idx) => (
-                <DraggableRow key={card.id} listId="creditCards" index={idx} onMove={(f,t)=>{const l=[...data.creditCards]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, creditCards: l})}} className="bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl p-4 relative">
-                  <div className="flex-1 min-w-0"><h4 className="font-black text-white tracking-widest truncate uppercase text-xs opacity-70 mb-1">{card.name}</h4><div className="mt-1"><p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Disponível</p><p className="text-xl font-black text-neon-pink drop-shadow-[0_0_8px_rgba(188,19,254,0.3)]">R$ {fmt(card.limit)}</p></div></div>
-                  <ActionButton onClick={()=>onUpdate({...data, creditCards: data.creditCards.filter(c=>c.id!==card.id)})} icon={<Trash2 size={16}/>} color="text-slate-600 hover:text-neon-red" />
-                </DraggableRow>
-            ))}</div>
-        </CollapsibleCard>
-    );
+// --- Pix Module ---
+export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+  const [type, setType] = useState<any>('Aleatória');
+  const [key, setKey] = useState('');
+  const [beneficiary, setBeneficiary] = useState('');
+
+  const handleAdd = () => {
+    if (!key) return;
+    onUpdate({ ...data, pixKeys: [...data.pixKeys, { id: Math.random().toString(36).substr(2, 9), type, key, beneficiary, active: true }] });
+    setKey(''); setBeneficiary('');
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Chave PIX copiada!');
+  };
+
+  return (
+    <CollapsibleCard title="CHAVES PIX" color="blue" icon={<Zap size={18} />}>
+      <AddForm onAdd={handleAdd}>
+        <div className="flex flex-col gap-2">
+          <Select label="TIPO" value={type} onChange={e => setType(e.target.value)} options={[
+            { value: 'CPF', label: 'CPF' },
+            { value: 'CNPJ', label: 'CNPJ' },
+            { value: 'Telefone', label: 'TELEFONE' },
+            { value: 'Email', label: 'EMAIL' },
+            { value: 'Aleatória', label: 'ALEATÓRIA' }
+          ]} />
+          <Input placeholder="CHAVE" value={key} onChange={e => setKey(e.target.value)} />
+          <Input placeholder="BENEFICIÁRIO (OPCIONAL)" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} />
+        </div>
+      </AddForm>
+      <div className="flex flex-col gap-2">
+        {data.pixKeys.map(k => (
+          <div key={k.id} className="p-3 bg-white/5 rounded-xl border border-white/5 group hover:border-neon-blue/40 transition-all">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge color="blue">{k.type}</Badge>
+                  {k.beneficiary && <span className="text-[10px] font-bold text-slate-400 truncate">{k.beneficiary}</span>}
+                </div>
+                <p className="text-xs font-mono text-white truncate break-all">{k.key}</p>
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => copyToClipboard(k.key)} className="p-2 text-slate-500 hover:text-neon-blue transition-colors"><Copy size={14} /></button>
+                <button onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(pk => pk.id !== k.id) })} className="p-2 text-slate-500 hover:text-neon-red transition-colors"><Trash2 size={14} /></button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </CollapsibleCard>
+  );
 };
 
-export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
-    const [type, setType] = useState('CPF'); 
-    const [key, setKey] = useState('');
-    const [beneficiary, setBeneficiary] = useState('');
+// --- Radar Module ---
+export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+  const [name, setName] = useState('');
+  const [val, setVal] = useState('');
 
-    const handleAdd = () => { 
-        if(!key) return; 
-        onUpdate({
-            ...data, 
-            pixKeys: [...data.pixKeys, { id: Math.random().toString(36).substr(2, 9), type: type as any, key, beneficiary, active: true }]
-        }); 
-        setKey(''); 
-        setBeneficiary('');
-    };
+  const handleAdd = () => {
+    if (!name || !val) return;
+    onUpdate({ ...data, radarItems: [...data.radarItems, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(val) }] });
+    setName(''); setVal('');
+  };
 
-    return (
-        <CollapsibleCard title="CHAVES PIX" color="blue" icon={<Zap size={18} />}>
-            <AddForm onAdd={handleAdd}>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                    <div className="md:col-span-4"><Select options={[{value: 'CPF', label: 'CPF'},{value: 'Telefone', label: 'Telefone'},{value: 'Email', label: 'Email'},{value: 'Aleatória', label: 'Aleatória'}]} value={type} onChange={e => setType(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-                    <div className="md:col-span-8"><Input placeholder="CHAVE" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-                    <div className="md:col-span-12"><Input placeholder="BENEFICIÁRIO (OPCIONAL)" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-                </div>
-            </AddForm>
-            <div className="flex flex-col gap-2">
-                {data.pixKeys.map((pk, idx) => (
-                    <div key={pk.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-blue/30 transition-all">
-                    <DraggableRow listId="pixKeys" index={idx} onMove={(f,t)=>{const l=[...data.pixKeys]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, pixKeys: l})}} className="w-full">
-                        <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center gap-2 mb-1.5">
-                                <Badge color="blue">{pk.type}</Badge>
-                                {pk.beneficiary && (
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate flex items-center gap-1">
-                                        <User size={10} className="text-neon-blue" /> {pk.beneficiary}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-sm font-mono text-white truncate selection:bg-neon-blue/30 tracking-tight">{pk.key}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <ActionButton onClick={()=> {
-                                navigator.clipboard.writeText(pk.key);
-                            }} icon={<Copy size={16}/>}/>
-                            <ActionButton onClick={()=>onUpdate({...data, pixKeys: data.pixKeys.filter(p=>p.id!==pk.id)})} icon={<Trash2 size={16}/>} color="text-slate-600 hover:text-neon-red" />
-                        </div>
-                    </DraggableRow>
-                    </div>
-                ))}
+  return (
+    <CollapsibleCard title="RADAR DE INVESTIMENTOS" color="yellow" icon={<Target size={18} />}>
+      <AddForm onAdd={handleAdd}>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2"><Input placeholder="ITEM / ATIVO" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="col-span-2"><Input type="number" placeholder="VALOR ALVO" value={val} onChange={e => setVal(e.target.value)} /></div>
+        </div>
+      </AddForm>
+      <div className="flex flex-col gap-2">
+        {data.radarItems.map(item => (
+          <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-neon-yellow/40">
+            <span className="text-xs font-bold text-white uppercase">{item.name}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-black text-neon-yellow">R$ {fmt(item.value)}</span>
+              <button onClick={() => onUpdate({ ...data, radarItems: data.radarItems.filter(i => i.id !== item.id) })} className="text-slate-600 hover:text-neon-red transition-colors"><X size={14} /></button>
             </div>
-        </CollapsibleCard>
-    );
+          </div>
+        ))}
+      </div>
+    </CollapsibleCard>
+  );
 };

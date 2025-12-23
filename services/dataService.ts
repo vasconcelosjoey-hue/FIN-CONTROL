@@ -46,6 +46,11 @@ export const logoutUser = async (): Promise<void> => {
   await signOut(auth);
 };
 
+// Salva IMEDIATAMENTE no localStorage
+export const saveToLocal = (userId: string, data: FinancialData): void => {
+  localStorage.setItem(`${LOCAL_STORAGE_KEY}_${userId}`, JSON.stringify(data));
+};
+
 export const loadData = async (userId: string): Promise<FinancialData> => {
   const localDataStr = localStorage.getItem(`${LOCAL_STORAGE_KEY}_${userId}`);
   const localData = localDataStr ? JSON.parse(localDataStr) : null;
@@ -57,6 +62,7 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
 
       if (docSnap.exists()) {
         const cloudData = docSnap.data() as FinancialData;
+        // Se a nuvem estiver vazia mas o local tiver dados, restaura o local para a nuvem
         if (cloudData.incomes.length === 0 && cloudData.fixedExpenses.length === 0 && localData) {
             await setDoc(docRef, localData);
             return localData;
@@ -78,15 +84,21 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
   return localData || INITIAL_DATA;
 };
 
-export const saveData = async (userId: string, data: FinancialData): Promise<void> => {
-  localStorage.setItem(`${LOCAL_STORAGE_KEY}_${userId}`, JSON.stringify(data));
-  if (db) {
-    try {
-      await setDoc(doc(db, "users", userId), data);
-    } catch (error) {
-      console.error("Error saving to Firebase:", error);
-    }
+// Salva especificamente na nuvem (Firebase)
+export const saveToCloud = async (userId: string, data: FinancialData): Promise<void> => {
+  if (!db) return;
+  try {
+    await setDoc(doc(db, "users", userId), data);
+  } catch (error) {
+    console.error("Error saving to Firebase:", error);
+    throw error;
   }
+};
+
+// Função mantida por compatibilidade mas refatorada
+export const saveData = async (userId: string, data: FinancialData): Promise<void> => {
+  saveToLocal(userId, data);
+  await saveToCloud(userId, data);
 };
 
 export const subscribeToData = (userId: string, callback: (data: FinancialData) => void) => {

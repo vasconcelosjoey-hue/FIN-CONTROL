@@ -19,6 +19,7 @@ function App() {
   
   const isInternalUpdate = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const normalizeData = (d: FinancialData) => {
     if (!d) return INITIAL_DATA;
@@ -45,10 +46,6 @@ function App() {
       try {
         await saveToCloud(userId, targetData);
         setIsSyncing(false);
-        // Delay para ignorar o snapshot vindo do próprio salvamento
-        setTimeout(() => {
-          isInternalUpdate.current = false;
-        }, 1000);
       } catch (err) {
         console.error("Cloud sync failed:", err);
         setIsSyncing(false);
@@ -58,14 +55,19 @@ function App() {
     if (immediate) {
       performSync();
     } else {
-      saveTimeoutRef.current = setTimeout(performSync, 800);
+      saveTimeoutRef.current = setTimeout(performSync, 1000);
     }
   }, [userId]);
 
   // Handler principal: Salva local IMEDIATAMENTE, nuvem depois
   const handleUpdate = useCallback((newDataOrUpdater: FinancialData | ((prev: FinancialData) => FinancialData), immediate = false) => {
+    // Bloqueia atualizações externas por 2 segundos para dar tempo do cloud sync terminar
     isInternalUpdate.current = true;
-    
+    if (updateLockRef.current) clearTimeout(updateLockRef.current);
+    updateLockRef.current = setTimeout(() => {
+      isInternalUpdate.current = false;
+    }, 2000);
+
     setData(prev => {
       const next = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
       
@@ -149,18 +151,18 @@ function App() {
     }
   };
 
-  const updateSection = (updatedSection: CustomSection) => {
+  const updateSection = (updatedSection: CustomSection, immediate = false) => {
     handleUpdate(prev => ({ 
       ...prev, 
       customSections: (prev.customSections || []).map(s => s.id === updatedSection.id ? updatedSection : s) 
-    }));
+    }), immediate);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-neon-blue gap-4">
         <RefreshCw className="animate-spin w-10 h-10 shadow-neon-blue" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] animate-pulse">Autenticando...</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] animate-pulse">Sincronizando...</p>
       </div>
     );
   }

@@ -111,7 +111,7 @@ const EditInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
 
 export const CustomSectionModule: React.FC<{ 
   section: CustomSection, 
-  onUpdate: (updatedSection: CustomSection) => void, 
+  onUpdate: (updatedSection: CustomSection, immediate?: boolean) => void, 
   onDeleteSection: () => void 
 }> = ({ section, onUpdate, onDeleteSection }) => {
   const [name, setName] = useState('');
@@ -136,13 +136,13 @@ export const CustomSectionModule: React.FC<{
     if (!name || !value) return;
     const newItem: SectionItem = {
       id: Math.random().toString(36).substr(2, 9),
-      name,
+      name: name.toUpperCase(),
       value: parseFloat(value),
       paidAmount: parseFloat(paid) || 0,
-      date: date || (section.type === 'expense' ? new Date().toISOString().slice(0, 7) : new Date().toLocaleDateString('pt-BR')),
+      date: date.toUpperCase() || (section.type === 'expense' ? new Date().toISOString().slice(0, 7) : new Date().toLocaleDateString('pt-BR')),
       installmentsCount: !isIncome ? (parseInt(qtd) || 1) : undefined
     };
-    onUpdate({ ...section, items: [...section.items, newItem] });
+    onUpdate({ ...section, items: [...section.items, newItem] }, true);
     setName(''); setValue(''); setPaid(''); setDate(''); setQtd('');
   };
 
@@ -153,21 +153,21 @@ export const CustomSectionModule: React.FC<{
 
   const handleAdvanceMonth = (item: SectionItem) => {
     if (!item.installmentsCount || item.installmentsCount <= 1) {
-      if (confirm(`Remover ${item.name}?`)) onUpdate({ ...section, items: section.items.filter(i => i.id !== item.id) });
+      if (confirm(`Remover ${item.name}?`)) onUpdate({ ...section, items: section.items.filter(i => i.id !== item.id) }, true);
       return;
     }
     const nextDate = advanceDateStr(item.date || '');
-    onUpdate({ ...section, items: section.items.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, date: nextDate, paidAmount: 0 } : i) });
+    onUpdate({ ...section, items: section.items.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, date: nextDate, paidAmount: 0 } : i) }, true);
   };
 
   const saveEdit = () => {
     if (!editingId) return;
-    onUpdate({ ...section, items: section.items.map(i => i.id === editingId ? { ...i, name: editName, value: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, date: editDate, installmentsCount: !isIncome ? (parseInt(editQtd) || 1) : undefined } : i) });
+    onUpdate({ ...section, items: section.items.map(i => i.id === editingId ? { ...i, name: editName.toUpperCase(), value: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, date: editDate.toUpperCase(), installmentsCount: !isIncome ? (parseInt(editQtd) || 1) : undefined } : i) }, true);
     setEditingId(null);
   };
 
   return (
-    <CollapsibleCard title={section.title} totalValue={`R$ ${fmt(totalRemaining)}`} color={color} icon={<FolderOpen size={18} />} onEditTitle={nt => onUpdate({...section, title: nt})}>
+    <CollapsibleCard title={section.title} totalValue={`R$ ${fmt(totalRemaining)}`} color={color} icon={<FolderOpen size={18} />} onEditTitle={nt => onUpdate({...section, title: nt.toUpperCase()}, true)}>
       <div className="flex justify-end mb-2"><button onClick={onDeleteSection} className={`text-[10px] ${neonColor} hover:underline font-bold flex items-center gap-1 opacity-60`}><Trash2 size={12}/> EXCLUIR SESSÃO</button></div>
       <AddForm onAdd={handleAdd}>
         {isIncome ? (
@@ -191,7 +191,7 @@ export const CustomSectionModule: React.FC<{
            const isFullyPaid = !isIncome && (item.paidAmount || 0) >= item.value;
            return (
              <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isFullyPaid ? 'border-neon-green/40 bg-neon-green/5' : 'border-white/5'} ${isIncome ? 'hover:border-neon-green/30' : 'hover:border-neon-red/30'}`}>
-               <DraggableRow listId={section.id} index={idx} onMove={(f, t) => { const l = [...section.items]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...section, items: l})}} className="w-full">
+               <DraggableRow listId={section.id} index={idx} onMove={(f, t) => { const l = [...section.items]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...section, items: l}, true)}} className="w-full">
                {editingId === item.id ? (
                   <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
                     <EditInput className="sm:col-span-5 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="NOME" autoFocus />
@@ -230,7 +230,7 @@ export const CustomSectionModule: React.FC<{
                            <button onClick={() => handleAdvanceMonth(item)} className={`px-2 py-1.5 border rounded-lg transition-all text-[10px] font-bold flex items-center gap-1.5 ${isFullyPaid ? 'bg-neon-green text-black border-neon-green shadow-neon-green' : 'bg-neon-green/10 text-neon-green border-neon-green/30 hover:bg-neon-green hover:text-black'}`}><CalendarCheck size={14} /> OK</button>
                          )}
                          <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditPaid(item.paidAmount?.toString() || ''); setEditDate(item.date || ''); setEditQtd(item.installmentsCount?.toString() || ''); }} icon={<Pencil size={16} />} />
-                         <ActionButton onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)})} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
+                         <ActionButton onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)}, true)} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
                       </div>
                    </div>
                  </div>
@@ -244,7 +244,7 @@ export const CustomSectionModule: React.FC<{
   );
 };
 
-export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState(''); const [value, setValue] = useState(''); const [paid, setPaid] = useState(''); const [qtd, setQtd] = useState(''); const [date, setDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState(''); const [editValue, setEditValue] = useState(''); const [editPaid, setEditPaid] = useState(''); const [editQtd, setEditQtd] = useState(''); const [editDate, setEditDate] = useState('');
@@ -253,7 +253,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
 
   const handleAdd = () => {
     if (!name || !value) return;
-    onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(value), paidAmount: parseFloat(paid) || 0, dueDate: date || new Date().toISOString().slice(0, 7), installmentsCount: parseInt(qtd) || 1 }] });
+    onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(value), paidAmount: parseFloat(paid) || 0, dueDate: date.toUpperCase() || new Date().toISOString().slice(0, 7), installmentsCount: parseInt(qtd) || 1 }] }, true);
     setName(''); setValue(''); setPaid(''); setQtd(''); setDate('');
   };
 
@@ -263,16 +263,16 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
 
   const handleAdvanceMonth = (item: FixedExpense) => {
     if (!item.installmentsCount || item.installmentsCount <= 1) {
-      if (confirm(`Remover ${item.name}?`)) onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) });
+      if (confirm(`Remover ${item.name}?`)) onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) }, true);
       return;
     }
     const nextDate = advanceDateStr(item.dueDate || '');
-    onUpdate({ ...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, dueDate: nextDate, paidAmount: 0 } : i) });
+    onUpdate({ ...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount! - 1, dueDate: nextDate, paidAmount: 0 } : i) }, true);
   };
 
   const saveEdit = () => {
     if (!editingId) return;
-    onUpdate({ ...data, fixedExpenses: data.fixedExpenses.map(i => i.id === editingId ? { ...i, name: editName, value: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, dueDate: editDate, installmentsCount: parseInt(editQtd) || 1 } : i) });
+    onUpdate({ ...data, fixedExpenses: data.fixedExpenses.map(i => i.id === editingId ? { ...i, name: editName.toUpperCase(), value: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, dueDate: editDate.toUpperCase(), installmentsCount: parseInt(editQtd) || 1 } : i) }, true);
     setEditingId(null);
   };
 
@@ -280,7 +280,6 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
     <CollapsibleCard title="CONTAS PESSOAIS" totalValue={`R$ ${fmt(totalRemaining)}`} color="red" icon={<AlertCircle size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-          {/* Fix: Added missing event parameter to handleEnter calls */}
           <div className="md:col-span-4"><Input placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-3"><Input type="number" placeholder="VALOR MÊS" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-2"><Input type="number" placeholder="PAGO R$" value={paid} onChange={e => setPaid(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
@@ -293,10 +292,9 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
           const isFullyPaid = (item.paidAmount || 0) >= item.value;
           return (
             <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isFullyPaid ? 'border-neon-green/40 bg-neon-green/5' : 'border-white/5'} hover:border-neon-red/30`}>
-              <DraggableRow listId="fixed" index={idx} onMove={(f,t) => { const l = [...data.fixedExpenses]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, fixedExpenses: l}) }} className="w-full">
+              <DraggableRow listId="fixed" index={idx} onMove={(f,t) => { const l = [...data.fixedExpenses]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, fixedExpenses: l}, true) }} className="w-full">
               {editingId === item.id ? (
                 <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
-                  {/* Fix: Added missing event parameter to handleEnter calls */}
                   <EditInput className="sm:col-span-5 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="DESCRIÇÃO" autoFocus />
                   <EditInput type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="VALOR" />
                   <EditInput type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="PAGO" />
@@ -329,7 +327,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                     <div className="flex items-center gap-1">
                         <button onClick={() => handleAdvanceMonth(item)} className={`px-2 py-1.5 border rounded-lg transition-all text-[10px] font-bold flex items-center gap-1.5 ${isFullyPaid ? 'bg-neon-green text-black border-neon-green shadow-neon-green' : 'bg-neon-green/10 text-neon-green border-neon-green/30 hover:bg-neon-green hover:text-black'}`}><CalendarCheck size={14} /> OK</button>
                         <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditPaid(item.paidAmount?.toString() || ''); setEditQtd(item.installmentsCount?.toString() || '1'); setEditDate(item.dueDate); }} icon={<Pencil size={16} />} />
-                        <ActionButton onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) })} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
+                        <ActionButton onClick={() => onUpdate({ ...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id) }, true)} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
                     </div>
                   </div>
                 </div>
@@ -343,7 +341,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   );
 };
 
-export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState(''); const [val, setVal] = useState(''); const [paid, setPaid] = useState(''); const [qtd, setQtd] = useState(''); const [start, setStart] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState(''); const [editValue, setEditValue] = useState(''); const [editPaid, setEditPaid] = useState(''); const [editQtd, setEditQtd] = useState(''); const [editStart, setEditStart] = useState('');
@@ -352,7 +350,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 
   const handleAdd = () => {
     if (!name || !val) return;
-    onUpdate({...data, installments: [...data.installments, { id: Math.random().toString(36).substr(2, 9), name, monthlyValue: parseFloat(val), paidAmount: parseFloat(paid) || 0, installmentsCount: parseInt(qtd) || 12, startMonth: start || new Date().toISOString().slice(0, 7) }]});
+    onUpdate({...data, installments: [...data.installments, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), monthlyValue: parseFloat(val), paidAmount: parseFloat(paid) || 0, installmentsCount: parseInt(qtd) || 12, startMonth: start.toUpperCase() || new Date().toISOString().slice(0, 7) }]}, true);
     setName(''); setVal(''); setPaid(''); setQtd(''); setStart('');
   };
 
@@ -361,14 +359,14 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   };
 
   const handleAdvanceMonth = (item: InstallmentExpense) => {
-    if (item.installmentsCount <= 1) { if (confirm(`Remover ${item.name}?`)) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}); return; }
+    if (item.installmentsCount <= 1) { if (confirm(`Remover ${item.name}?`)) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}, true); return; }
     const nextDate = advanceDateStr(item.startMonth || '');
-    onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount - 1, startMonth: nextDate, paidAmount: 0 } : i)});
+    onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? { ...i, installmentsCount: i.installmentsCount - 1, startMonth: nextDate, paidAmount: 0 } : i)}, true);
   };
 
   const saveEdit = () => {
     if(!editingId) return;
-    onUpdate({...data, installments: data.installments.map(i => i.id === editingId ? { ...i, name: editName, monthlyValue: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, installmentsCount: parseInt(editQtd) || 1, startMonth: editStart } : i)});
+    onUpdate({...data, installments: data.installments.map(i => i.id === editingId ? { ...i, name: editName.toUpperCase(), monthlyValue: parseFloat(editValue) || 0, paidAmount: parseFloat(editPaid) || 0, installmentsCount: parseInt(editQtd) || 1, startMonth: editStart.toUpperCase() } : i)}, true);
     setEditingId(null);
   };
 
@@ -376,7 +374,6 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       <CollapsibleCard title="PARCELAMENTOS" totalValue={`R$ ${fmt(totalRemainingMonthly)}`} color="red" icon={<CalendarDays size={18} />}>
          <AddForm onAdd={handleAdd}>
              <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                 {/* Fix: Added missing event parameter to handleEnter calls */}
                  <div className="md:col-span-4"><Input placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
                  <div className="md:col-span-3"><Input type="number" placeholder="VALOR MÊS" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)}/></div>
                  <div className="md:col-span-2"><Input type="number" placeholder="PAGO R$" value={paid} onChange={e => setPaid(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)}/></div>
@@ -389,10 +386,9 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                  const isFullyPaid = (item.paidAmount || 0) >= item.monthlyValue;
                  return (
                   <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isFullyPaid ? 'border-neon-green/40 bg-neon-green/5' : 'border-white/5'} hover:border-neon-red/30`}>
-                      <DraggableRow listId="installments" index={idx} onMove={(f,t) => {const l = [...data.installments]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, installments: l})}} className="w-full">
+                      <DraggableRow listId="installments" index={idx} onMove={(f,t) => {const l = [...data.installments]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, installments: l}, true)}} className="w-full">
                       {editingId === item.id ? (
                         <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
-                           {/* Fix: Added missing event parameter to handleEnter calls */}
                            <EditInput className="sm:col-span-5 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="NOME" autoFocus />
                            <EditInput type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="MÊS" />
                            <EditInput type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} placeholder="PAGO" />
@@ -425,7 +421,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                                 <div className="flex items-center gap-1">
                                     <button onClick={() => handleAdvanceMonth(item)} className={`px-2 py-1.5 border rounded-lg transition-all text-[10px] font-bold flex items-center gap-1.5 ${isFullyPaid ? 'bg-neon-green text-black border-neon-green shadow-neon-green' : 'bg-neon-green/10 text-neon-green border-neon-green/30 hover:bg-neon-green hover:text-black'}`}><CalendarCheck size={14} /> OK</button>
                                     <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.monthlyValue.toString()); setEditPaid(item.paidAmount?.toString() || ''); setEditQtd(item.installmentsCount.toString()); setEditStart(item.startMonth); }} icon={<Pencil size={16} />} />
-                                    <ActionButton onClick={() => onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)})} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
+                                    <ActionButton onClick={() => onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}, true)} icon={<Trash2 size={16} />} color="text-slate-600 hover:text-neon-red" />
                                 </div>
                             </div>
                         </div>
@@ -439,7 +435,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   );
 };
 
-export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [date, setDate] = useState('');
@@ -453,7 +449,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
 
   const handleAdd = () => {
     if (!name || !value) return;
-    onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(value), expectedDate: date || new Date().toLocaleDateString('pt-BR') }] });
+    onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(value), expectedDate: date.toUpperCase() || new Date().toLocaleDateString('pt-BR') }] }, true);
     setName(''); setValue(''); setDate('');
   };
 
@@ -463,11 +459,11 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       ...data, 
       incomes: data.incomes.map(i => i.id === editingId ? { 
         ...i, 
-        name: editName, 
+        name: editName.toUpperCase(), 
         value: parseFloat(editValue) || 0, 
-        expectedDate: editDate 
+        expectedDate: editDate.toUpperCase() 
       } : i) 
-    });
+    }, true);
     setEditingId(null);
   };
 
@@ -475,7 +471,6 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     <CollapsibleCard title="RECEITAS FIXAS" totalValue={`R$ ${fmt(total)}`} color="green" icon={<Wallet size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-          {/* Fix: Added missing event parameter to handleEnter calls */}
           <div className="md:col-span-6"><Input placeholder="FONTE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-3"><Input type="number" placeholder="VALOR" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           <div className="md:col-span-3"><Input placeholder="DATA" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
@@ -484,10 +479,9 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <div className="flex flex-col gap-2">
         {data.incomes.map((item, idx) => (
           <div key={item.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/30 transition-all">
-            <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}) }} className="w-full">
+            <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}, true) }} className="w-full">
               {editingId === item.id ? (
                 <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
-                  {/* Fix: Added missing event parameter to handleEnter calls */}
                   <EditInput 
                     className="sm:col-span-6 uppercase font-bold" 
                     value={editName} 
@@ -531,7 +525,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                         icon={<Pencil size={16} />} 
                       />
                       <ActionButton 
-                        onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) })} 
+                        onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) }, true)} 
                         icon={<Trash2 size={16} />} 
                         color="text-slate-600 hover:text-neon-red" 
                       />
@@ -547,7 +541,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   );
 };
 
-export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
   const [closing, setClosing] = useState('');
@@ -556,7 +550,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
 
   const handleAdd = () => {
     if (!name || !limit) return;
-    onUpdate({ ...data, creditCards: [...data.creditCards, { id: Math.random().toString(36).substr(2, 9), name, limit: parseFloat(limit), closingDay: parseInt(closing) || 1, dueDay: parseInt(due) || 1, currentInvoiceValue: parseFloat(invoice) || 0 }] });
+    onUpdate({ ...data, creditCards: [...data.creditCards, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), limit: parseFloat(limit), closingDay: parseInt(closing) || 1, dueDay: parseInt(due) || 1, currentInvoiceValue: parseFloat(invoice) || 0 }] }, true);
     setName(''); setLimit(''); setClosing(''); setDue(''); setInvoice('');
   };
 
@@ -582,7 +576,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
                   <h4 className="font-bold text-white text-sm">{card.name}</h4>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">FECH: {card.closingDay} | VENC: {card.dueDay}</p>
                 </div>
-                <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) })} icon={<Trash2 size={14} />} />
+                <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) }, true)} icon={<Trash2 size={14} />} />
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -602,14 +596,14 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
   );
 };
 
-export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [type, setType] = useState<any>('Aleatória');
   const [key, setKey] = useState('');
   const [beneficiary, setBeneficiary] = useState('');
 
   const handleAdd = () => {
     if (!key) return;
-    onUpdate({ ...data, pixKeys: [...data.pixKeys, { id: Math.random().toString(36).substr(2, 9), type, key, beneficiary, active: true }] });
+    onUpdate({ ...data, pixKeys: [...data.pixKeys, { id: Math.random().toString(36).substr(2, 9), type, key: key.toUpperCase(), beneficiary: beneficiary.toUpperCase(), active: true }] }, true);
     setKey(''); setBeneficiary('');
   };
 
@@ -646,7 +640,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
               </div>
               <div className="flex gap-1">
                 <button onClick={() => copyToClipboard(k.key)} className="p-2 text-slate-500 hover:text-neon-blue transition-colors"><Copy size={14} /></button>
-                <button onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(pk => pk.id !== k.id) })} className="p-2 text-slate-500 hover:text-neon-red transition-colors"><Trash2 size={14} /></button>
+                <button onClick={() => onUpdate({ ...data, pixKeys: data.pixKeys.filter(pk => pk.id !== k.id) }, true)} className="p-2 text-slate-500 hover:text-neon-red transition-colors"><Trash2 size={14} /></button>
               </div>
             </div>
           </div>
@@ -656,13 +650,13 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   );
 };
 
-export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData) => void }> = ({ data, onUpdate }) => {
+export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState('');
 
   const handleAdd = () => {
     if (!name || !val) return;
-    onUpdate({ ...data, radarItems: [...data.radarItems, { id: Math.random().toString(36).substr(2, 9), name, value: parseFloat(val) }] });
+    onUpdate({ ...data, radarItems: [...data.radarItems, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(val) }] }, true);
     setName(''); setVal('');
   };
 
@@ -680,7 +674,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
             <span className="text-xs font-bold text-white uppercase">{item.name}</span>
             <div className="flex items-center gap-3">
               <span className="text-sm font-black text-neon-yellow">R$ {fmt(item.value)}</span>
-              <button onClick={() => onUpdate({ ...data, radarItems: data.radarItems.filter(i => i.id !== item.id) })} className="text-slate-600 hover:text-neon-red transition-colors"><X size={14} /></button>
+              <button onClick={() => onUpdate({ ...data, radarItems: data.radarItems.filter(i => i.id !== item.id) }, true)} className="text-slate-600 hover:text-neon-red transition-colors"><X size={14} /></button>
             </div>
           </div>
         ))}

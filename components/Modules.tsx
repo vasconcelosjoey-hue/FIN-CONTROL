@@ -107,7 +107,7 @@ const EditInput = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputEleme
     {label && <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{label}</label>}
     <input 
       {...props} 
-      className={`bg-black/60 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue/20 transition-all h-11 w-full placeholder:text-slate-700`}
+      className={`bg-black/60 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue/20 transition-all h-11 w-full placeholder:text-slate-700`}
     />
   </div>
 );
@@ -197,11 +197,11 @@ export const CustomSectionModule: React.FC<{
                <DraggableRow listId={section.id} index={idx} onMove={(f, t) => { const l = [...section.items]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...section, items: l}, true)}} className="w-full">
                {editingId === item.id ? (
                   <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
-                    <EditInput label="NOME / DESCRIÇÃO" className="sm:col-span-5 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} autoFocus />
+                    <EditInput label="NOME / DESCRIÇÃO" className="sm:col-span-4 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} autoFocus />
                     <EditInput label="VALOR" type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
                     {!isIncome && <EditInput label="PAGO" type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />}
-                    {!isIncome && <EditInput label="QTD" type="number" className="sm:col-span-1" value={editQtd} onChange={e => setEditQtd(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />}
-                    <EditInput label="REF. / DATA" className={isIncome ? "sm:col-span-5 text-center" : "sm:col-span-2 text-center"} value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} />
+                    {!isIncome && <EditInput label="QTD" type="number" className="sm:col-span-2" value={editQtd} onChange={e => setEditQtd(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />}
+                    <EditInput label="REF. / DATA" className={isIncome ? "sm:col-span-6 text-center" : "sm:col-span-2 text-center"} value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} />
                   </EditRowLayout>
                ) : (
                  <div className="flex items-center justify-between w-full gap-2">
@@ -302,8 +302,8 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                   <EditInput label="DESCRIÇÃO" className="sm:col-span-4 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} autoFocus />
                   <EditInput label="VALOR" type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
                   <EditInput label="PAGO" type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
-                  <EditInput label="QTD" type="number" className="sm:col-span-1" value={editQtd} onChange={e => setEditQtd(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
-                  <EditInput label="REF." className="sm:col-span-3 text-center" value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} />
+                  <EditInput label="QTD" type="number" className="sm:col-span-2" value={editQtd} onChange={e => setEditQtd(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
+                  <EditInput label="REF." className="sm:col-span-2 text-center" value={editDate} onChange={e => setEditDate(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} />
                 </EditRowLayout>
               ) : (
                 <div className="flex items-center justify-between w-full gap-2">
@@ -397,8 +397,8 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                            <EditInput label="DESCRIÇÃO" className="sm:col-span-4 uppercase font-bold" value={editName} onChange={e => setEditName(e.target.value.toUpperCase())} onKeyDown={e => handleEnter(e, saveEdit)} autoFocus />
                            <EditInput label="VALOR" type="number" className="sm:col-span-2" value={editValue} onChange={e => setEditValue(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
                            <EditInput label="PAGO" type="number" className="sm:col-span-2 text-neon-yellow" value={editPaid} onChange={e => setEditPaid(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
-                           <EditInput label="QTD" type="number" className="sm:col-span-1" value={editQtd} onChange={e => setEditQtd(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
-                           <EditInput label="INÍCIO" className="sm:col-span-3 text-center" value={editStart} onChange={e => setEditStart(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
+                           <EditInput label="QTD" type="number" className="sm:col-span-2" value={editQtd} onChange={e => setEditQtd(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
+                           <EditInput label="INÍCIO" className="sm:col-span-2 text-center" value={editStart} onChange={e => setEditStart(e.target.value)} onKeyDown={e => handleEnter(e, saveEdit)} />
                         </EditRowLayout>
                       ) : (
                         <div className="flex items-center justify-between w-full gap-2">

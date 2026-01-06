@@ -95,7 +95,11 @@ const EditInput = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputEleme
 const ToggleStatusButton = ({ active, onClick }: { active: boolean, onClick: () => void }) => (
   <button 
     onClick={(e) => { e.stopPropagation(); onClick(); }}
-    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg border text-[10px] font-black tracking-[0.2em] transition-all shadow-md active:scale-95 shrink-0 ${active ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-neon-green/30' : 'bg-neon-red/10 border-neon-red text-neon-red shadow-neon-red/20'}`}
+    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg border text-[10px] font-black tracking-[0.2em] transition-all active:scale-95 shrink-0 ${
+      active 
+      ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-neon-green' 
+      : 'bg-neon-red/10 border-neon-red text-neon-red shadow-neon-red'
+    }`}
   >
     <Power size={12} /> {active ? 'ON' : 'OFF'}
   </button>
@@ -139,7 +143,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         {section.items.map((item, idx) => {
           const isActive = item.isActive !== false;
           return (
-            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5' : 'border-neon-red/10 opacity-60 grayscale'}`}>
+            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5' : 'border-neon-red/10 opacity-70'}`}>
               <DraggableRow listId={section.id} index={idx} onMove={(f,t) => {const l=[...section.items]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...section, items:l}, true)}}>
                 {editingId === item.id ? (
                   <EditRowLayout onSave={() => { onUpdate({...section, items: section.items.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, paidAmount: parseFloat(editPaid)||0, date: editDate.toUpperCase(), installmentsCount: parseInt(editQtd)||1} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
@@ -159,7 +163,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="flex flex-col items-end">
                          <span className={`font-black text-base ${isActive ? (isIncome ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
-                         {!isIncome && isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[11px] text-slate-500 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 bg-black/50 border border-white/10 rounded px-1 text-xs text-neon-yellow font-black text-center py-0.5 outline-none focus:border-neon-yellow/50 transition-all"/></div>}
+                         {!isIncome && isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[12px] text-slate-500 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 bg-black/50 border border-white/10 rounded px-1 text-xs text-neon-yellow font-black text-center py-0.5 outline-none focus:border-neon-yellow/50 transition-all"/></div>}
                       </div>
                       <div className="flex items-center gap-1">
                         <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditPaid(item.paidAmount?.toString()||''); setEditDate(item.date||''); setEditQtd(item.installmentsCount?.toString()||''); }} icon={<Pencil size={18} />} />
@@ -205,7 +209,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
           const isActive = item.isActive !== false;
           const isPaid = (item.paidAmount || 0) >= item.value;
           return (
-            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5 hover:border-neon-red/20' : 'border-neon-red/10 opacity-60 grayscale'}`}>
+            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5 hover:border-neon-red/20' : 'border-neon-red/10 opacity-70'}`}>
               <DraggableRow listId="fixed" index={idx} onMove={(f,t) => {const l=[...data.fixedExpenses]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, fixedExpenses:l}, true)}}>
                 {editingId === item.id ? (
                   <EditRowLayout onSave={() => { onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, paidAmount: parseFloat(editPaid)||0, dueDate: editDate.toUpperCase(), installmentsCount: parseInt(editQtd)||1} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
@@ -225,7 +229,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="flex flex-col items-end">
                          <span className={`font-black text-base ${isActive ? (isPaid ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
-                         {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[11px] text-slate-500 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 bg-black/50 border border-white/10 rounded px-1 text-xs text-neon-yellow font-black text-center py-0.5 outline-none focus:border-neon-yellow/50 transition-all"/></div>}
+                         {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[12px] text-slate-500 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 bg-black/50 border border-white/10 rounded px-1 text-xs text-neon-yellow font-black text-center py-0.5 outline-none focus:border-neon-yellow/50 transition-all"/></div>}
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => { if(item.installmentsCount! > 1) { onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, installmentsCount: i.installmentsCount!-1, dueDate: advanceDateStr(item.dueDate), paidAmount: 0} : i)}, true); } else { if(confirm("Remover conta finalizada?")) onUpdate({...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id)}, true); } }} className="px-2.5 py-1.5 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold"><CalendarCheck size={16} /></button>
@@ -270,7 +274,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
         {data.installments.map((item, idx) => {
           const isActive = item.isActive !== false;
           return (
-            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5' : 'border-neon-red/10 opacity-60 grayscale'}`}>
+            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5' : 'border-neon-red/10 opacity-70'}`}>
               <DraggableRow listId="installments" index={idx} onMove={(f,t) => {const l=[...data.installments]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, installments:l}, true)}}>
                 {editingId === item.id ? (
                   <EditRowLayout onSave={() => { onUpdate({...data, installments: data.installments.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), monthlyValue: parseFloat(editValue)||0, paidAmount: parseFloat(editPaid)||0, installmentsCount: parseInt(editQtd)||1, startMonth: editStart.toUpperCase()} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
@@ -290,7 +294,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="flex flex-col items-end">
                          <span className={`font-black text-base ${isActive ? 'text-white' : 'text-slate-600'}`}>R$ {fmt(item.monthlyValue - (item.paidAmount||0))}</span>
-                         {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[11px] text-slate-500 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 bg-black/50 border border-white/10 rounded px-1 text-xs text-neon-yellow font-black text-center py-0.5 outline-none focus:border-neon-yellow/50 transition-all"/></div>}
+                         {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[12px] text-slate-500 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 bg-black/50 border border-white/10 rounded px-1 text-xs text-neon-yellow font-black text-center py-0.5 outline-none focus:border-neon-yellow/50 transition-all"/></div>}
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => { if(item.installmentsCount > 1) { onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, installmentsCount: i.installmentsCount-1, startMonth: advanceDateStr(item.startMonth), paidAmount: 0} : i)}, true); } else { if(confirm("Remover parcelamento finalizado?")) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}, true); } }} className="px-2.5 py-1.5 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold"><CalendarCheck size={16} /></button>
@@ -334,7 +338,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         {data.incomes.map((item, idx) => {
           const isActive = item.isActive !== false;
           return (
-            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5 hover:border-neon-green/20' : 'border-neon-red/10 opacity-60 grayscale'}`}>
+            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5 hover:border-neon-green/20' : 'border-neon-red/10 opacity-70'}`}>
               <DraggableRow listId="incomes" index={idx} onMove={(f,t) => {const l=[...data.incomes]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, incomes:l}, true)}}>
                 {editingId === item.id ? (
                   <EditRowLayout onSave={() => { onUpdate({...data, incomes: data.incomes.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, expectedDate: editDate.toUpperCase()} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>

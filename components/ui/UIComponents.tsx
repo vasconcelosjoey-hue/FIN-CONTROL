@@ -163,12 +163,12 @@ export const Button = ({ onClick, children, variant = 'primary', className = "",
 };
 
 export const Input = ({ label, onChange, noUppercase = false, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string, noUppercase?: boolean }) => (
-  <div className="flex flex-col gap-1 w-full group">
-    {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
+  <div className="flex flex-col gap-1.5 w-full group">
+    {label && <label className="text-[10px] text-slate-400 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-widest">{label}</label>}
     <input 
-      className={`bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white font-medium text-sm
+      className={`bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white font-bold text-sm
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
-                 transition-all placeholder:text-slate-600 placeholder:text-xs w-full h-10 ${!noUppercase ? 'uppercase' : ''}`}
+                 transition-all placeholder:text-slate-700 placeholder:text-xs w-full h-11 ${!noUppercase ? 'uppercase' : ''}`}
       onChange={(e) => {
           if (!noUppercase) {
             e.target.value = e.target.value.toUpperCase();
@@ -181,12 +181,12 @@ export const Input = ({ label, onChange, noUppercase = false, ...props }: React.
 );
 
 export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string, options: {value: string, label: string}[] }) => (
-  <div className="flex flex-col gap-1 w-full group">
-    {label && <label className="text-[10px] text-slate-400 font-bold ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-wider">{label}</label>}
+  <div className="flex flex-col gap-1.5 w-full group">
+    {label && <label className="text-[10px] text-slate-400 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-widest">{label}</label>}
     <select 
-      className="bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white font-medium text-sm
+      className="bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white font-bold text-sm
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
-                 transition-all appearance-none w-full h-10"
+                 transition-all appearance-none w-full h-11"
       {...props}
     >
       {options.map(opt => <option key={opt.value} value={opt.value} className="bg-neon-surface text-slate-200 font-medium">{opt.label}</option>)}

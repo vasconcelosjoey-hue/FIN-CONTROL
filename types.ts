@@ -11,7 +11,7 @@ export interface FixedExpense {
   name: string;
   value: number;
   paidAmount?: number;
-  dueDate: string; // Usado como data de início/referência no modo unificado
+  dueDate: string; 
   installmentsCount?: number;
   startMonth?: string;
 }
@@ -77,6 +77,7 @@ export interface FinancialData {
   radarItems: RadarItem[];
   modulesOrder?: string[];
   incomeModulesOrder?: string[];
+  lastUpdate?: number;
   settings?: {
     userName?: string;
   };
@@ -92,4 +93,5 @@ export const INITIAL_DATA: FinancialData = {
   radarItems: [],
   modulesOrder: ['fixed', 'installments'],
   incomeModulesOrder: ['incomes'],
+  lastUpdate: 0,
 };

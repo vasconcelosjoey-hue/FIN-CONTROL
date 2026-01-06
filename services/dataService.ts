@@ -46,11 +46,23 @@ export const logoutUser = async (): Promise<void> => {
   await signOut(auth);
 };
 
+// Retorna o timestamp da última atualização salva localmente
+export const getLocalTimestamp = (userId: string): number => {
+  const localDataStr = localStorage.getItem(`${LOCAL_STORAGE_KEY}_${userId}`);
+  if (!localDataStr) return 0;
+  try {
+    const data = JSON.parse(localDataStr);
+    return data.lastUpdate || 0;
+  } catch {
+    return 0;
+  }
+};
+
 // Salva IMEDIATAMENTE no localStorage com timestamp
 export const saveToLocal = (userId: string, data: FinancialData): void => {
   const dataToSave = {
     ...data,
-    lastUpdate: Date.now()
+    lastUpdate: data.lastUpdate || Date.now()
   };
   localStorage.setItem(`${LOCAL_STORAGE_KEY}_${userId}`, JSON.stringify(dataToSave));
 };
@@ -67,21 +79,18 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
       if (docSnap.exists()) {
         const cloudData = docSnap.data() as any;
         
-        // Lógica de prioridade: Se o local for mais recente (timestamp) ou tiver mais itens, prefira ele.
         if (localData) {
           const localTimestamp = localData.lastUpdate || 0;
           const cloudTimestamp = cloudData.lastUpdate || 0;
           
-          // Contagem de itens para segurança extra
           const countItems = (d: any) => 
             (d.incomes?.length || 0) + 
             (d.fixedExpenses?.length || 0) + 
             (d.installments?.length || 0) + 
             (d.customSections?.reduce((a: number, s: any) => a + (s.items?.length || 0), 0) || 0);
 
-          if (localTimestamp > cloudTimestamp || countItems(localData) > countItems(cloudData)) {
+          if (localTimestamp > cloudTimestamp || (localTimestamp === cloudTimestamp && countItems(localData) > countItems(cloudData))) {
             console.log("⚡ Priorizando dados locais (mais recentes/completos)");
-            // Sincroniza a nuvem com o que temos de melhor no local
             await setDoc(docRef, { ...localData, lastUpdate: Date.now() });
             return localData;
           }
@@ -104,7 +113,7 @@ export const saveToCloud = async (userId: string, data: FinancialData): Promise<
   try {
     const dataWithTimestamp = {
       ...data,
-      lastUpdate: Date.now()
+      lastUpdate: data.lastUpdate || Date.now()
     };
     await setDoc(doc(db, "users", userId), dataWithTimestamp);
   } catch (error) {
@@ -114,8 +123,9 @@ export const saveToCloud = async (userId: string, data: FinancialData): Promise<
 };
 
 export const saveData = async (userId: string, data: FinancialData): Promise<void> => {
-  saveToLocal(userId, data);
-  await saveToCloud(userId, data);
+  const timestampedData = { ...data, lastUpdate: Date.now() };
+  saveToLocal(userId, timestampedData);
+  await saveToCloud(userId, timestampedData);
 };
 
 export const subscribeToData = (userId: string, callback: (data: FinancialData) => void) => {

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { FinancialData, INITIAL_DATA, CustomSection } from './types';
-import { loadData, saveToLocal, saveToCloud, subscribeToData, logoutUser } from './services/dataService';
+import { loadData, saveToLocal, saveToCloud, subscribeToData, logoutUser, getLocalTimestamp } from './services/dataService';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Dashboard } from './components/Dashboard';
@@ -20,6 +20,7 @@ function App() {
   const isInternalUpdate = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const updateLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastUpdateRef = useRef<number>(0);
 
   const normalizeData = (d: FinancialData) => {
     if (!d) return INITIAL_DATA;
@@ -55,29 +56,29 @@ function App() {
     if (immediate) {
       performSync();
     } else {
-      saveTimeoutRef.current = setTimeout(performSync, 1000);
+      saveTimeoutRef.current = setTimeout(performSync, 1500);
     }
   }, [userId]);
 
   // Handler principal: Salva local IMEDIATAMENTE, nuvem depois
   const handleUpdate = useCallback((newDataOrUpdater: FinancialData | ((prev: FinancialData) => FinancialData), immediate = false) => {
-    // Bloqueia atualizações externas por 2 segundos para dar tempo do cloud sync terminar
+    const now = Date.now();
+    lastUpdateRef.current = now;
+    
     isInternalUpdate.current = true;
     if (updateLockRef.current) clearTimeout(updateLockRef.current);
     updateLockRef.current = setTimeout(() => {
       isInternalUpdate.current = false;
-    }, 2000);
+    }, 3000); // Aumentado para 3s para maior segurança entre dispositivos
 
     setData(prev => {
       const next = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
+      const nextWithTimestamp = { ...next, lastUpdate: now };
       
-      // Persistência Local é instantânea e síncrona
-      if (userId) saveToLocal(userId, next);
+      if (userId) saveToLocal(userId, nextWithTimestamp);
+      syncToCloud(nextWithTimestamp, immediate);
       
-      // Sincronização Cloud é assíncrona
-      syncToCloud(next, immediate);
-      
-      return next;
+      return nextWithTimestamp;
     });
   }, [userId, syncToCloud]);
 
@@ -91,12 +92,27 @@ function App() {
         
         const initialData = await loadData(user.uid);
         const normalized = normalizeData(initialData);
+        lastUpdateRef.current = normalized.lastUpdate || 0;
         setData(normalized);
         
         unsubscribeData = subscribeToData(user.uid, (cloudData) => {
-          if (!isInternalUpdate.current) {
+          const cloudTimestamp = (cloudData as any).lastUpdate || 0;
+          const localTimestamp = getLocalTimestamp(user.uid);
+          
+          // SÓ atualiza o estado se os dados da nuvem forem estritamente mais novos
+          // e se não estivermos no meio de uma edição local
+          if (!isInternalUpdate.current && cloudTimestamp > localTimestamp) {
+            console.log("🔄 Sincronização externa recebida");
+            lastUpdateRef.current = cloudTimestamp;
             setData(normalizeData(cloudData));
             setIsSyncing(false);
+          } else if (cloudTimestamp < localTimestamp) {
+            // Se a nuvem estiver atrasada, forçamos o que temos no local para a nuvem
+            console.log("📤 Nuvem desatualizada detectada, forçando upload local");
+            const localDataStr = localStorage.getItem(`fincontroller_data_${user.uid}`);
+            if (localDataStr) {
+               saveToCloud(user.uid, JSON.parse(localDataStr));
+            }
           }
         });
         setLoading(false);
@@ -162,7 +178,7 @@ function App() {
     return (
       <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-neon-blue gap-4">
         <RefreshCw className="animate-spin w-10 h-10 shadow-neon-blue" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] animate-pulse">Sincronizando...</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] animate-pulse">Protegendo Dados...</p>
       </div>
     );
   }
@@ -195,10 +211,10 @@ function App() {
                  <UserIcon size={12} className="text-slate-500" />
                  <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{userEmail}</span>
                </div>
-               <div className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all duration-500 ${isSyncing ? 'bg-neon-blue/10 border-neon-blue/40 text-neon-blue' : 'bg-neon-green/10 border-neon-green/40 text-neon-green'}`}>
+               <div className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all duration-500 ${isSyncing ? 'bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-neon-blue' : 'bg-neon-green/10 border-neon-green/40 text-neon-green shadow-none'}`}>
                  {isSyncing ? <RefreshCw size={12} className="animate-spin" /> : <CloudCheck size={14} />}
                  <span className="text-[9px] font-black uppercase tracking-widest">
-                   {isSyncing ? 'Sincronizando...' : 'Nuvem Ativa'}
+                   {isSyncing ? 'Sincronizando...' : 'Conexão Segura'}
                  </span>
                </div>
             </div>
@@ -232,7 +248,7 @@ function App() {
         </div>
       </main>
       <footer className="mt-20 py-8 text-center text-slate-600 text-[10px] font-bold tracking-widest uppercase">
-        FINANCIAL CONTROLLER • {new Date().getFullYear()} • Real-Time Sync Active
+        FINANCIAL CONTROLLER • {new Date().getFullYear()} • Multi-Device Sync Active
       </footer>
     </div>
   );

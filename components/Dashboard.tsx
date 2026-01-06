@@ -10,35 +10,35 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<0 | 1 | 2>(0);
-
-  // Formatting Helper (PT-BR)
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // 1. Entradas (Apenas as ativas entram no somatório)
+  // 1. Entradas (Fixas + Custom)
   const baseIncome = data.incomes
-    .filter(i => i.isActive !== false) // Filtra apenas ON
+    .filter(i => i.isActive !== false)
     .reduce((acc, curr) => acc + curr.value, 0);
     
   const customIncomeTotal = data.customSections
     ?.filter(s => s.type === 'income')
-    .reduce((acc, s) => acc + s.items.reduce((iAcc, item) => iAcc + item.value, 0), 0) || 0;
+    .reduce((acc, s) => acc + s.items
+      .filter(i => i.isActive !== false)
+      .reduce((iAcc, item) => iAcc + item.value, 0), 0) || 0;
   
   const totalIncome = baseIncome + customIncomeTotal;
 
-  // 2. Saídas (Calculando valor restante: Valor - Pago)
-  const totalFixedExpenses = data.fixedExpenses.reduce((acc, curr) => {
-    return acc + (curr.value - (curr.paidAmount || 0));
-  }, 0);
+  // 2. Saídas (Fixas + Parcelamentos + Custom)
+  const totalFixedExpenses = data.fixedExpenses
+    .filter(e => e.isActive !== false)
+    .reduce((acc, curr) => acc + (curr.value - (curr.paidAmount || 0)), 0);
   
-  const totalInstallmentMonthly = data.installments.reduce((acc, curr) => {
-     return acc + (curr.monthlyValue - (curr.paidAmount || 0));
-  }, 0);
+  const totalInstallmentMonthly = data.installments
+    .filter(e => e.isActive !== false)
+    .reduce((acc, curr) => acc + (curr.monthlyValue - (curr.paidAmount || 0)), 0);
 
   const customExpenseTotal = data.customSections
     ?.filter(s => s.type === 'expense')
-    .reduce((acc, s) => acc + s.items.reduce((iAcc, item) => {
-      return iAcc + (item.value - (item.paidAmount || 0));
-    }, 0), 0) || 0;
+    .reduce((acc, s) => acc + s.items
+      .filter(i => i.isActive !== false)
+      .reduce((iAcc, item) => iAcc + (item.value - (item.paidAmount || 0)), 0), 0) || 0;
 
   const totalOutflow = totalFixedExpenses + totalInstallmentMonthly + customExpenseTotal;
   const balance = totalIncome - totalOutflow;
@@ -59,7 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 <span className="text-2xl font-bold mr-2 opacity-60 align-top mt-2 inline-block">R$</span>
                 {fmt(balance)}
                 </p>
-                <p className="text-xs text-slate-400 font-bold mt-2 uppercase tracking-widest opacity-80">Saldo após Pagamentos Parciais</p>
+                <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest opacity-80">Saldo considerando apenas itens Ativos</p>
             </div>
         </Card>
       </div>
@@ -88,26 +88,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                      <>
                       <div className="scale-90 origin-left pl-2"><DonutChart income={totalIncome} expense={totalOutflow} /></div>
                       <div className="flex flex-col gap-2 text-[10px] font-bold uppercase tracking-wider text-right flex-1 pr-8">
-                          <div className="flex items-center justify-end gap-2 text-neon-green">Entradas <div className="w-2 h-2 rounded-full bg-neon-green shadow-neon-green"></div></div>
-                          <div className="flex items-center justify-end gap-2 text-neon-red">Saídas <div className="w-2 h-2 rounded-full bg-neon-red shadow-neon-red"></div></div>
+                          <div className="flex items-center justify-end gap-2 text-neon-green">Ativo <div className="w-2 h-2 rounded-full bg-neon-green shadow-neon-green"></div></div>
+                          <div className="flex items-center justify-end gap-2 text-neon-red">Gasto <div className="w-2 h-2 rounded-full bg-neon-red shadow-neon-red"></div></div>
                       </div>
                      </>
                  )}
                  {viewMode === 1 && (
                      <div className="w-full flex flex-col gap-4 pr-8 pl-2">
                          <div className="space-y-1">
-                             <div className="flex justify-between text-[10px] font-bold uppercase text-neon-green"><span>Entradas</span><span>{((totalIncome / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
+                             <div className="flex justify-between text-[10px] font-bold uppercase text-neon-green"><span>Capacidade</span><span>{((totalIncome / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
                              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5"><div style={{ width: `${(totalIncome / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-green rounded-full"></div></div>
                          </div>
                          <div className="space-y-1">
-                             <div className="flex justify-between text-[10px] font-bold uppercase text-neon-red"><span>Saídas</span><span>{((totalOutflow / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
+                             <div className="flex justify-between text-[10px] font-bold uppercase text-neon-red"><span>Compromisso</span><span>{((totalOutflow / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
                              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5"><div style={{ width: `${(totalOutflow / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-red rounded-full"></div></div>
                          </div>
                      </div>
                  )}
                  {viewMode === 2 && (
                      <div className="text-center w-full pr-6">
-                         <h4 className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mb-1">Comprometimento</h4>
+                         <h4 className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mb-1">Risco Financeiro</h4>
                          <div className={`text-5xl font-black tracking-tighter ${totalOutflow > totalIncome ? 'text-neon-red' : 'text-neon-blue'}`}>{((totalOutflow / (totalIncome || 1)) * 100).toFixed(0)}<span className="text-2xl align-top">%</span></div>
                      </div>
                  )}

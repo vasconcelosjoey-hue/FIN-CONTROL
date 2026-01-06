@@ -14,7 +14,7 @@ export interface FixedExpense {
   paidAmount?: number;
   dueDate: string; 
   installmentsCount?: number;
-  startMonth?: string;
+  isActive?: boolean;
 }
 
 export interface SectionItem {
@@ -24,7 +24,7 @@ export interface SectionItem {
   paidAmount?: number;
   date?: string;
   installmentsCount?: number;
-  startMonth?: string;
+  isActive?: boolean;
 }
 
 export interface CustomSection {
@@ -42,7 +42,7 @@ export interface InstallmentExpense {
   paidAmount?: number;
   installmentsCount: number;
   startMonth: string;
-  totalValue?: number;
+  isActive?: boolean;
 }
 
 export interface CreditCard {
@@ -79,9 +79,6 @@ export interface FinancialData {
   modulesOrder?: string[];
   incomeModulesOrder?: string[];
   lastUpdate?: number;
-  settings?: {
-    userName?: string;
-  };
 }
 
 export const INITIAL_DATA: FinancialData = {

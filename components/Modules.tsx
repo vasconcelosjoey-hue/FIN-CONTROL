@@ -68,7 +68,7 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
 
 const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, onCancel: () => void }> = ({ children, onSave, onCancel }) => (
   <div className="w-full flex flex-col gap-4 py-3">
-    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 w-full items-start">
+    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 w-full items-end">
       {children}
     </div>
     <div className="flex flex-col sm:flex-row gap-2 w-full pt-2">
@@ -134,9 +134,18 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-          <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-          {!isIncome && <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>}
-          <div className={isIncome ? "sm:col-span-5" : "sm:col-span-3"}><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+          {isIncome ? (
+            <>
+              <div className="sm:col-span-4"><Input label="VALOR" type="number" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+              <div className="sm:col-span-4"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            </>
+          ) : (
+            <>
+              <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+              <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+              <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            </>
+          )}
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -148,10 +157,19 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                 {editingId === item.id ? (
                   <EditRowLayout onSave={() => { onUpdate({...section, items: section.items.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, paidAmount: parseFloat(editPaid)||0, date: editDate.toUpperCase(), installmentsCount: parseInt(editQtd)||1} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
                     <EditInput label="DESCRIÇÃO" className="sm:col-span-4" value={editName} onChange={e=>setEditName(e.target.value)} />
-                    <EditInput label="VALOR A PARCELA" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
-                    {!isIncome && <EditInput label="PAGO PARCIAL" type="number" className="sm:col-span-2" value={editPaid} onChange={e=>setEditPaid(e.target.value)} />}
-                    {!isIncome && <EditInput label="QTDE" type="number" className="sm:col-span-2" value={editQtd} onChange={e=>setEditQtd(e.target.value)} />}
-                    <EditInput label="DATA REFERENCIAL" className="sm:col-span-2" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                    {isIncome ? (
+                      <>
+                        <EditInput label="VALOR" type="number" className="sm:col-span-4" value={editValue} onChange={e=>setEditValue(e.target.value)} />
+                        <EditInput label="DATA REFERENCIAL" className="sm:col-span-4" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                      </>
+                    ) : (
+                      <>
+                        <EditInput label="VALOR A PARCELA" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
+                        <EditInput label="PAGO PARCIAL" type="number" className="sm:col-span-2" value={editPaid} onChange={e=>setEditPaid(e.target.value)} />
+                        <EditInput label="QTDE" type="number" className="sm:col-span-2" value={editQtd} onChange={e=>setEditQtd(e.target.value)} />
+                        <EditInput label="DATA REFERENCIAL" className="sm:col-span-2" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                      </>
+                    )}
                   </EditRowLayout>
                 ) : (
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
@@ -329,9 +347,9 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     <CollapsibleCard title="RECEITAS FIXAS" totalValue={`R$ ${fmt(total)}`} color="green" icon={<Wallet size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div className="sm:col-span-6"><Input label="DESCRIÇÃO" placeholder="EX: SALÁRIO" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="sm:col-span-3"><Input label="VALOR A RECEBER" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} /></div>
-          <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SALÁRIO" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="sm:col-span-4"><Input label="VALOR A RECEBER" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div className="sm:col-span-4"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} /></div>
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -342,9 +360,9 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
               <DraggableRow listId="incomes" index={idx} onMove={(f,t) => {const l=[...data.incomes]; l.splice(t,0,l.splice(f,1)[0]); onUpdate({...data, incomes:l}, true)}}>
                 {editingId === item.id ? (
                   <EditRowLayout onSave={() => { onUpdate({...data, incomes: data.incomes.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, expectedDate: editDate.toUpperCase()} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
-                    <EditInput label="DESCRIÇÃO" className="sm:col-span-6" value={editName} onChange={e=>setEditName(e.target.value)} />
-                    <EditInput label="VALOR" type="number" className="sm:col-span-3" value={editValue} onChange={e=>setEditValue(e.target.value)} />
-                    <EditInput label="DATA REFERENCIAL" className="sm:col-span-3" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                    <EditInput label="DESCRIÇÃO" className="sm:col-span-4" value={editName} onChange={e=>setEditName(e.target.value)} />
+                    <EditInput label="VALOR" type="number" className="sm:col-span-4" value={editValue} onChange={e=>setEditValue(e.target.value)} />
+                    <EditInput label="DATA REFERENCIAL" className="sm:col-span-4" value={editDate} onChange={e=>setEditDate(e.target.value)} />
                   </EditRowLayout>
                 ) : (
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">

@@ -7,8 +7,50 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { Dashboard } from './components/Dashboard';
 import { AuthScreen } from './components/AuthScreen';
 import { IncomeModule, FixedExpenseModule, InstallmentModule, CreditCardModule, PixModule, CustomSectionModule, RadarModule } from './components/Modules';
-import { RefreshCw, Plus, LogOut, User as UserIcon, CloudCheck } from 'lucide-react';
+import { RefreshCw, Plus, LogOut, User as UserIcon, CloudCheck, Clock, Calendar } from 'lucide-react';
 import { DraggableModuleWrapper } from './components/ui/UIComponents';
+
+const DigitalClock = () => {
+  const [dateTime, setDateTime] = useState({ time: '', date: '' });
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('pt-BR', { 
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      const dateStr = now.toLocaleDateString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      setDateTime({ time: timeStr, date: dateStr });
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center sm:items-end px-4 py-1.5 bg-black/60 border border-neon-blue/30 rounded-xl shadow-[0_0_20px_rgba(0,243,255,0.1)] backdrop-blur-md">
+      <div className="flex items-center gap-2">
+        <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">Brasília</span>
+        <span className="text-xs font-black text-neon-blue font-mono tracking-widest drop-shadow-[0_0_8px_rgba(0,243,255,0.6)] animate-pulse">
+          {dateTime.time}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 opacity-70">
+        <Calendar size={8} className="text-slate-400" />
+        <span className="text-[9px] font-bold text-slate-400 font-mono tracking-wider">{dateTime.date}</span>
+      </div>
+    </div>
+  );
+};
 
 function App() {
   const [data, setData] = useState<FinancialData>(INITIAL_DATA);
@@ -36,7 +78,6 @@ function App() {
     return clean;
   };
 
-  // Envia dados para o Firebase com debounce
   const syncToCloud = useCallback((targetData: FinancialData, immediate = false) => {
     if (!userId) return;
     
@@ -60,7 +101,6 @@ function App() {
     }
   }, [userId]);
 
-  // Handler principal: Salva local IMEDIATAMENTE, nuvem depois
   const handleUpdate = useCallback((newDataOrUpdater: FinancialData | ((prev: FinancialData) => FinancialData), immediate = false) => {
     const now = Date.now();
     lastUpdateRef.current = now;
@@ -69,7 +109,7 @@ function App() {
     if (updateLockRef.current) clearTimeout(updateLockRef.current);
     updateLockRef.current = setTimeout(() => {
       isInternalUpdate.current = false;
-    }, 3000); // Aumentado para 3s para maior segurança entre dispositivos
+    }, 3000);
 
     setData(prev => {
       const next = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
@@ -99,15 +139,12 @@ function App() {
           const cloudTimestamp = (cloudData as any).lastUpdate || 0;
           const localTimestamp = getLocalTimestamp(user.uid);
           
-          // SÓ atualiza o estado se os dados da nuvem forem estritamente mais novos
-          // e se não estivermos no meio de uma edição local
           if (!isInternalUpdate.current && cloudTimestamp > localTimestamp) {
             console.log("🔄 Sincronização externa recebida");
             lastUpdateRef.current = cloudTimestamp;
             setData(normalizeData(cloudData));
             setIsSyncing(false);
           } else if (cloudTimestamp < localTimestamp) {
-            // Se a nuvem estiver atrasada, forçamos o que temos no local para a nuvem
             console.log("📤 Nuvem desatualizada detectada, forçando upload local");
             const localDataStr = localStorage.getItem(`fincontroller_data_${user.uid}`);
             if (localDataStr) {
@@ -204,9 +241,11 @@ function App() {
     <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white">
       <nav className="border-b border-white/5 bg-neon-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <h1 className="font-extrabold text-xl tracking-tight shrink-0">FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">CONTROLLER</span></h1>
+            <DigitalClock />
+          </div>
           <div className="flex items-center gap-4">
-            <h1 className="font-extrabold text-xl tracking-tight">FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">CONTROLLER</span></h1>
-            <div className="flex items-center gap-3">
                <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
                  <UserIcon size={12} className="text-slate-500" />
                  <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{userEmail}</span>
@@ -217,11 +256,10 @@ function App() {
                    {isSyncing ? 'Sincronizando...' : 'Conexão Segura'}
                  </span>
                </div>
-            </div>
+               <button onClick={logoutUser} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-neon-red transition-all uppercase tracking-widest px-4 py-2 hover:bg-neon-red/10 rounded-lg border border-transparent hover:border-neon-red/30">
+                 <LogOut size={14} /> Sair
+               </button>
           </div>
-          <button onClick={logoutUser} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-neon-red transition-all uppercase tracking-widest px-4 py-2 hover:bg-neon-red/10 rounded-lg border border-transparent hover:border-neon-red/30">
-            <LogOut size={14} /> Sair do Sistema
-          </button>
         </div>
       </nav>
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -248,7 +286,7 @@ function App() {
         </div>
       </main>
       <footer className="mt-20 py-8 text-center text-slate-600 text-[10px] font-bold tracking-widest uppercase">
-        FINANCIAL CONTROLLER • {new Date().getFullYear()} • Multi-Device Sync Active
+        FINANCIAL CONTROLLER • {new Date().getFullYear()} • Brasília Server Sync Active
       </footer>
     </div>
   );

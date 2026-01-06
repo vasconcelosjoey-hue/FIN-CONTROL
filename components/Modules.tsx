@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CustomSection, SectionItem, RadarItem } from '../types';
 import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, ArrowRight, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck, User } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck, User, Power } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-3 pt-2 border-t border-white/5">
@@ -450,13 +450,22 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   const [editName, setEditName] = useState('');
   const [editValue, setEditValue] = useState('');
   const [editDate, setEditDate] = useState('');
+  const [editActive, setEditActive] = useState(true);
 
-  const total = data.incomes.reduce((acc, i) => acc + i.value, 0);
+  // Somatório considera apenas ativos
+  const total = data.incomes.filter(i => i.isActive !== false).reduce((acc, i) => acc + i.value, 0);
 
   const handleAdd = () => {
     if (!name || !value) return;
-    onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(value), expectedDate: date.toUpperCase() || new Date().toLocaleDateString('pt-BR') }] }, true);
+    onUpdate({ ...data, incomes: [...data.incomes, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(value), expectedDate: date.toUpperCase() || new Date().toLocaleDateString('pt-BR'), isActive: true }] }, true);
     setName(''); setValue(''); setDate('');
+  };
+
+  const toggleIncomeStatus = (id: string) => {
+    onUpdate({
+      ...data,
+      incomes: data.incomes.map(i => i.id === id ? { ...i, isActive: i.isActive === false ? true : false } : i)
+    }, true);
   };
 
   const saveEdit = () => {
@@ -467,7 +476,8 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         ...i, 
         name: editName.toUpperCase(), 
         value: parseFloat(editValue) || 0, 
-        expectedDate: editDate.toUpperCase() 
+        expectedDate: editDate.toUpperCase(),
+        isActive: editActive
       } : i) 
     }, true);
     setEditingId(null);
@@ -483,65 +493,91 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
-        {data.incomes.map((item, idx) => (
-          <div key={item.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-green/30 transition-all">
-            <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}, true) }} className="w-full">
-              {editingId === item.id ? (
-                <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
-                  <EditInput 
-                    label="FONTE"
-                    className="sm:col-span-6 uppercase font-bold" 
-                    value={editName} 
-                    onChange={e => setEditName(e.target.value.toUpperCase())} 
-                    onKeyDown={e => handleEnter(e, saveEdit)} 
-                    autoFocus 
-                  />
-                  <EditInput 
-                    label="VALOR"
-                    type="number" 
-                    className="sm:col-span-3 font-black text-neon-green" 
-                    value={editValue} 
-                    onChange={e => setEditValue(e.target.value)} 
-                    onKeyDown={e => handleEnter(e, saveEdit)} 
-                  />
-                  <EditInput 
-                    label="DATA"
-                    className="sm:col-span-3 text-center uppercase text-slate-400 font-bold" 
-                    value={editDate} 
-                    onChange={e => setEditDate(e.target.value.toUpperCase())} 
-                    onKeyDown={e => handleEnter(e, saveEdit)} 
-                  />
-                </EditRowLayout>
-              ) : (
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex-1">
-                    <p className="font-bold text-sm text-white tracking-wide">{item.name}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.expectedDate}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-black text-neon-green text-sm">R$ {fmt(item.value)}</span>
-                    <div className="flex items-center gap-1">
-                      <ActionButton 
-                        onClick={() => { 
-                          setEditingId(item.id); 
-                          setEditName(item.name); 
-                          setEditValue(item.value.toString()); 
-                          setEditDate(item.expectedDate); 
-                        }} 
-                        icon={<Pencil size={16} />} 
-                      />
-                      <ActionButton 
-                        onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) }, true)} 
-                        icon={<Trash2 size={16} />} 
-                        color="text-slate-600 hover:text-neon-red" 
-                      />
+        {data.incomes.map((item, idx) => {
+          const isActive = item.isActive !== false;
+          return (
+            <div key={item.id} className={`p-4 bg-white/5 rounded-xl border transition-all duration-300 ${isActive ? 'border-white/5 hover:border-neon-green/30 opacity-100' : 'border-neon-red/10 grayscale opacity-60 bg-black/40'}`}>
+              <DraggableRow listId="incomes" index={idx} onMove={(f,t) => { const l = [...data.incomes]; l.splice(t, 0, l.splice(f, 1)[0]); onUpdate({...data, incomes: l}, true) }} className="w-full">
+                {editingId === item.id ? (
+                  <EditRowLayout onSave={saveEdit} onCancel={() => setEditingId(null)}>
+                    <EditInput 
+                      label="FONTE"
+                      className="sm:col-span-5 uppercase font-bold" 
+                      value={editName} 
+                      onChange={e => setEditName(e.target.value.toUpperCase())} 
+                      onKeyDown={e => handleEnter(e, saveEdit)} 
+                      autoFocus 
+                    />
+                    <EditInput 
+                      label="VALOR"
+                      type="number" 
+                      className="sm:col-span-2 font-black text-neon-green" 
+                      value={editValue} 
+                      onChange={e => setEditValue(e.target.value)} 
+                      onKeyDown={e => handleEnter(e, saveEdit)} 
+                    />
+                    <EditInput 
+                      label="DATA"
+                      className="sm:col-span-3 text-center uppercase text-slate-400 font-bold" 
+                      value={editDate} 
+                      onChange={e => setEditDate(e.target.value.toUpperCase())} 
+                      onKeyDown={e => handleEnter(e, saveEdit)} 
+                    />
+                    <div className="sm:col-span-2 flex flex-col items-center justify-center gap-1">
+                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">STATUS</label>
+                       <button 
+                        onClick={() => setEditActive(!editActive)}
+                        className={`w-full h-11 rounded-xl border flex items-center justify-center gap-2 transition-all font-black text-[10px] ${editActive ? 'bg-neon-green/10 border-neon-green text-neon-green' : 'bg-neon-red/10 border-neon-red text-neon-red'}`}
+                       >
+                         <Power size={14} /> {editActive ? 'ON' : 'OFF'}
+                       </button>
+                    </div>
+                  </EditRowLayout>
+                ) : (
+                  <div className="flex items-center justify-between w-full gap-4">
+                    {/* Nome do Registro */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold text-sm tracking-wide transition-all ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.expectedDate}</p>
+                    </div>
+
+                    {/* Botão ON OFF Centralizado */}
+                    <div className="flex items-center justify-center shrink-0">
+                      <button 
+                        onClick={() => toggleIncomeStatus(item.id)}
+                        className={`flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg border text-[10px] font-black tracking-widest transition-all shadow-md active:scale-95 ${isActive ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-neon-green/30' : 'bg-neon-red/10 border-neon-red text-neon-red shadow-neon-red/20'}`}
+                      >
+                        <Power size={12} /> {isActive ? 'ON' : 'OFF'}
+                      </button>
+                    </div>
+
+                    {/* Valor e Ações Finais */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={`font-black text-sm transition-colors ${isActive ? 'text-neon-green drop-shadow-[0_0_5px_rgba(10,255,104,0.3)]' : 'text-slate-600'}`}>R$ {fmt(item.value)}</span>
+                      <div className="flex items-center gap-1">
+                        <ActionButton 
+                          onClick={() => { 
+                            setEditingId(item.id); 
+                            setEditName(item.name); 
+                            setEditValue(item.value.toString()); 
+                            setEditDate(item.expectedDate); 
+                            setEditActive(item.isActive !== false);
+                          }} 
+                          icon={<Pencil size={16} />} 
+                        />
+                        <ActionButton 
+                          onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) }, true)} 
+                          icon={<Trash2 size={16} />} 
+                          color="text-slate-600 hover:text-neon-red" 
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </DraggableRow>
-          </div>
-        ))}
+                )}
+              </DraggableRow>
+            </div>
+          );
+        })}
       </div>
     </CollapsibleCard>
   );

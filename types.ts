@@ -4,6 +4,7 @@ export interface Income {
   name: string;
   value: number;
   expectedDate: string;
+  isActive?: boolean;
 }
 
 export interface FixedExpense {

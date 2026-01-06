@@ -14,8 +14,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   // Formatting Helper (PT-BR)
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // 1. Entradas
-  const baseIncome = data.incomes.reduce((acc, curr) => acc + curr.value, 0);
+  // 1. Entradas (Apenas as ativas entram no somatório)
+  const baseIncome = data.incomes
+    .filter(i => i.isActive !== false) // Filtra apenas ON
+    .reduce((acc, curr) => acc + curr.value, 0);
+    
   const customIncomeTotal = data.customSections
     ?.filter(s => s.type === 'income')
     .reduce((acc, s) => acc + s.items.reduce((iAcc, item) => iAcc + item.value, 0), 0) || 0;

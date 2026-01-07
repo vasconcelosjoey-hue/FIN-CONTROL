@@ -59,7 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 <span className="text-2xl font-bold mr-2 opacity-60 align-top mt-2 inline-block">R$</span>
                 {fmt(balance)}
                 </p>
-                <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest opacity-80">Saldo considerando apenas itens Ativos</p>
+                <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest opacity-80">Apenas itens Ativos</p>
             </div>
         </Card>
       </div>
@@ -67,11 +67,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
         <Card className="relative overflow-hidden group border-t-2 border-t-neon-green/50 flex flex-col justify-center p-5 hover:bg-white/5 transition-colors h-36">
           <div className="flex justify-between items-center mb-3 relative z-10">
-              <h3 className="text-slate-300 text-xs uppercase tracking-[0.15em] font-bold">Entradas</h3>
+              <h3 className="text-neon-green text-xs uppercase tracking-[0.15em] font-bold">Entradas</h3>
               <div className="p-1.5 bg-neon-green/10 rounded-md text-neon-green"><TrendingUp size={18} /></div>
           </div>
-          <p className="text-3xl sm:text-4xl font-black text-white tracking-tight relative z-10">
-            <span className="text-sm text-slate-500 font-bold align-top mr-1">R$</span>
+          <p className="text-3xl sm:text-4xl font-black text-neon-green tracking-tight relative z-10">
+            <span className="text-sm text-neon-green/60 font-bold align-top mr-1">R$</span>
             {fmt(totalIncome)}
           </p>
         </Card>
@@ -87,7 +87,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                  {viewMode === 0 && (
                      <>
                       <div className="scale-90 origin-left pl-2"><DonutChart income={totalIncome} expense={totalOutflow} /></div>
-                      <div className="flex flex-col gap-2 text-[10px] font-bold uppercase tracking-wider text-right flex-1 pr-8">
+                      <div className="flex flex-col gap-2 text-[9px] font-bold uppercase tracking-wider text-right flex-1 pr-8">
                           <div className="flex items-center justify-end gap-2 text-neon-green">Ativo <div className="w-2 h-2 rounded-full bg-neon-green shadow-neon-green"></div></div>
                           <div className="flex items-center justify-end gap-2 text-neon-red">Gasto <div className="w-2 h-2 rounded-full bg-neon-red shadow-neon-red"></div></div>
                       </div>
@@ -96,18 +96,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                  {viewMode === 1 && (
                      <div className="w-full flex flex-col gap-4 pr-8 pl-2">
                          <div className="space-y-1">
-                             <div className="flex justify-between text-[10px] font-bold uppercase text-neon-green"><span>Capacidade</span><span>{((totalIncome / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
-                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5"><div style={{ width: `${(totalIncome / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-green rounded-full"></div></div>
+                             <div className="flex justify-between text-[9px] font-bold uppercase text-neon-green"><span>Capacidade</span><span>{((totalIncome / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
+                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5"><div style={{ width: `${(totalIncome / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-green rounded-full shadow-neon-green"></div></div>
                          </div>
                          <div className="space-y-1">
-                             <div className="flex justify-between text-[10px] font-bold uppercase text-neon-red"><span>Compromisso</span><span>{((totalOutflow / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
-                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5"><div style={{ width: `${(totalOutflow / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-red rounded-full"></div></div>
+                             <div className="flex justify-between text-[9px] font-bold uppercase text-neon-red"><span>Compromisso</span><span>{((totalOutflow / (totalIncome + totalOutflow || 1)) * 100).toFixed(0)}%</span></div>
+                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5"><div style={{ width: `${(totalOutflow / (totalIncome + totalOutflow || 1)) * 100}%` }} className="h-full bg-neon-red rounded-full shadow-neon-red"></div></div>
                          </div>
                      </div>
                  )}
                  {viewMode === 2 && (
                      <div className="text-center w-full pr-6">
-                         <h4 className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mb-1">Risco Financeiro</h4>
+                         <h4 className="text-slate-400 text-[9px] uppercase tracking-[0.2em] font-bold mb-1">Risco</h4>
                          <div className={`text-5xl font-black tracking-tighter ${totalOutflow > totalIncome ? 'text-neon-red' : 'text-neon-blue'}`}>{((totalOutflow / (totalIncome || 1)) * 100).toFixed(0)}<span className="text-2xl align-top">%</span></div>
                      </div>
                  )}
@@ -117,11 +117,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
         <Card className="relative overflow-hidden group border-t-2 border-t-neon-red/50 flex flex-col justify-center p-5 hover:bg-white/5 transition-colors h-36">
           <div className="flex justify-between items-center mb-3 relative z-10">
-            <h3 className="text-slate-300 text-xs uppercase tracking-[0.15em] font-bold">Saídas (Restante)</h3>
+            <h3 className="text-neon-red text-xs uppercase tracking-[0.15em] font-bold">Saídas</h3>
             <div className="p-1.5 bg-neon-red/10 rounded-md text-neon-red"><TrendingDown size={18} /></div>
           </div>
-          <p className="text-3xl sm:text-4xl font-black text-white tracking-tight relative z-10">
-            <span className="text-sm text-slate-500 font-bold align-top mr-1">R$</span>
+          <p className="text-3xl sm:text-4xl font-black text-neon-red tracking-tight relative z-10">
+            <span className="text-sm text-neon-red/60 font-bold align-top mr-1">R$</span>
             {fmt(totalOutflow)}
           </p>
         </Card>

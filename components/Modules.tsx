@@ -138,13 +138,13 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
             {isIncome ? (
               <>
                 <div className="sm:col-span-4"><Input label="VALOR" type="number" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-                <div className="sm:col-span-4"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+                <div className="sm:col-span-4"><Input label="DATA" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
               </>
             ) : (
               <>
-                <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+                <div className="sm:col-span-3"><Input label="VALOR" type="number" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
                 <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-                <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+                <div className="sm:col-span-3"><Input label="DATA" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
               </>
             )}
           </div>
@@ -161,14 +161,14 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                       {isIncome ? (
                         <>
                           <EditInput label="VALOR" type="number" className="sm:col-span-4" value={editValue} onChange={e=>setEditValue(e.target.value)} />
-                          <EditInput label="DATA REFERENCIAL" className="sm:col-span-4" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                          <EditInput label="DATA" className="sm:col-span-4" value={editDate} onChange={e=>setEditDate(e.target.value)} />
                         </>
                       ) : (
                         <>
-                          <EditInput label="VALOR A PARCELA" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
+                          <EditInput label="VALOR" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
                           <EditInput label="PAGO PARCIAL" type="number" className="sm:col-span-2" value={editPaid} onChange={e=>setEditPaid(e.target.value)} />
                           <EditInput label="QTDE" type="number" className="sm:col-span-2" value={editQtd} onChange={e=>setEditQtd(e.target.value)} />
-                          <EditInput label="DATA REFERENCIAL" className="sm:col-span-2" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                          <EditInput label="DATA" className="sm:col-span-2" value={editDate} onChange={e=>setEditDate(e.target.value)} />
                         </>
                       )}
                     </EditRowLayout>
@@ -181,8 +181,8 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
                         <div className="flex flex-col items-end">
-                           <span className={`font-black text-sm sm:text-base ${isActive ? (isIncome ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
-                           {!isIncome && isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
+                           <span className={`font-black text-sm sm:text-base ${isActive ? (isIncome ? 'text-neon-green shadow-neon-green/20' : 'text-neon-red shadow-neon-red/20') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
+                           {!isIncome && isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
                         </div>
                         <div className="flex items-center gap-1">
                           <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditPaid(item.paidAmount?.toString()||''); setEditDate(item.date||''); setEditQtd(item.installmentsCount?.toString()||''); }} icon={<Pencil size={18} />} />
@@ -220,9 +220,9 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: ALUGUEL" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="VALOR" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
             <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="DATA" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           </div>
         </AddForm>
         <div className="flex flex-col gap-2">
@@ -235,10 +235,10 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                   {editingId === item.id ? (
                     <EditRowLayout onSave={() => { onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, paidAmount: parseFloat(editPaid)||0, dueDate: editDate.toUpperCase(), installmentsCount: parseInt(editQtd)||1} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
                       <EditInput label="DESCRIÇÃO" className="sm:col-span-4" value={editName} onChange={e=>setEditName(e.target.value)} />
-                      <EditInput label="VALOR A PARCELA" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
+                      <EditInput label="VALOR" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
                       <EditInput label="PAGO PARCIAL" type="number" className="sm:col-span-2" value={editPaid} onChange={e=>setEditPaid(e.target.value)} />
                       <EditInput label="QTDE" type="number" className="sm:col-span-2" value={editQtd} onChange={e=>setEditQtd(e.target.value)} />
-                      <EditInput label="DATA REFERENCIAL" className="sm:col-span-2" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                      <EditInput label="DATA" className="sm:col-span-2" value={editDate} onChange={e=>setEditDate(e.target.value)} />
                     </EditRowLayout>
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
@@ -249,8 +249,8 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
                         <div className="flex flex-col items-end">
-                           <span className={`font-black text-sm sm:text-base ${isActive ? (isPaid ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
-                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
+                           <span className={`font-black text-sm sm:text-base ${isActive ? (isPaid ? 'text-neon-green' : 'text-neon-red shadow-neon-red/20') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
+                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
                         </div>
                         <div className="flex gap-1">
                           {(!isActive || window.innerWidth > 640) && (
@@ -290,9 +290,9 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SMARTPHONE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="VALOR" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
             <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={start} onChange={e => setStart(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="DATA" placeholder="EX: JAN" value={start} onChange={e => setStart(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           </div>
         </AddForm>
         <div className="flex flex-col gap-2">
@@ -304,22 +304,22 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                   {editingId === item.id ? (
                     <EditRowLayout onSave={() => { onUpdate({...data, installments: data.installments.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), monthlyValue: parseFloat(editValue)||0, paidAmount: parseFloat(editPaid)||0, installmentsCount: parseInt(editQtd)||1, startMonth: editStart.toUpperCase()} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
                       <EditInput label="DESCRIÇÃO" className="sm:col-span-4" value={editName} onChange={e=>setEditName(e.target.value)} />
-                      <EditInput label="VALOR A PARCELA" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
+                      <EditInput label="VALOR" type="number" className="sm:col-span-2" value={editValue} onChange={e=>setEditValue(e.target.value)} />
                       <EditInput label="PAGO PARCIAL" type="number" className="sm:col-span-2" value={editPaid} onChange={e=>setEditPaid(e.target.value)} />
                       <EditInput label="QTDE" type="number" className="sm:col-span-2" value={editQtd} onChange={e=>setEditQtd(e.target.value)} />
-                      <EditInput label="DATA REFERENCIAL" className="sm:col-span-2" value={editStart} onChange={e=>setEditStart(e.target.value)} />
+                      <EditInput label="DATA" className="sm:col-span-2" value={editStart} onChange={e=>setEditStart(e.target.value)} />
                     </EditRowLayout>
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
                       <div className="flex-1 min-w-0">
                         <p className={`font-bold text-xs sm:text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.startMonth} • {item.installmentsCount}X Restantes</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.startMonth} • {item.installmentsCount}X</p>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
                         <div className="flex flex-col items-end">
-                           <span className={`font-black text-sm sm:text-base ${isActive ? 'text-white' : 'text-slate-600'}`}>R$ {fmt(item.monthlyValue - (item.paidAmount||0))}</span>
-                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
+                           <span className={`font-black text-sm sm:text-base ${isActive ? 'text-neon-red shadow-neon-red/20' : 'text-slate-600'}`}>R$ {fmt(item.monthlyValue - (item.paidAmount||0))}</span>
+                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
                         </div>
                         <div className="flex gap-1">
                           {(!isActive || window.innerWidth > 640) && (
@@ -359,8 +359,8 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SALÁRIO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-4"><Input label="VALOR A RECEBER" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-4"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-4"><Input label="VALOR" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-4"><Input label="DATA" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           </div>
         </AddForm>
         <div className="flex flex-col gap-2">
@@ -373,7 +373,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                     <EditRowLayout onSave={() => { onUpdate({...data, incomes: data.incomes.map(i => i.id === editingId ? {...i, name: editName.toUpperCase(), value: parseFloat(editValue)||0, expectedDate: editDate.toUpperCase()} : i)}, true); setEditingId(null); }} onCancel={() => setEditingId(null)}>
                       <EditInput label="DESCRIÇÃO" className="sm:col-span-4" value={editName} onChange={e=>setEditName(e.target.value)} />
                       <EditInput label="VALOR" type="number" className="sm:col-span-4" value={editValue} onChange={e=>setEditValue(e.target.value)} />
-                      <EditInput label="DATA REFERENCIAL" className="sm:col-span-4" value={editDate} onChange={e=>setEditDate(e.target.value)} />
+                      <EditInput label="DATA" className="sm:col-span-4" value={editDate} onChange={e=>setEditDate(e.target.value)} />
                     </EditRowLayout>
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
@@ -383,7 +383,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...data, incomes: data.incomes.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
-                        <span className={`font-black text-sm sm:text-base ${isActive ? 'text-neon-green drop-shadow-[0_0_8px_rgba(10,255,104,0.3)]' : 'text-slate-600'}`}>R$ {fmt(item.value)}</span>
+                        <span className={`font-black text-sm sm:text-base ${isActive ? 'text-neon-green shadow-neon-green/30' : 'text-slate-600'}`}>R$ {fmt(item.value)}</span>
                         <div className="flex gap-1">
                           <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditDate(item.expectedDate); }} icon={<Pencil size={18} />} />
                           <ActionButton onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) }, true)} icon={<Trash2 size={18} />} color="text-slate-600 hover:text-neon-red" />
@@ -409,7 +409,7 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
     setName(''); setLimit(''); setClosing(''); setDue(''); setInvoice('');
   };
   return (
-    <CollapsibleCard title="CARTÕES DE CRÉDITO" color="pink" icon={<CCIcon size={18} />}>
+    <CollapsibleCard title="CARTÕES" color="pink" icon={<CCIcon size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-2 gap-3 items-end">
           <div className="col-span-2"><Input label="IDENTIFICAÇÃO" placeholder="NOME DO CARTÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
@@ -426,12 +426,12 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
             <div key={card.id} className="p-4 bg-black/40 rounded-xl border border-white/10 relative overflow-hidden group">
               <div className="absolute top-0 left-0 h-1 bg-neon-pink shadow-neon-pink transition-all duration-1000" style={{ width: `${used}%` }}></div>
               <div className="flex justify-between items-start mb-2">
-                <div><h4 className="font-bold text-white text-xs sm:text-sm">{card.name}</h4><p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">FECH: {card.closingDay} | VENC: {card.dueDay}</p></div>
+                <div><h4 className="font-bold text-white text-xs sm:text-sm">{card.name}</h4><p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">F: {card.closingDay} | V: {card.dueDay}</p></div>
                 <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) }, true)} icon={<Trash2 size={16} />} />
               </div>
               <div className="flex justify-between items-end mt-4">
-                <div><p className="text-[8px] text-slate-500 font-bold uppercase">VALOR FATURA</p><p className="text-xs sm:text-sm font-black text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p></div>
-                <div className="text-right"><p className="text-[8px] text-slate-500 font-bold uppercase">LIMITE LIVRE</p><p className="text-[10px] sm:text-xs font-bold text-slate-300">R$ {fmt(card.limit - card.currentInvoiceValue)}</p></div>
+                <div><p className="text-[8px] text-slate-500 font-bold uppercase">FATURA</p><p className="text-xs sm:text-sm font-black text-neon-pink shadow-neon-pink/20">R$ {fmt(card.currentInvoiceValue)}</p></div>
+                <div className="text-right"><p className="text-[8px] text-slate-500 font-bold uppercase">LIVRE</p><p className="text-[10px] sm:text-xs font-bold text-slate-300">R$ {fmt(card.limit - card.currentInvoiceValue)}</p></div>
               </div>
             </div>
           );
@@ -448,9 +448,9 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
     <CollapsibleCard title="CHAVES PIX" color="blue" icon={<Zap size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="flex flex-col gap-3 items-end">
-          <Select label="TIPO DE CHAVE" value={type} onChange={e => setType(e.target.value)} options={[{ value: 'CPF', label: 'CPF' }, { value: 'CNPJ', label: 'CNPJ' }, { value: 'Telefone', label: 'TELEFONE' }, { value: 'Email', label: 'EMAIL' }, { value: 'Aleatória', label: 'ALEATÓRIA' }]} />
-          <Input label="CHAVE" placeholder="COLE OU DIGITE A CHAVE" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
-          <Input label="BENEFICIÁRIO" placeholder="NOME DO DONO" value={ben} onChange={e => setBen(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Select label="TIPO" value={type} onChange={e => setType(e.target.value)} options={[{ value: 'CPF', label: 'CPF' }, { value: 'CNPJ', label: 'CNPJ' }, { value: 'Telefone', label: 'TEL' }, { value: 'Email', label: 'EMAIL' }, { value: 'Aleatória', label: 'ALET' }]} />
+          <Input label="CHAVE" placeholder="COLE CHAVE" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="DONO" placeholder="BENEFICIÁRIO" value={ben} onChange={e => setBen(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -477,11 +477,11 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
   const [name, setName] = useState(''); const [val, setVal] = useState('');
   const handleAdd = () => { if (!name || !val) return; onUpdate({ ...data, radarItems: [...data.radarItems, { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(val) }] }, true); setName(''); setVal(''); };
   return (
-    <CollapsibleCard title="RADAR DE ATIVOS" color="yellow" icon={<Target size={18} />}>
+    <CollapsibleCard title="RADAR ATIVOS" color="yellow" icon={<Target size={18} />}>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 gap-3 items-end">
-          <Input label="ATIVO" placeholder="EX: BITCOIN OU IPHONE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
-          <Input label="VALOR ALVO" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="ATIVO" placeholder="EX: BITCOIN" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="ALVO" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -489,7 +489,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
           <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-yellow/40 transition-all">
             <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wide">{item.name}</span>
             <div className="flex items-center gap-4">
-              <span className="text-xs sm:text-sm font-black text-neon-yellow">R$ {fmt(item.value)}</span>
+              <span className="text-xs sm:text-sm font-black text-neon-yellow shadow-neon-yellow/20">R$ {fmt(item.value)}</span>
               <button onClick={() => onUpdate({ ...data, radarItems: data.radarItems.filter(i => i.id !== item.id) }, true)} className="text-slate-600 hover:text-neon-red transition-colors"><X size={18} /></button>
             </div>
           </div>

@@ -67,7 +67,7 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
 };
 
 const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, onCancel: () => void }> = ({ children, onSave, onCancel }) => (
-  <div className="w-full flex flex-col gap-4 py-3">
+  <div className="w-full flex flex-col gap-4 py-3" onKeyDown={e => handleEnter(e, onSave)}>
     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 w-full items-end">
       {children}
     </div>
@@ -84,10 +84,10 @@ const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, o
 
 const EditInput = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) => (
   <div className={`flex flex-col gap-1.5 ${props.className || ''}`}>
-    {label && <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{label}</label>}
+    {label && <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">{label}</label>}
     <input 
       {...props} 
-      className={`bg-black/60 border border-white/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue/20 transition-all h-12 w-full placeholder:text-slate-700 font-bold uppercase`}
+      className={`bg-black/60 border border-white/20 rounded-xl px-4 py-3 text-xs sm:text-sm text-white outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue/20 transition-all h-12 w-full placeholder:text-slate-700 font-bold uppercase`}
     />
   </div>
 );
@@ -95,7 +95,7 @@ const EditInput = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputEleme
 const ToggleStatusButton = ({ active, onClick }: { active: boolean, onClick: () => void }) => (
   <button 
     onClick={(e) => { e.stopPropagation(); onClick(); }}
-    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-black tracking-[0.2em] transition-all active:scale-95 shrink-0 ${
+    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[9px] font-black tracking-[0.2em] transition-all active:scale-95 shrink-0 ${
       active 
       ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-neon-green' 
       : 'bg-neon-red/10 border-neon-red text-neon-red shadow-neon-red'
@@ -131,7 +131,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   return (
     <div id={`section-${section.id}`}>
       <CollapsibleCard title={section.title} totalValue={`R$ ${fmt(total)}`} color={isIncome ? 'green' : 'red'} icon={<FolderOpen size={18} />} onEditTitle={nt => onUpdate({...section, title: nt.toUpperCase()}, true)}>
-        <div className="flex justify-end mb-2"><button onClick={onDeleteSection} className={`text-[10px] font-bold text-slate-500 hover:text-neon-red uppercase transition-all flex items-center gap-1 opacity-60`}><Trash2 size={12}/> DELETAR SESSÃO</button></div>
+        <div className="flex justify-end mb-2"><button onClick={onDeleteSection} className={`text-[9px] font-bold text-slate-500 hover:text-neon-red uppercase transition-all flex items-center gap-1 opacity-60`}><Trash2 size={12}/> DELETAR SESSÃO</button></div>
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="DESCRIÇÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
@@ -175,14 +175,14 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className={`font-bold text-sm truncate tracking-wide ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date} {!isIncome && item.installmentsCount ? `• ${item.installmentsCount}X` : ''}</p>
+                        <p className={`font-bold text-xs sm:text-sm truncate tracking-wide ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.date} {!isIncome && item.installmentsCount ? `• ${item.installmentsCount}X` : ''}</p>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
                         <div className="flex flex-col items-end">
-                           <span className={`font-black text-base ${isActive ? (isIncome ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
-                           {!isIncome && isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[12px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
+                           <span className={`font-black text-sm sm:text-base ${isActive ? (isIncome ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
+                           {!isIncome && isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
                         </div>
                         <div className="flex items-center gap-1">
                           <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditPaid(item.paidAmount?.toString()||''); setEditDate(item.date||''); setEditQtd(item.installmentsCount?.toString()||''); }} icon={<Pencil size={18} />} />
@@ -219,10 +219,10 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       <CollapsibleCard title="CONTAS PESSOAIS" totalValue={`R$ ${fmt(total)}`} color="red" icon={<AlertCircle size={18} />}>
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: ALUGUEL" value={name} onChange={e => setName(e.target.value)} /></div>
-            <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} /></div>
-            <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} /></div>
-            <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} /></div>
+            <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: ALUGUEL" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           </div>
         </AddForm>
         <div className="flex flex-col gap-2">
@@ -243,17 +243,19 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.dueDate} • {item.installmentsCount}X</p>
+                        <p className={`font-bold text-xs sm:text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.dueDate} • {item.installmentsCount}X</p>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
                         <div className="flex flex-col items-end">
-                           <span className={`font-black text-base ${isActive ? (isPaid ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
-                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[12px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
+                           <span className={`font-black text-sm sm:text-base ${isActive ? (isPaid ? 'text-neon-green' : 'text-white') : 'text-slate-600'}`}>R$ {fmt(item.value - (item.paidAmount||0))}</span>
+                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => { if(item.installmentsCount! > 1) { onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, installmentsCount: i.installmentsCount!-1, dueDate: advanceDateStr(item.dueDate), paidAmount: 0} : i)}, true); } else { if(confirm("Remover conta finalizada?")) onUpdate({...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id)}, true); } }} className="px-2.5 py-1.5 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold"><CalendarCheck size={16} /></button>
+                          {(!isActive || window.innerWidth > 640) && (
+                            <button onClick={() => { if(item.installmentsCount! > 1) { onUpdate({...data, fixedExpenses: data.fixedExpenses.map(i => i.id === item.id ? {...i, installmentsCount: i.installmentsCount!-1, dueDate: advanceDateStr(item.dueDate), paidAmount: 0} : i)}, true); } else { if(confirm("Remover conta finalizada?")) onUpdate({...data, fixedExpenses: data.fixedExpenses.filter(i => i.id !== item.id)}, true); } }} className="px-2.5 py-1.5 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold"><CalendarCheck size={16} /></button>
+                          )}
                           <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditPaid(item.paidAmount?.toString()||''); setEditDate(item.dueDate); setEditQtd(item.installmentsCount?.toString()||''); }} icon={<Pencil size={18} />} />
                         </div>
                       </div>
@@ -287,10 +289,10 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       <CollapsibleCard title="PARCELAMENTOS" totalValue={`R$ ${fmt(total)}`} color="red" icon={<CalendarDays size={18} />}>
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SMARTPHONE" value={name} onChange={e => setName(e.target.value)} /></div>
-            <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} /></div>
-            <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} /></div>
-            <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={start} onChange={e => setStart(e.target.value)} /></div>
+            <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SMARTPHONE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="VALOR A PARCELA" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-2"><Input label="QTDE" type="number" placeholder="1" value={qtd} onChange={e => setQtd(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-3"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={start} onChange={e => setStart(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           </div>
         </AddForm>
         <div className="flex flex-col gap-2">
@@ -310,17 +312,19 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.startMonth} • {item.installmentsCount}X Restantes</p>
+                        <p className={`font-bold text-xs sm:text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.startMonth} • {item.installmentsCount}X Restantes</p>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
                         <div className="flex flex-col items-end">
-                           <span className={`font-black text-base ${isActive ? 'text-white' : 'text-slate-600'}`}>R$ {fmt(item.monthlyValue - (item.paidAmount||0))}</span>
-                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[12px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
+                           <span className={`font-black text-sm sm:text-base ${isActive ? 'text-white' : 'text-slate-600'}`}>R$ {fmt(item.monthlyValue - (item.paidAmount||0))}</span>
+                           {isActive && <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">PAGO PARCIAL:</span><input type="number" value={item.paidAmount || ''} onChange={e => onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, paidAmount: parseFloat(e.target.value)||0} : i)})} className="w-20 sm:w-24 bg-black/60 border border-white/20 rounded-lg px-2 text-[10px] sm:text-xs text-neon-yellow font-black text-center py-1 outline-none focus:border-neon-yellow transition-all"/></div>}
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => { if(item.installmentsCount > 1) { onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, installmentsCount: i.installmentsCount-1, startMonth: advanceDateStr(item.startMonth), paidAmount: 0} : i)}, true); } else { if(confirm("Remover parcelamento finalizado?")) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}, true); } }} className="px-2.5 py-1.5 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold"><CalendarCheck size={16} /></button>
+                          {(!isActive || window.innerWidth > 640) && (
+                            <button onClick={() => { if(item.installmentsCount > 1) { onUpdate({...data, installments: data.installments.map(i => i.id === item.id ? {...i, installmentsCount: i.installmentsCount-1, startMonth: advanceDateStr(item.startMonth), paidAmount: 0} : i)}, true); } else { if(confirm("Remover parcelamento finalizado?")) onUpdate({...data, installments: data.installments.filter(i => i.id !== item.id)}, true); } }} className="px-2.5 py-1.5 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green hover:text-black transition-all text-[10px] font-bold"><CalendarCheck size={16} /></button>
+                          )}
                           <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.monthlyValue.toString()); setEditPaid(item.paidAmount?.toString()||''); setEditQtd(item.installmentsCount.toString()); setEditStart(item.startMonth); }} icon={<Pencil size={18} />} />
                         </div>
                       </div>
@@ -354,9 +358,9 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <CollapsibleCard title="RECEITAS FIXAS" totalValue={`R$ ${fmt(total)}`} color="green" icon={<Wallet size={18} />}>
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SALÁRIO" value={name} onChange={e => setName(e.target.value)} /></div>
-            <div className="sm:col-span-4"><Input label="VALOR A RECEBER" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} /></div>
-            <div className="sm:col-span-4"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} /></div>
+            <div className="sm:col-span-4"><Input label="DESCRIÇÃO" placeholder="EX: SALÁRIO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-4"><Input label="VALOR A RECEBER" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-4"><Input label="DATA REFERENCIAL" placeholder="EX: JAN" value={date} onChange={e => setDate(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
           </div>
         </AddForm>
         <div className="flex flex-col gap-2">
@@ -374,12 +378,12 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.expectedDate}</p>
+                        <p className={`font-bold text-xs sm:text-sm truncate ${isActive ? 'text-white' : 'text-slate-500 line-through'}`}>{item.name}</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.expectedDate}</p>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                         <ToggleStatusButton active={isActive} onClick={() => onUpdate({...data, incomes: data.incomes.map(i => i.id === item.id ? {...i, isActive: !isActive} : i)}, true)} />
-                        <span className={`font-black text-base ${isActive ? 'text-neon-green drop-shadow-[0_0_8px_rgba(10,255,104,0.3)]' : 'text-slate-600'}`}>R$ {fmt(item.value)}</span>
+                        <span className={`font-black text-sm sm:text-base ${isActive ? 'text-neon-green drop-shadow-[0_0_8px_rgba(10,255,104,0.3)]' : 'text-slate-600'}`}>R$ {fmt(item.value)}</span>
                         <div className="flex gap-1">
                           <ActionButton onClick={() => { setEditingId(item.id); setEditName(item.name); setEditValue(item.value.toString()); setEditDate(item.expectedDate); }} icon={<Pencil size={18} />} />
                           <ActionButton onClick={() => onUpdate({ ...data, incomes: data.incomes.filter(i => i.id !== item.id) }, true)} icon={<Trash2 size={18} />} color="text-slate-600 hover:text-neon-red" />
@@ -407,12 +411,12 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
   return (
     <CollapsibleCard title="CARTÕES DE CRÉDITO" color="pink" icon={<CCIcon size={18} />}>
       <AddForm onAdd={handleAdd}>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2"><Input label="IDENTIFICAÇÃO" placeholder="NOME DO CARTÃO" value={name} onChange={e => setName(e.target.value)} /></div>
-          <Input label="LIMITE" type="number" placeholder="0,00" value={limit} onChange={e => setLimit(e.target.value)} />
-          <Input label="FATURA" type="number" placeholder="0,00" value={invoice} onChange={e => setInvoice(e.target.value)} />
-          <Input label="FECH." type="number" placeholder="DIA" value={closing} onChange={e => setClosing(e.target.value)} />
-          <Input label="VENC." type="number" placeholder="DIA" value={due} onChange={e => setDue(e.target.value)} />
+        <div className="grid grid-cols-2 gap-3 items-end">
+          <div className="col-span-2"><Input label="IDENTIFICAÇÃO" placeholder="NOME DO CARTÃO" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+          <Input label="LIMITE" type="number" placeholder="0,00" value={limit} onChange={e => setLimit(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="FATURA" type="number" placeholder="0,00" value={invoice} onChange={e => setInvoice(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="FECH." type="number" placeholder="DIA" value={closing} onChange={e => setClosing(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="VENC." type="number" placeholder="DIA" value={due} onChange={e => setDue(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-3">
@@ -422,12 +426,12 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
             <div key={card.id} className="p-4 bg-black/40 rounded-xl border border-white/10 relative overflow-hidden group">
               <div className="absolute top-0 left-0 h-1 bg-neon-pink shadow-neon-pink transition-all duration-1000" style={{ width: `${used}%` }}></div>
               <div className="flex justify-between items-start mb-2">
-                <div><h4 className="font-bold text-white text-sm">{card.name}</h4><p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">FECH: {card.closingDay} | VENC: {card.dueDay}</p></div>
+                <div><h4 className="font-bold text-white text-xs sm:text-sm">{card.name}</h4><p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">FECH: {card.closingDay} | VENC: {card.dueDay}</p></div>
                 <ActionButton onClick={() => onUpdate({ ...data, creditCards: data.creditCards.filter(c => c.id !== card.id) }, true)} icon={<Trash2 size={16} />} />
               </div>
               <div className="flex justify-between items-end mt-4">
-                <div><p className="text-[8px] text-slate-500 font-bold uppercase">VALOR FATURA</p><p className="text-sm font-black text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p></div>
-                <div className="text-right"><p className="text-[8px] text-slate-500 font-bold uppercase">LIMITE LIVRE</p><p className="text-xs font-bold text-slate-300">R$ {fmt(card.limit - card.currentInvoiceValue)}</p></div>
+                <div><p className="text-[8px] text-slate-500 font-bold uppercase">VALOR FATURA</p><p className="text-xs sm:text-sm font-black text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</p></div>
+                <div className="text-right"><p className="text-[8px] text-slate-500 font-bold uppercase">LIMITE LIVRE</p><p className="text-[10px] sm:text-xs font-bold text-slate-300">R$ {fmt(card.limit - card.currentInvoiceValue)}</p></div>
               </div>
             </div>
           );
@@ -443,10 +447,10 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   return (
     <CollapsibleCard title="CHAVES PIX" color="blue" icon={<Zap size={18} />}>
       <AddForm onAdd={handleAdd}>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 items-end">
           <Select label="TIPO DE CHAVE" value={type} onChange={e => setType(e.target.value)} options={[{ value: 'CPF', label: 'CPF' }, { value: 'CNPJ', label: 'CNPJ' }, { value: 'Telefone', label: 'TELEFONE' }, { value: 'Email', label: 'EMAIL' }, { value: 'Aleatória', label: 'ALEATÓRIA' }]} />
-          <Input label="CHAVE" placeholder="COLE OU DIGITE A CHAVE" value={key} onChange={e => setKey(e.target.value)} />
-          <Input label="BENEFICIÁRIO" placeholder="NOME DO DONO" value={ben} onChange={e => setBen(e.target.value)} />
+          <Input label="CHAVE" placeholder="COLE OU DIGITE A CHAVE" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="BENEFICIÁRIO" placeholder="NOME DO DONO" value={ben} onChange={e => setBen(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -454,8 +458,8 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
           <div key={k.id} className="p-4 bg-white/5 rounded-xl border border-white/5 group hover:border-neon-blue/40 transition-all">
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2"><Badge color="blue">{k.type}</Badge>{k.beneficiary && <span className="text-[10px] font-bold text-slate-400 truncate">{k.beneficiary}</span>}</div>
-                <p className="text-xs font-mono text-white truncate break-all">{k.key}</p>
+                <div className="flex items-center gap-2 mb-2"><Badge color="blue">{k.type}</Badge>{k.beneficiary && <span className="text-[9px] font-bold text-slate-400 truncate">{k.beneficiary}</span>}</div>
+                <p className="text-[10px] sm:text-xs font-mono text-white truncate break-all">{k.key}</p>
               </div>
               <div className="flex gap-1">
                 <button onClick={() => { navigator.clipboard.writeText(k.key); alert('Copiado!'); }} className="p-2 text-slate-500 hover:text-neon-blue transition-colors"><Copy size={16} /></button>
@@ -475,17 +479,17 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
   return (
     <CollapsibleCard title="RADAR DE ATIVOS" color="yellow" icon={<Target size={18} />}>
       <AddForm onAdd={handleAdd}>
-        <div className="grid grid-cols-1 gap-3">
-          <Input label="ATIVO" placeholder="EX: BITCOIN OU IPHONE" value={name} onChange={e => setName(e.target.value)} />
-          <Input label="VALOR ALVO" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} />
+        <div className="grid grid-cols-1 gap-3 items-end">
+          <Input label="ATIVO" placeholder="EX: BITCOIN OU IPHONE" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
+          <Input label="VALOR ALVO" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
         {data.radarItems.map(item => (
           <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-neon-yellow/40 transition-all">
-            <span className="text-xs font-bold text-white uppercase tracking-wide">{item.name}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wide">{item.name}</span>
             <div className="flex items-center gap-4">
-              <span className="text-sm font-black text-neon-yellow">R$ {fmt(item.value)}</span>
+              <span className="text-xs sm:text-sm font-black text-neon-yellow">R$ {fmt(item.value)}</span>
               <button onClick={() => onUpdate({ ...data, radarItems: data.radarItems.filter(i => i.id !== item.id) }, true)} className="text-slate-600 hover:text-neon-red transition-colors"><X size={18} /></button>
             </div>
           </div>

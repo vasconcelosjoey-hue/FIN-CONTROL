@@ -7,7 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { Dashboard } from './components/Dashboard';
 import { AuthScreen } from './components/AuthScreen';
 import { IncomeModule, FixedExpenseModule, InstallmentModule, CreditCardModule, PixModule, CustomSectionModule, RadarModule } from './components/Modules';
-import { RefreshCw, Plus, LogOut, User as UserIcon, CloudCheck, Clock, Calendar, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { RefreshCw, Plus, LogOut, User as UserIcon, CloudCheck, Clock, Calendar, TrendingUp, TrendingDown, Target, ShieldCheck } from 'lucide-react';
 import { DraggableModuleWrapper } from './components/ui/UIComponents';
 
 const DigitalClock = () => {
@@ -38,15 +38,15 @@ const DigitalClock = () => {
 
   return (
     <div className="flex flex-col items-center sm:items-end px-2 sm:px-3 py-1 bg-black/60 border border-neon-blue/30 rounded-xl shadow-[0_0_20px_rgba(0,243,255,0.1)] backdrop-blur-md shrink-0">
-      <div className="flex items-center gap-1.5">
-        <span className="text-[7px] font-black text-slate-500 uppercase tracking-tighter">Brasília</span>
-        <span className="text-[10px] sm:text-[11px] font-black text-neon-blue font-mono tracking-widest drop-shadow-[0_0_8px_rgba(0,243,255,0.6)] animate-pulse">
+      <div className="flex items-center gap-1">
+        <span className="text-[6px] font-black text-slate-500 uppercase tracking-tighter">Brasília</span>
+        <span className="text-[9px] sm:text-[11px] font-black text-neon-blue font-mono tracking-widest drop-shadow-[0_0_8px_rgba(0,243,255,0.6)] animate-pulse">
           {dateTime.time}
         </span>
       </div>
       <div className="flex items-center gap-1 opacity-70">
-        <Calendar size={8} className="text-slate-400" />
-        <span className="text-[7px] sm:text-[8px] font-bold text-slate-400 font-mono tracking-wider">{dateTime.date}</span>
+        <Calendar size={7} className="text-slate-400" />
+        <span className="text-[6px] sm:text-[8px] font-bold text-slate-400 font-mono tracking-wider">{dateTime.date}</span>
       </div>
     </div>
   );
@@ -172,7 +172,6 @@ function App() {
           const localTimestamp = getLocalTimestamp(user.uid);
           
           if (!isInternalUpdate.current && cloudTimestamp > localTimestamp) {
-            console.log("🔄 External sync applied");
             lastUpdateRef.current = cloudTimestamp;
             setData(normalizeData(cloudData));
             setIsSyncing(false);
@@ -269,9 +268,39 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-neon-blue gap-4 px-4">
-        <RefreshCw className="animate-spin w-10 h-10 shadow-neon-blue" />
-        <p className="text-[9px] font-black uppercase tracking-[0.3em] animate-pulse">Protegendo Dados...</p>
+      <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-center p-8">
+        <div className="absolute top-0 left-0 w-full h-full bg-grid-pattern opacity-10 pointer-events-none"></div>
+        
+        <div className="relative mb-12 animate-pulse">
+          <div className="p-6 bg-neon-blue/10 rounded-[2.5rem] border-2 border-neon-blue/40 shadow-[0_0_50px_rgba(0,243,255,0.2)]">
+            <ShieldCheck className="text-neon-blue w-20 h-20" strokeWidth={1.5} />
+          </div>
+          <div className="absolute -bottom-2 -right-2 bg-neon-dark p-1.5 rounded-full border border-neon-blue/30 shadow-neon-blue">
+            <RefreshCw className="animate-spin text-neon-blue w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="relative z-10 space-y-4">
+          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter leading-none">
+            FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_15px_rgba(0,243,255,0.5)]">CONTROLLER</span>
+          </h1>
+          <div className="flex flex-col gap-2 items-center">
+            <p className="text-slate-400 text-[10px] sm:text-[12px] font-black uppercase tracking-[0.4em] opacity-80">
+              ACESSO SEGURO • SINCRONIZAÇÃO CLOUD
+            </p>
+            <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden mt-4">
+              <div className="h-full bg-neon-blue shadow-neon-blue animate-[loading_2s_infinite]"></div>
+            </div>
+          </div>
+        </div>
+        
+        <style>{`
+          @keyframes loading {
+            0% { width: 0%; transform: translateX(-100%); }
+            50% { width: 50%; transform: translateX(50%); }
+            100% { width: 100%; transform: translateX(200%); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -295,23 +324,23 @@ function App() {
 
   return (
     <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white relative">
-      <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3 overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-6 min-w-0">
-            <h1 className="font-extrabold text-[12px] sm:text-xl tracking-tighter sm:tracking-tight flex-wrap max-w-[120px] sm:max-w-none leading-none">
-              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)] sm:inline">CONTROLLER</span>
+      <nav className="border-b border-white/5 bg-neon-surface/95 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2 overflow-hidden">
+          <div className="flex flex-row items-center gap-2 sm:gap-6 min-w-0">
+            <h1 className="font-extrabold text-[11px] sm:text-xl tracking-tighter sm:tracking-tight flex flex-wrap max-w-[110px] sm:max-w-none leading-none">
+              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)] block">CONTROLLER</span>
             </h1>
             <DigitalClock />
           </div>
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all duration-500 ${isSyncing ? 'bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-neon-blue' : 'bg-neon-green/10 border-neon-green/40 text-neon-green shadow-none'}`}>
-                 {isSyncing ? <RefreshCw size={9} className="animate-spin" /> : <CloudCheck size={11} />}
-                 <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
-                   {isSyncing ? 'Sync' : 'Online'}
+          <div className="flex items-center gap-1 sm:gap-4 shrink-0">
+               <div className={`flex items-center gap-1 px-1.5 py-1 rounded-full border transition-all duration-500 ${isSyncing ? 'bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-neon-blue' : 'bg-neon-green/10 border-neon-green/40 text-neon-green shadow-none'}`}>
+                 {isSyncing ? <RefreshCw size={8} className="animate-spin" /> : <CloudCheck size={10} />}
+                 <span className="text-[6px] sm:text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
+                   {isSyncing ? 'Sync' : 'ON'}
                  </span>
                </div>
-               <button onClick={logoutUser} className="flex items-center gap-1 text-[8px] sm:text-[9px] font-black text-slate-400 hover:text-neon-red transition-all uppercase tracking-widest px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-neon-red/10 rounded-lg border border-transparent hover:border-neon-red/30">
-                 <LogOut size={11} /> Sair
+               <button onClick={logoutUser} className="flex items-center gap-1 text-[7px] sm:text-[9px] font-black text-slate-400 hover:text-neon-red transition-all uppercase tracking-widest px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-neon-red/10 rounded-lg border border-transparent hover:border-neon-red/30">
+                 <LogOut size={10} /> Sair
                </button>
           </div>
         </div>
@@ -321,18 +350,18 @@ function App() {
         <Dashboard data={data} />
         <div className="flex flex-col lg:flex-row gap-6 items-start mt-4 sm:mt-6">
           <div className="flex-1 w-full flex flex-col gap-4">
-            <h3 className="text-[9px] font-extrabold text-neon-green uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-green/30">Entradas</h3>
+            <h3 className="text-[8px] font-extrabold text-neon-green uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-green/30">Entradas</h3>
             {incomeModules}
-            <button onClick={() => createNewSection('income')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-green/40 hover:text-neon-green hover:bg-neon-green/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Nova Sessão Entrada</button>
+            <button onClick={() => createNewSection('income')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-green/40 hover:text-neon-green hover:bg-neon-green/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Adicionar Nova Entrada</button>
           </div>
           <div className="flex-1 w-full flex flex-col gap-4">
-            <h3 className="text-[9px] font-extrabold text-neon-red uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-red/30">Saídas</h3>
+            <h3 className="text-[8px] font-extrabold text-neon-red uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-red/30">Saídas</h3>
             {expenseModules}
-            <button onClick={() => createNewSection('expense')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-red/40 hover:text-neon-red hover:bg-neon-red/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Nova Sessão Saída</button>
+            <button onClick={() => createNewSection('expense')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-red/40 hover:text-neon-red hover:bg-neon-red/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Adicionar Nova Saída</button>
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-white/5">
-          <h3 className="text-[9px] font-extrabold text-slate-500 uppercase tracking-[0.2em] mb-6 text-center lg:text-left">Recursos & Bancos</h3>
+          <h3 className="text-[8px] font-extrabold text-slate-500 uppercase tracking-[0.2em] mb-6 text-center lg:text-left">Recursos & Bancos</h3>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <CreditCardModule data={data} onUpdate={handleUpdate} />
             <RadarModule data={data} onUpdate={handleUpdate} />
@@ -347,7 +376,7 @@ function App() {
         <div className="flex flex-col items-center gap-2 px-4">
           <p className="text-[9px] font-black text-white/70 uppercase tracking-[0.4em]">Financial Controller</p>
           <div className="h-px w-20 bg-white/5 my-1"></div>
-          <p className="text-[7px] sm:text-[8px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed">
+          <p className="text-[7px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed">
             {new Date().getFullYear()} • Powered By JOI.A. todos os direitos reservados
           </p>
         </div>

@@ -7,7 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { Dashboard } from './components/Dashboard';
 import { AuthScreen } from './components/AuthScreen';
 import { IncomeModule, FixedExpenseModule, InstallmentModule, CreditCardModule, PixModule, CustomSectionModule, RadarModule } from './components/Modules';
-import { RefreshCw, Plus, LogOut, User as UserIcon, CloudCheck, Clock, Calendar } from 'lucide-react';
+import { RefreshCw, Plus, LogOut, User as UserIcon, CloudCheck, Clock, Calendar, TrendingUp, TrendingDown, Target } from 'lucide-react';
 import { DraggableModuleWrapper } from './components/ui/UIComponents';
 
 const DigitalClock = () => {
@@ -48,6 +48,38 @@ const DigitalClock = () => {
         <Calendar size={8} className="text-slate-400" />
         <span className="text-[9px] font-bold text-slate-400 font-mono tracking-wider">{dateTime.date}</span>
       </div>
+    </div>
+  );
+};
+
+const BottomMobileNav = ({ balance, onScrollTo }: { balance: number, onScrollTo: (id: string) => void }) => {
+  const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/90 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+      <button 
+        onClick={() => onScrollTo('section-incomes')}
+        className="flex flex-col items-center gap-1 text-neon-green/60 hover:text-neon-green transition-colors"
+      >
+        <TrendingUp size={20} />
+        <span className="text-[8px] font-black uppercase tracking-tighter">Entradas</span>
+      </button>
+
+      <div className="flex flex-col items-center bg-black/40 border border-neon-yellow/30 px-6 py-1.5 rounded-2xl shadow-[0_0_15px_rgba(255,230,0,0.1)]">
+        <span className="text-[7px] text-slate-500 font-black uppercase tracking-[0.2em] mb-0.5">Saldo Previsto</span>
+        <span className={`text-sm font-black tracking-tight ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
+          <span className="text-[10px] mr-1 opacity-60">R$</span>
+          {fmt(balance)}
+        </span>
+      </div>
+
+      <button 
+        onClick={() => onScrollTo('section-fixed')}
+        className="flex flex-col items-center gap-1 text-neon-red/60 hover:text-neon-red transition-colors"
+      >
+        <TrendingDown size={20} />
+        <span className="text-[8px] font-black uppercase tracking-tighter">Saídas</span>
+      </button>
     </div>
   );
 };
@@ -211,6 +243,31 @@ function App() {
     }), immediate);
   };
 
+  const scrollToId = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 100; // Ajuste para o header fixo
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const calculateBalance = () => {
+    const baseInc = data.incomes.filter(i => i.isActive !== false).reduce((a, c) => a + c.value, 0);
+    const customInc = data.customSections?.filter(s => s.type === 'income').reduce((a, s) => a + s.items.filter(i => i.isActive !== false).reduce((ia, i) => ia + i.value, 0), 0) || 0;
+    const fixedExp = data.fixedExpenses.filter(e => e.isActive !== false).reduce((a, c) => a + (c.value - (c.paidAmount || 0)), 0);
+    const instExp = data.installments.filter(e => e.isActive !== false).reduce((a, c) => a + (c.monthlyValue - (c.paidAmount || 0)), 0);
+    const customExp = data.customSections?.filter(s => s.type === 'expense').reduce((a, s) => a + s.items.filter(i => i.isActive !== false).reduce((ia, i) => ia + (i.value - (i.paidAmount || 0)), 0), 0) || 0;
+    return (baseInc + customInc) - (fixedExp + instExp + customExp);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-neon-blue gap-4">
@@ -238,7 +295,7 @@ function App() {
   });
 
   return (
-    <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white">
+    <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white relative">
       <nav className="border-b border-white/5 bg-neon-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
@@ -262,7 +319,8 @@ function App() {
           </div>
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+
+      <main className="max-w-7xl mx-auto px-4 py-8 pb-32">
         <Dashboard data={data} />
         <div className="flex flex-col lg:flex-row gap-6 items-start mt-6">
           <div className="flex-1 w-full flex flex-col gap-4">
@@ -285,8 +343,14 @@ function App() {
           </div>
         </div>
       </main>
-      <footer className="mt-20 py-8 text-center text-slate-600 text-[10px] font-bold tracking-widest uppercase">
-        FINANCIAL CONTROLLER • {new Date().getFullYear()} • Brasília Server Sync Active
+
+      <BottomMobileNav balance={calculateBalance()} onScrollTo={scrollToId} />
+
+      <footer className="mt-20 py-12 text-center border-t border-white/5 bg-black/20">
+        <p className="text-[11px] font-black text-white uppercase tracking-[0.3em] mb-3">Financial Controller</p>
+        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+          {new Date().getFullYear()} • Powered By JOI.A. todos os direitos reservados
+        </p>
       </footer>
     </div>
   );

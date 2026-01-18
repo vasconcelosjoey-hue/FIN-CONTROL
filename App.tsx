@@ -66,8 +66,8 @@ const BottomMobileNav = ({ balance, onScrollTo }: { balance: number, onScrollTo:
       </button>
 
       <div className="flex flex-col items-center bg-black/70 border border-neon-yellow/30 px-5 py-1 rounded-2xl shadow-[0_0_15px_rgba(255,230,0,0.2)]">
-        <span className="text-[6px] text-slate-500 font-black uppercase tracking-[0.2em] mb-0.5">Saldo</span>
-        <span className={`text-[11px] font-black tracking-tight ${balance >= 0 ? 'text-neon-yellow shadow-neon-yellow/10' : 'text-neon-red shadow-neon-red/10'}`}>
+        <span className="text-[6px] text-slate-500 font-black uppercase tracking-[0.2em] mb-0.5">Saldo Atual</span>
+        <span className={`text-[11px] font-black tracking-tight ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
           <span className="text-[8px] mr-1 opacity-60 font-bold">R$</span>
           {fmt(balance)}
         </span>
@@ -182,7 +182,9 @@ function App() {
             }
           }
         });
-        setLoading(false);
+        
+        // Simula Splash Screen por 1.5s para garantir estética neon
+        setTimeout(() => setLoading(false), 1500);
       } else {
         setUserId(null);
         setUserEmail(null);
@@ -228,7 +230,9 @@ function App() {
       handleUpdate(prev => ({
         ...prev, 
         customSections: (prev.customSections || []).filter(s => s.id !== id),
+        // Fix: Added missing arrow function argument 'oid' to the filter callback
         modulesOrder: (prev.modulesOrder || []).filter(oid => oid !== id),
+        // Fix: Added missing arrow function argument 'oid' to the filter callback
         incomeModulesOrder: (prev.incomeModulesOrder || []).filter(oid => oid !== id)
       }), true);
     }
@@ -268,37 +272,44 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neon-dark flex flex-col items-center justify-center text-center p-8">
-        <div className="absolute top-0 left-0 w-full h-full bg-grid-pattern opacity-10 pointer-events-none"></div>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-grid-pattern opacity-5 pointer-events-none"></div>
         
-        <div className="relative mb-12 animate-pulse">
-          <div className="p-6 bg-neon-blue/10 rounded-[2.5rem] border-2 border-neon-blue/40 shadow-[0_0_50px_rgba(0,243,255,0.2)]">
-            <ShieldCheck className="text-neon-blue w-20 h-20" strokeWidth={1.5} />
+        {/* Shield Icon Splash */}
+        <div className="relative mb-14 animate-pulse">
+          <div className="p-8 bg-neon-blue/5 rounded-[3rem] border-2 border-neon-blue/40 shadow-[0_0_60px_rgba(0,243,255,0.2)]">
+            <ShieldCheck className="text-neon-blue w-24 h-24 sm:w-32 sm:h-32" strokeWidth={1} />
           </div>
-          <div className="absolute -bottom-2 -right-2 bg-neon-dark p-1.5 rounded-full border border-neon-blue/30 shadow-neon-blue">
-            <RefreshCw className="animate-spin text-neon-blue w-5 h-5" />
+          <div className="absolute -bottom-3 -right-3 bg-black p-2 rounded-full border border-neon-blue/50 shadow-[0_0_15px_rgba(0,243,255,0.6)]">
+            <RefreshCw className="animate-spin text-neon-blue w-6 h-6" />
           </div>
         </div>
 
-        <div className="relative z-10 space-y-4">
-          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter leading-none">
-            FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_15px_rgba(0,243,255,0.5)]">CONTROLLER</span>
-          </h1>
-          <div className="flex flex-col gap-2 items-center">
-            <p className="text-slate-400 text-[10px] sm:text-[12px] font-black uppercase tracking-[0.4em] opacity-80">
+        <div className="relative z-10 space-y-6">
+          <div className="space-y-1">
+            <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
+              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.6)]">CONTROLLER</span>
+            </h1>
+          </div>
+          
+          <div className="flex flex-col gap-3 items-center">
+            <p className="text-slate-500 text-[10px] sm:text-[13px] font-black uppercase tracking-[0.4em] opacity-80">
               ACESSO SEGURO • SINCRONIZAÇÃO CLOUD
             </p>
-            <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden mt-4">
-              <div className="h-full bg-neon-blue shadow-neon-blue animate-[loading_2s_infinite]"></div>
+            <div className="w-56 h-1 bg-white/5 rounded-full overflow-hidden mt-6">
+              <div className="h-full bg-neon-blue shadow-[0_0_10px_#00f3ff] animate-loading-bar"></div>
             </div>
           </div>
         </div>
         
         <style>{`
-          @keyframes loading {
-            0% { width: 0%; transform: translateX(-100%); }
-            50% { width: 50%; transform: translateX(50%); }
-            100% { width: 100%; transform: translateX(200%); }
+          @keyframes loading-bar {
+            0% { transform: translateX(-100%); width: 30%; }
+            50% { transform: translateX(50%); width: 60%; }
+            100% { transform: translateX(250%); width: 30%; }
+          }
+          .animate-loading-bar {
+            animation: loading-bar 1.8s infinite ease-in-out;
           }
         `}</style>
       </div>
@@ -323,7 +334,7 @@ function App() {
   });
 
   return (
-    <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white relative">
+    <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white relative bg-black">
       <nav className="border-b border-white/5 bg-neon-surface/95 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2 overflow-hidden">
           <div className="flex flex-row items-center gap-2 sm:gap-6 min-w-0">
@@ -336,7 +347,7 @@ function App() {
                <div className={`flex items-center gap-1 px-1.5 py-1 rounded-full border transition-all duration-500 ${isSyncing ? 'bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-neon-blue' : 'bg-neon-green/10 border-neon-green/40 text-neon-green shadow-none'}`}>
                  {isSyncing ? <RefreshCw size={8} className="animate-spin" /> : <CloudCheck size={10} />}
                  <span className="text-[6px] sm:text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
-                   {isSyncing ? 'Sync' : 'ON'}
+                   {isSyncing ? 'Sync' : 'Cloud ON'}
                  </span>
                </div>
                <button onClick={logoutUser} className="flex items-center gap-1 text-[7px] sm:text-[9px] font-black text-slate-400 hover:text-neon-red transition-all uppercase tracking-widest px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-neon-red/10 rounded-lg border border-transparent hover:border-neon-red/30">
@@ -350,12 +361,12 @@ function App() {
         <Dashboard data={data} />
         <div className="flex flex-col lg:flex-row gap-6 items-start mt-4 sm:mt-6">
           <div className="flex-1 w-full flex flex-col gap-4">
-            <h3 className="text-[8px] font-extrabold text-neon-green uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-green/30">Entradas</h3>
+            <h3 className="text-[8px] font-extrabold text-neon-green uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-green/30">Recebimentos</h3>
             {incomeModules}
             <button onClick={() => createNewSection('income')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-green/40 hover:text-neon-green hover:bg-neon-green/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Adicionar Nova Entrada</button>
           </div>
           <div className="flex-1 w-full flex flex-col gap-4">
-            <h3 className="text-[8px] font-extrabold text-neon-red uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-red/30">Saídas</h3>
+            <h3 className="text-[8px] font-extrabold text-neon-red uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-red/30">Pagamentos</h3>
             {expenseModules}
             <button onClick={() => createNewSection('expense')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-red/40 hover:text-neon-red hover:bg-neon-red/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Adicionar Nova Saída</button>
           </div>

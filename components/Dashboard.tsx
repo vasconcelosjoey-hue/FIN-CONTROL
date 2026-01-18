@@ -59,7 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 <span className="text-2xl font-bold mr-2 opacity-60 align-top mt-2 inline-block">R$</span>
                 {fmt(balance)}
                 </p>
-                <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest opacity-80">Apenas itens Ativos</p>
+                <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest opacity-80">Saldo Consolidado</p>
             </div>
         </Card>
       </div>
@@ -68,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         <Card className="relative overflow-hidden group border-t-2 border-t-neon-green/50 flex flex-col justify-center p-5 hover:bg-white/5 transition-colors h-36">
           <div className="flex justify-between items-center mb-3 relative z-10">
               <h3 className="text-neon-green text-xs uppercase tracking-[0.15em] font-bold">Entradas</h3>
-              <div className="p-1.5 bg-neon-green/10 rounded-md text-neon-green"><TrendingUp size={18} /></div>
+              <div className="p-1.5 bg-neon-green/10 rounded-md text-neon-green shadow-neon-green/20"><TrendingUp size={18} /></div>
           </div>
           <p className="text-3xl sm:text-4xl font-black text-neon-green tracking-tight relative z-10">
             <span className="text-sm text-neon-green/60 font-bold align-top mr-1">R$</span>
@@ -80,9 +80,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
           <Card className="flex flex-col items-center justify-center py-2 px-4 bg-black/40 border-neon-blue/30 hover:border-neon-blue/60 transition-all h-full relative overflow-hidden">
              <div className="w-full h-full flex flex-row items-center justify-between gap-4 relative z-10">
                  <div className="flex flex-col gap-2 absolute right-0 top-0 z-20">
-                     <div className={`p-1.5 rounded-lg transition-all ${viewMode === 0 ? 'bg-neon-blue text-black' : 'text-slate-600 bg-white/5'}`}><PieChart size={12} /></div>
-                     <div className={`p-1.5 rounded-lg transition-all ${viewMode === 1 ? 'bg-neon-blue text-black' : 'text-slate-600 bg-white/5'}`}><BarChart3 size={12} /></div>
-                     <div className={`p-1.5 rounded-lg transition-all ${viewMode === 2 ? 'bg-neon-blue text-black' : 'text-slate-600 bg-white/5'}`}><Percent size={12} /></div>
+                     <div className={`p-1.5 rounded-lg transition-all ${viewMode === 0 ? 'bg-neon-blue text-black shadow-neon-blue' : 'text-slate-600 bg-white/5'}`}><PieChart size={12} /></div>
+                     <div className={`p-1.5 rounded-lg transition-all ${viewMode === 1 ? 'bg-neon-blue text-black shadow-neon-blue' : 'text-slate-600 bg-white/5'}`}><BarChart3 size={12} /></div>
+                     <div className={`p-1.5 rounded-lg transition-all ${viewMode === 2 ? 'bg-neon-blue text-black shadow-neon-blue' : 'text-slate-600 bg-white/5'}`}><Percent size={12} /></div>
                  </div>
                  {viewMode === 0 && (
                      <>
@@ -107,8 +107,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                  )}
                  {viewMode === 2 && (
                      <div className="text-center w-full pr-6">
-                         <h4 className="text-slate-400 text-[9px] uppercase tracking-[0.2em] font-bold mb-1">Risco</h4>
-                         <div className={`text-5xl font-black tracking-tighter ${totalOutflow > totalIncome ? 'text-neon-red' : 'text-neon-blue'}`}>{((totalOutflow / (totalIncome || 1)) * 100).toFixed(0)}<span className="text-2xl align-top">%</span></div>
+                         <h4 className="text-slate-400 text-[9px] uppercase tracking-[0.2em] font-bold mb-1">Risco Geral</h4>
+                         <div className={`text-5xl font-black tracking-tighter ${totalOutflow > totalIncome ? 'text-neon-red' : 'text-neon-blue shadow-neon-blue'}`}>{((totalOutflow / (totalIncome || 1)) * 100).toFixed(0)}<span className="text-2xl align-top">%</span></div>
                      </div>
                  )}
              </div>
@@ -118,7 +118,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         <Card className="relative overflow-hidden group border-t-2 border-t-neon-red/50 flex flex-col justify-center p-5 hover:bg-white/5 transition-colors h-36">
           <div className="flex justify-between items-center mb-3 relative z-10">
             <h3 className="text-neon-red text-xs uppercase tracking-[0.15em] font-bold">Saídas</h3>
-            <div className="p-1.5 bg-neon-red/10 rounded-md text-neon-red"><TrendingDown size={18} /></div>
+            <div className="p-1.5 bg-neon-red/10 rounded-md text-neon-red shadow-neon-red/20"><TrendingDown size={18} /></div>
           </div>
           <p className="text-3xl sm:text-4xl font-black text-neon-red tracking-tight relative z-10">
             <span className="text-sm text-neon-red/60 font-bold align-top mr-1">R$</span>

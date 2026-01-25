@@ -170,7 +170,7 @@ export const Input = ({ label, onChange, noUppercase = false, ...props }: React.
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
                  transition-all placeholder:text-slate-700 placeholder:text-xs w-full h-11 ${!noUppercase ? 'uppercase' : ''}`}
       onChange={(e) => {
-          if (!noUppercase) {
+          if (!noUppercase && props.type !== 'number') {
             e.target.value = e.target.value.toUpperCase();
           }
           onChange?.(e);
@@ -179,6 +179,73 @@ export const Input = ({ label, onChange, noUppercase = false, ...props }: React.
     />
   </div>
 );
+
+/**
+ * Componente Inteligente para entrada de Valores Monetários (BRL)
+ */
+export const CurrencyInput = ({ 
+  label, 
+  value, 
+  onValueChange, 
+  ...props 
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> & { 
+  label?: string, 
+  value: number, 
+  onValueChange: (val: number) => void 
+}) => {
+  const [displayValue, setDisplayValue] = useState('');
+
+  // Formata o valor numérico inicial para string BRL
+  useEffect(() => {
+    if (value === 0 && displayValue === '') return;
+    const formatted = (value).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    // Só atualiza se for diferente para evitar loops durante digitação
+    if (parseBRL(displayValue) !== value) {
+      setDisplayValue(formatted);
+    }
+  }, [value]);
+
+  const parseBRL = (valStr: string): number => {
+    if (!valStr) return 0;
+    const cleanStr = valStr.replace(/\D/g, '');
+    return Number(cleanStr) / 100;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, '');
+    if (raw === '') raw = '0';
+    
+    const numValue = Number(raw) / 100;
+    const formatted = numValue.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    setDisplayValue(formatted);
+    onValueChange(numValue);
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full group">
+      {label && <label className="text-[10px] text-slate-400 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-widest">{label}</label>}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-500 uppercase">R$</span>
+        <input 
+          {...props}
+          type="text"
+          value={displayValue}
+          onChange={handleChange}
+          className={`bg-black/40 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-white font-bold text-sm
+                     focus:outline-none focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,243,255,0.15)] 
+                     transition-all placeholder:text-slate-700 placeholder:text-xs w-full h-11`}
+        />
+      </div>
+    </div>
+  );
+};
 
 export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string, options: {value: string, label: string}[] }) => (
   <div className="flex flex-col gap-1.5 w-full group">

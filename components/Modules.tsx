@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { FinancialData, Income, FixedExpense, InstallmentExpense, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard } from '../types';
-import { CollapsibleCard, Button, Input, Select, Badge, Card } from './ui/UIComponents';
+import { CollapsibleCard, Button, Input, CurrencyInput, Select, Badge, Card } from './ui/UIComponents';
 import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck, Power, Star, ArrowLeft, Trophy } from 'lucide-react';
 
 // Helper component for adding new records
@@ -93,7 +93,7 @@ const ToggleStatusButton = ({ active, onClick }: { active: boolean, onClick: () 
 // Module for Incomes
 export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
-  const [val, setVal] = useState('');
+  const [val, setVal] = useState(0);
   const [date, setDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Income>>({});
@@ -101,10 +101,10 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
   const total = data.incomes.filter(i => i.isActive !== false).reduce((acc, curr) => acc + curr.value, 0);
 
   const handleAdd = () => {
-    if (!name || !val) return;
-    const newItem: Income = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(val), expectedDate: date, isActive: true };
+    if (!name || val === 0) return;
+    const newItem: Income = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val, expectedDate: date, isActive: true };
     onUpdate({ ...data, incomes: [...data.incomes, newItem] }, true);
-    setName(''); setVal(''); setDate('');
+    setName(''); setVal(0); setDate('');
   };
 
   const handleSaveEdit = () => {
@@ -118,7 +118,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-5"><Input label="Nome" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="sm:col-span-4"><Input label="Valor" type="number" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div className="sm:col-span-4"><CurrencyInput label="Valor" value={val} onValueChange={setVal} /></div>
           <div className="sm:col-span-3"><Input label="Data" value={date} onChange={e => setDate(e.target.value)} placeholder="05/Mês" /></div>
         </div>
       </AddForm>
@@ -128,9 +128,9 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
             <div className="flex-1 flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
               {editingId === item.id ? (
                 <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
-                  <EditInput className="sm:col-span-6" label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
-                  <EditInput className="sm:col-span-3" label="VALOR" type="number" value={editData.value} onChange={e => setEditData({...editData, value: parseFloat(e.target.value)})} />
-                  <EditInput className="sm:col-span-3" label="DATA" value={editData.expectedDate} onChange={e => setEditData({...editData, expectedDate: e.target.value})} />
+                  <div className="sm:col-span-6"><Input label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
+                  <div className="sm:col-span-3"><CurrencyInput label="VALOR" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
+                  <div className="sm:col-span-3"><Input label="DATA" value={editData.expectedDate} onChange={e => setEditData({...editData, expectedDate: e.target.value})} /></div>
                 </EditRowLayout>
               ) : (
                 <>
@@ -157,7 +157,7 @@ export const IncomeModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
 // Module for Fixed Expenses
 export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
-  const [val, setVal] = useState('');
+  const [val, setVal] = useState(0);
   const [due, setDue] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<FixedExpense>>({});
@@ -165,10 +165,10 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
   const total = data.fixedExpenses.filter(e => e.isActive !== false).reduce((acc, curr) => acc + (curr.value - (curr.paidAmount || 0)), 0);
 
   const handleAdd = () => {
-    if (!name || !val) return;
-    const newItem: FixedExpense = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(val), dueDate: due, isActive: true };
+    if (!name || val === 0) return;
+    const newItem: FixedExpense = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val, dueDate: due, isActive: true };
     onUpdate({ ...data, fixedExpenses: [...data.fixedExpenses, newItem] }, true);
-    setName(''); setVal(''); setDue('');
+    setName(''); setVal(0); setDue('');
   };
 
   const handleSaveEdit = () => {
@@ -182,7 +182,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-5"><Input label="Nome" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="sm:col-span-4"><Input label="Valor" type="number" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div className="sm:col-span-4"><CurrencyInput label="Valor" value={val} onValueChange={setVal} /></div>
           <div className="sm:col-span-3"><Input label="Vencimento" value={due} onChange={e => setDue(e.target.value)} placeholder="10/Mês" /></div>
         </div>
       </AddForm>
@@ -192,10 +192,10 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
             <div className="flex-1 flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
               {editingId === item.id ? (
                 <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
-                  <EditInput className="sm:col-span-4" label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
-                  <EditInput className="sm:col-span-3" label="VALOR" type="number" value={editData.value} onChange={e => setEditData({...editData, value: parseFloat(e.target.value)})} />
-                  <EditInput className="sm:col-span-3" label="PAGO" type="number" value={editData.paidAmount} onChange={e => setEditData({...editData, paidAmount: parseFloat(e.target.value)})} />
-                  <EditInput className="sm:col-span-2" label="VENC" value={editData.dueDate} onChange={e => setEditData({...editData, dueDate: e.target.value})} />
+                  <div className="sm:col-span-4"><Input label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
+                  <div className="sm:col-span-3"><CurrencyInput label="VALOR" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
+                  <div className="sm:col-span-3"><CurrencyInput label="PAGO" value={editData.paidAmount || 0} onValueChange={v => setEditData({...editData, paidAmount: v})} /></div>
+                  <div className="sm:col-span-2"><Input label="VENC" value={editData.dueDate} onChange={e => setEditData({...editData, dueDate: e.target.value})} /></div>
                 </EditRowLayout>
               ) : (
                 <>
@@ -225,7 +225,7 @@ export const FixedExpenseModule: React.FC<{ data: FinancialData, onUpdate: (d: F
 // Module for Installment Expenses
 export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
-  const [val, setVal] = useState('');
+  const [val, setVal] = useState(0);
   const [count, setCount] = useState('');
   const [start, setStart] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -234,10 +234,10 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
   const total = data.installments.filter(e => e.isActive !== false).reduce((acc, curr) => acc + (curr.monthlyValue - (curr.paidAmount || 0)), 0);
 
   const handleAdd = () => {
-    if (!name || !val || !count) return;
-    const newItem: InstallmentExpense = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), monthlyValue: parseFloat(val), installmentsCount: parseInt(count), startMonth: start || new Date().toISOString().slice(0, 7), isActive: true };
+    if (!name || val === 0 || !count) return;
+    const newItem: InstallmentExpense = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), monthlyValue: val, installmentsCount: parseInt(count), startMonth: start || new Date().toISOString().slice(0, 7), isActive: true };
     onUpdate({ ...data, installments: [...data.installments, newItem] }, true);
-    setName(''); setVal(''); setCount(''); setStart('');
+    setName(''); setVal(0); setCount(''); setStart('');
   };
 
   const handleSaveEdit = () => {
@@ -251,7 +251,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-4"><Input label="Nome" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="sm:col-span-3"><Input label="Vlr Mensal" type="number" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div className="sm:col-span-3"><CurrencyInput label="Vlr Mensal" value={val} onValueChange={setVal} /></div>
           <div className="sm:col-span-2"><Input label="Parc." type="number" value={count} onChange={e => setCount(e.target.value)} /></div>
           <div className="sm:col-span-3"><Input label="Início" type="month" value={start} onChange={e => setStart(e.target.value)} /></div>
         </div>
@@ -262,10 +262,10 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
             <div className="flex-1 flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
               {editingId === item.id ? (
                 <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
-                  <EditInput className="sm:col-span-4" label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
-                  <EditInput className="sm:col-span-3" label="VLR MENSAL" type="number" value={editData.monthlyValue} onChange={e => setEditData({...editData, monthlyValue: parseFloat(e.target.value)})} />
-                  <EditInput className="sm:col-span-2" label="PARC" type="number" value={editData.installmentsCount} onChange={e => setEditData({...editData, installmentsCount: parseInt(e.target.value)})} />
-                  <EditInput className="sm:col-span-3" label="INÍCIO" type="month" value={editData.startMonth} onChange={e => setEditData({...editData, startMonth: e.target.value})} />
+                  <div className="sm:col-span-4"><Input label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
+                  <div className="sm:col-span-3"><CurrencyInput label="VLR MENSAL" value={editData.monthlyValue || 0} onValueChange={v => setEditData({...editData, monthlyValue: v})} /></div>
+                  <div className="sm:col-span-2"><Input label="PARC" type="number" value={editData.installmentsCount} onChange={e => setEditData({...editData, installmentsCount: parseInt(e.target.value)})} /></div>
+                  <div className="sm:col-span-3"><Input label="INÍCIO" type="month" value={editData.startMonth} onChange={e => setEditData({...editData, startMonth: e.target.value})} /></div>
                 </EditRowLayout>
               ) : (
                 <>
@@ -292,7 +292,7 @@ export const InstallmentModule: React.FC<{ data: FinancialData, onUpdate: (d: Fi
 // Module for Custom Sections
 export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (s: CustomSection, immediate?: boolean) => void, onDeleteSection: () => void }> = ({ section, onUpdate, onDeleteSection }) => {
   const [name, setName] = useState('');
-  const [val, setVal] = useState('');
+  const [val, setVal] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<SectionItem>>({});
 
@@ -300,10 +300,10 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   const color = section.type === 'income' ? 'green' : 'pink';
 
   const handleAdd = () => {
-    if (!name || !val) return;
-    const newItem: SectionItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(val), isActive: true };
+    if (!name || val === 0) return;
+    const newItem: SectionItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val, isActive: true };
     onUpdate({ ...section, items: [...section.items, newItem] }, true);
-    setName(''); setVal('');
+    setName(''); setVal(0);
   };
 
   const handleSaveEdit = () => {
@@ -319,8 +319,8 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
       </div>
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div className="sm:col-span-8"><Input label="Item" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div className="sm:col-span-4"><Input label="Valor" type="number" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div className="sm:col-span-7"><Input label="Item" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="sm:col-span-5"><CurrencyInput label="Valor" value={val} onValueChange={setVal} /></div>
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -329,9 +329,9 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
             <div className="flex-1 flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
               {editingId === item.id ? (
                 <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
-                  <EditInput className="sm:col-span-6" label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
-                  <EditInput className="sm:col-span-3" label="VALOR" type="number" value={editData.value} onChange={e => setEditData({...editData, value: parseFloat(e.target.value)})} />
-                  <EditInput className="sm:col-span-3" label="PAGO" type="number" value={editData.paidAmount} onChange={e => setEditData({...editData, paidAmount: parseFloat(e.target.value)})} />
+                  <div className="sm:col-span-6"><Input label="NOME" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
+                  <div className="sm:col-span-3"><CurrencyInput label="VALOR" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
+                  <div className="sm:col-span-3"><CurrencyInput label="PAGO" value={editData.paidAmount || 0} onValueChange={v => setEditData({...editData, paidAmount: v})} /></div>
                 </EditRowLayout>
               ) : (
                 <>
@@ -358,16 +358,16 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
 // Module for Credit Cards
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
-  const [limit, setLimit] = useState('');
+  const [limit, setLimit] = useState(0);
   const [closing, setClosing] = useState('');
   const [due, setDue] = useState('');
-  const [invoice, setInvoice] = useState('');
+  const [invoice, setInvoice] = useState(0);
 
   const handleAdd = () => {
-    if (!name || !limit) return;
-    const newItem: CreditCard = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), limit: parseFloat(limit), closingDay: parseInt(closing) || 1, dueDay: parseInt(due) || 10, currentInvoiceValue: parseFloat(invoice) || 0 };
+    if (!name || limit === 0) return;
+    const newItem: CreditCard = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), limit: limit, closingDay: parseInt(closing) || 1, dueDay: parseInt(due) || 10, currentInvoiceValue: invoice };
     onUpdate({ ...data, creditCards: [...(data.creditCards || []), newItem] }, true);
-    setName(''); setLimit(''); setClosing(''); setDue(''); setInvoice('');
+    setName(''); setLimit(0); setClosing(''); setDue(''); setInvoice(0);
   };
 
   return (
@@ -375,12 +375,12 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <Input label="Nome do Cartão" value={name} onChange={e => setName(e.target.value)} />
-          <Input label="Limite Total" type="number" value={limit} onChange={e => setLimit(e.target.value)} />
+          <CurrencyInput label="Limite Total" value={limit} onValueChange={setLimit} />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Input label="Fechamento" type="number" value={closing} onChange={e => setClosing(e.target.value)} />
           <Input label="Vencimento" type="number" value={due} onChange={e => setDue(e.target.value)} />
-          <Input label="Fatura Atual" type="number" value={invoice} onChange={e => setInvoice(e.target.value)} />
+          <CurrencyInput label="Fatura Atual" value={invoice} onValueChange={setInvoice} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-4">
@@ -467,13 +467,13 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
 // Module for Radar Items
 export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
-  const [val, setVal] = useState('');
+  const [val, setVal] = useState(0);
 
   const handleAdd = () => {
-    if (!name || !val) return;
-    const newItem: RadarItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: parseFloat(val) };
+    if (!name || val === 0) return;
+    const newItem: RadarItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val };
     onUpdate({ ...data, radarItems: [...(data.radarItems || []), newItem] }, true);
-    setName(''); setVal('');
+    setName(''); setVal(0);
   };
 
   const total = (data.radarItems || []).reduce((a, c) => a + c.value, 0);
@@ -484,7 +484,7 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-2 gap-3">
           <Input label="Descrição" value={name} onChange={e => setName(e.target.value)} />
-          <Input label="Valor Estimado" type="number" value={val} onChange={e => setVal(e.target.value)} />
+          <CurrencyInput label="Valor Estimado" value={val} onValueChange={setVal} />
         </div>
       </AddForm>
       <div className="flex flex-col gap-2">
@@ -505,33 +505,33 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
 // Module for Dreams
 export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
   const [name, setName] = useState('');
-  const [val, setVal] = useState('');
+  const [val, setVal] = useState(0);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editVal, setEditVal] = useState('');
+  const [editVal, setEditVal] = useState(0);
 
   const activeDreamsTotal = (data.dreams || []).filter(d => d.isActive).reduce((acc, curr) => acc + curr.value, 0);
   const remainingBudget = (data.dreamsTotalBudget || 0) - activeDreamsTotal;
 
   const handleAdd = () => {
-    if (!name || !val) return;
+    if (!name || val === 0) return;
     const newDream: DreamItem = {
       id: Math.random().toString(36).substr(2, 9),
       name: name.toUpperCase(),
-      value: parseFloat(val),
+      value: val,
       isActive: true
     };
     onUpdate({ ...data, dreams: [...(data.dreams || []), newDream] }, true);
-    setName(''); setVal('');
+    setName(''); setVal(0);
   };
 
   const handleSaveEdit = () => {
-    if (!editingId || !editName || !editVal) return;
+    if (!editingId || !editName || editVal === 0) return;
     onUpdate({
       ...data,
       dreams: (data.dreams || []).map(d => 
-        d.id === editingId ? { ...d, name: editName.toUpperCase(), value: parseFloat(editVal) || 0 } : d
+        d.id === editingId ? { ...d, name: editName.toUpperCase(), value: editVal } : d
       )
     }, true);
     setEditingId(null);
@@ -583,7 +583,7 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-8"><Input label="DESCRIÇÃO DO SONHO" placeholder="EX: IPHONE 16 PRO MAX" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
-            <div className="sm:col-span-4"><Input label="VALOR" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-4"><CurrencyInput label="VALOR" placeholder="0,00" value={val} onValueChange={setVal} /></div>
           </div>
         </AddForm>
 
@@ -592,8 +592,8 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
             <div key={dream.id} className={`p-5 bg-white/5 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${dream.isActive ? 'border-white/10 hover:border-white/20' : 'border-neon-red/10 opacity-50'}`}>
               {editingId === dream.id ? (
                 <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
-                  <EditInput label="DESCRIÇÃO" className="sm:col-span-8" value={editName} onChange={e => setEditName(e.target.value)} />
-                  <EditInput label="VALOR" type="number" className="sm:col-span-4" value={editVal} onChange={e => setEditVal(e.target.value)} />
+                  <div className="sm:col-span-8"><EditInput label="DESCRIÇÃO" value={editName} onChange={e => setEditName(e.target.value)} /></div>
+                  <div className="sm:col-span-4"><CurrencyInput label="VALOR" value={editVal} onValueChange={setEditVal} /></div>
                 </EditRowLayout>
               ) : (
                 <>
@@ -612,7 +612,7 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
                       <ActionButton onClick={() => {
                         setEditingId(dream.id);
                         setEditName(dream.name);
-                        setEditVal(dream.value.toString());
+                        setEditVal(dream.value);
                       }} icon={<Pencil size={20} />} />
                       <ActionButton onClick={() => onUpdate({ ...data, dreams: data.dreams.filter(d => d.id !== dream.id) }, true)} icon={<Trash2 size={20} />} color="text-slate-600 hover:text-neon-red" />
                     </div>

@@ -51,6 +51,22 @@
       }
       @keyframes loading-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
       .animate-loading-bar { animation: loading-bar 2s infinite ease-in-out; }
+      
+      /* Melhora na seleção de texto */
+      ::selection {
+        background: #bc13fe;
+        color: white;
+      }
+      
+      /* Remove setas do input number padrão para focar no CurrencyInput */
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
     </style>
     <script type="importmap">
 {

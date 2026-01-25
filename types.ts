@@ -68,6 +68,13 @@ export interface RadarItem {
   value: number;
 }
 
+export interface DreamItem {
+  id: string;
+  name: string;
+  value: number;
+  isActive: boolean;
+}
+
 export interface FinancialData {
   incomes: Income[];
   fixedExpenses: FixedExpense[];
@@ -76,6 +83,8 @@ export interface FinancialData {
   creditCards: CreditCard[];
   pixKeys: PixKey[];
   radarItems: RadarItem[];
+  dreams: DreamItem[];
+  dreamsTotalBudget: number;
   modulesOrder?: string[];
   incomeModulesOrder?: string[];
   lastUpdate?: number;
@@ -89,6 +98,8 @@ export const INITIAL_DATA: FinancialData = {
   creditCards: [],
   pixKeys: [],
   radarItems: [],
+  dreams: [],
+  dreamsTotalBudget: 0,
   modulesOrder: ['fixed', 'installments'],
   incomeModulesOrder: ['incomes'],
   lastUpdate: 0,

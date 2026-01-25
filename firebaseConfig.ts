@@ -1,12 +1,7 @@
 
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
-import { getAuth, Auth } from "firebase/auth";
 
-/**
- * CONFIGURAÇÃO PROFISSIONAL
- * Valores atualizados com as credenciais do seu projeto 'financial-controller-joia'
- */
 const firebaseConfig = {
   apiKey: "AIzaSyCc8RhjBVreMRa73AaywBMtDeYCqqssFao",
   authDomain: "financial-controller-joia.firebaseapp.com",
@@ -18,9 +13,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp;
 let db: Firestore;
-let auth: Auth;
 
-// Inicialização segura para ambientes React (evita re-inicialização em Hot Reload)
 try {
   if (!getApps().length) {
     app = initializeApp(firebaseConfig);
@@ -28,12 +21,11 @@ try {
     app = getApps()[0];
   }
   
+  // getFirestore é geralmente mais estável que initializeFirestore para uso básico com persistência automática
   db = getFirestore(app);
-  auth = getAuth(app);
-  
-  console.log("🚀 Cloud Sync: Ativo no projeto " + firebaseConfig.projectId);
+  console.log("🚀 Firestore: Conectado com sucesso");
 } catch (error) {
-  console.error("❌ Falha na conexão Cloud:", error);
+  console.error("❌ Falha na conexão Firestore:", error);
 }
 
-export { db, auth };
+export { db };

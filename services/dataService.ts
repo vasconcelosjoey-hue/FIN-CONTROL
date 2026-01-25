@@ -1,50 +1,9 @@
 
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut,
-  sendPasswordResetEmail,
-  User 
-} from "firebase/auth";
-import { db, auth } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
 import { FinancialData, INITIAL_DATA } from "../types";
 
 const LOCAL_STORAGE_KEY = "fincontroller_data";
-
-export const registerUser = async (email: string, pass: string): Promise<User | null> => {
-  if (!auth) return null;
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    return userCredential.user;
-  } catch (error: any) {
-    throw new Error(error.message);
-  }
-};
-
-export const loginUser = async (email: string, pass: string): Promise<User | null> => {
-  if (!auth) return null;
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    return userCredential.user;
-  } catch (error: any) {
-    throw new Error(error.message);
-  }
-};
-
-export const resetPassword = async (email: string): Promise<void> => {
-  if (!auth) return;
-  try {
-    await sendPasswordResetEmail(auth, email);
-  } catch (error: any) {
-    throw new Error(error.message);
-  }
-};
-
-export const logoutUser = async (): Promise<void> => {
-  if (!auth) return;
-  await signOut(auth);
-};
 
 // Retorna o timestamp da última atualização salva localmente
 export const getLocalTimestamp = (userId: string): number => {
@@ -83,14 +42,8 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
           const localTimestamp = localData.lastUpdate || 0;
           const cloudTimestamp = cloudData.lastUpdate || 0;
           
-          const countItems = (d: any) => 
-            (d.incomes?.length || 0) + 
-            (d.fixedExpenses?.length || 0) + 
-            (d.installments?.length || 0) + 
-            (d.customSections?.reduce((a: number, s: any) => a + (s.items?.length || 0), 0) || 0);
-
-          if (localTimestamp > cloudTimestamp || (localTimestamp === cloudTimestamp && countItems(localData) > countItems(cloudData))) {
-            console.log("⚡ Priorizando dados locais (mais recentes/completos)");
+          if (localTimestamp > cloudTimestamp) {
+            console.log("⚡ Priorizando dados locais (mais recentes)");
             await setDoc(docRef, { ...localData, lastUpdate: Date.now() });
             return localData;
           }
@@ -107,7 +60,6 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
   return localData || INITIAL_DATA;
 };
 
-// Salva na nuvem com timestamp
 export const saveToCloud = async (userId: string, data: FinancialData): Promise<void> => {
   if (!db) return;
   try {
@@ -120,12 +72,6 @@ export const saveToCloud = async (userId: string, data: FinancialData): Promise<
     console.error("Error saving to Firebase:", error);
     throw error;
   }
-};
-
-export const saveData = async (userId: string, data: FinancialData): Promise<void> => {
-  const timestampedData = { ...data, lastUpdate: Date.now() };
-  saveToLocal(userId, timestampedData);
-  await saveToCloud(userId, timestampedData);
 };
 
 export const subscribeToData = (userId: string, callback: (data: FinancialData) => void) => {

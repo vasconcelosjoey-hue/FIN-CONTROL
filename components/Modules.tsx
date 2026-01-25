@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { FinancialData, Income, FixedExpense, InstallmentExpense, CustomSection, SectionItem, RadarItem } from '../types';
-import { CollapsibleCard, Button, Input, Select, Badge } from './ui/UIComponents';
-import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck, Power } from 'lucide-react';
+import { FinancialData, Income, FixedExpense, InstallmentExpense, CustomSection, SectionItem, RadarItem, DreamItem } from '../types';
+import { CollapsibleCard, Button, Input, Select, Badge, Card } from './ui/UIComponents';
+import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, FolderOpen, CalendarDays, AlertCircle, Copy, CalendarCheck, Power, Star, ArrowLeft, Trophy } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-4 pt-4 border-t border-white/5">
@@ -104,6 +104,106 @@ const ToggleStatusButton = ({ active, onClick }: { active: boolean, onClick: () 
     <Power size={12} /> {active ? 'ON' : 'OFF'}
   </button>
 );
+
+export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData, immediate?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
+  const [name, setName] = useState('');
+  const [val, setVal] = useState('');
+
+  const activeDreamsTotal = (data.dreams || []).filter(d => d.isActive).reduce((acc, curr) => acc + curr.value, 0);
+  const remainingBudget = (data.dreamsTotalBudget || 0) - activeDreamsTotal;
+
+  const handleAdd = () => {
+    if (!name || !val) return;
+    const newDream: DreamItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: name.toUpperCase(),
+      value: parseFloat(val),
+      isActive: true
+    };
+    onUpdate({ ...data, dreams: [...(data.dreams || []), newDream] }, true);
+    setName(''); setVal('');
+  };
+
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+        <button onClick={onBack} className="w-full sm:w-auto flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-all text-xs font-black uppercase tracking-widest bg-white/5 px-4 py-3 rounded-xl border border-white/10">
+          <ArrowLeft size={16} /> Voltar ao Painel
+        </button>
+        <div className="flex items-center gap-3">
+          <Star className="text-neon-yellow animate-pulse" size={24} />
+          <h2 className="text-2xl font-black text-white tracking-tighter">MODO <span className="bg-gradient-to-r from-neon-blue to-neon-pink bg-clip-text text-transparent">DREAMS</span></h2>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card className="border-neon-yellow/30 bg-black/40 p-5 h-36 flex flex-col justify-center">
+          <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Valor Total Acumulado</p>
+          <div className="flex items-center gap-3">
+            <h3 className="text-3xl font-black text-neon-yellow tracking-tighter">R$ {fmt(data.dreamsTotalBudget || 0)}</h3>
+            <button 
+              onClick={() => {
+                const nv = prompt("Digite o novo valor do prêmio acumulado:", (data.dreamsTotalBudget || 0).toString());
+                if (nv !== null) onUpdate({...data, dreamsTotalBudget: parseFloat(nv) || 0}, true);
+              }}
+              className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+            >
+              <Pencil size={14} />
+            </button>
+          </div>
+        </Card>
+
+        <Card className="border-neon-blue/30 bg-black/40 p-5 h-36 flex flex-col justify-center">
+          <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Custo dos Sonhos Ativos</p>
+          <h3 className="text-3xl font-black text-neon-pink tracking-tighter">R$ {fmt(activeDreamsTotal)}</h3>
+        </Card>
+
+        <Card className={`border-2 p-5 h-36 flex flex-col justify-center transition-all duration-700 ${remainingBudget >= 0 ? 'border-neon-green/30 bg-neon-green/5' : 'border-neon-red/30 bg-neon-red/5'}`}>
+          <p className="text-[8px] font-black uppercase tracking-[0.3em] mb-1 text-slate-400">Saldo Final Disponível</p>
+          <h3 className={`text-3xl font-black tracking-tighter ${remainingBudget >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+            R$ {fmt(remainingBudget)}
+          </h3>
+        </Card>
+      </div>
+
+      <CollapsibleCard title="GESTÃO DE SONHOS" color="white" icon={<Trophy size={18} />} defaultOpen={true}>
+        <AddForm onAdd={handleAdd}>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div className="sm:col-span-8"><Input label="DESCRIÇÃO DO SONHO" placeholder="EX: IPHONE 16 PRO MAX" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+            <div className="sm:col-span-4"><Input label="VALOR" type="number" placeholder="0,00" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => handleEnter(e, handleAdd)} /></div>
+          </div>
+        </AddForm>
+
+        <div className="flex flex-col gap-3">
+          {(data.dreams || []).map((dream) => (
+            <div key={dream.id} className={`p-5 bg-white/5 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${dream.isActive ? 'border-white/10 hover:border-white/20' : 'border-neon-red/10 opacity-50'}`}>
+              <div className="flex-1 min-w-0">
+                <p className={`font-black text-sm sm:text-lg tracking-tight uppercase ${dream.isActive ? 'text-white' : 'text-slate-600 line-through'}`}>{dream.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                   <Badge color={dream.isActive ? 'green' : 'red'}>{dream.isActive ? 'No Orçamento' : 'Fora do Orçamento'}</Badge>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <span className={`text-xl font-black ${dream.isActive ? 'text-white' : 'text-slate-600'}`}>
+                  R$ {fmt(dream.value)}
+                </span>
+                <div className="flex items-center gap-1">
+                  <ToggleStatusButton active={dream.isActive} onClick={() => onUpdate({ ...data, dreams: data.dreams.map(d => d.id === dream.id ? { ...d, isActive: !d.isActive } : d) }, true)} />
+                  <ActionButton onClick={() => onUpdate({ ...data, dreams: data.dreams.filter(d => d.id !== dream.id) }, true)} icon={<Trash2 size={20} />} color="text-slate-600 hover:text-neon-red" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(data.dreams || []).length === 0 && (
+            <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
+              <p className="text-slate-600 font-black uppercase tracking-[0.3em] text-[10px]">Nenhum sonho registrado ainda. Liste o que você quer conquistar!</p>
+            </div>
+          )}
+        </div>
+      </CollapsibleCard>
+    </div>
+  );
+};
 
 export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (updatedSection: CustomSection, immediate?: boolean) => void, onDeleteSection: () => void }> = ({ section, onUpdate, onDeleteSection }) => {
   const [name, setName] = useState(''); const [value, setValue] = useState(''); const [date, setDate] = useState(''); const [qtd, setQtd] = useState('');

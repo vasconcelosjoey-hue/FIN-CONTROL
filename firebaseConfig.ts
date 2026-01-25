@@ -21,7 +21,7 @@ try {
     app = getApps()[0];
   }
   
-  // getFirestore é geralmente mais estável que initializeFirestore para uso básico com persistência automática
+  // getFirestore é geralmente mais resiliente em carregamentos dinâmicos ESM
   db = getFirestore(app);
   console.log("🚀 Firestore: Conectado com sucesso");
 } catch (error) {

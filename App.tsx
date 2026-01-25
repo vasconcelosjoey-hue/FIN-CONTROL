@@ -7,28 +7,13 @@ import { IncomeModule, FixedExpenseModule, InstallmentModule, CreditCardModule, 
 import { RefreshCw, Plus, Cloud, TrendingUp, TrendingDown, ShieldCheck, Star } from 'lucide-react';
 import { DraggableModuleWrapper } from './components/ui/UIComponents';
 
-// Tenta recuperar o ID de usuário usado anteriormente (inclusive do Clerk) para não perder os dados
+// ID de usuário específico solicitado para restauração de dados
+const REQUESTED_USER_ID = "GWDk0P5fbhdiLRovli43syBaHUG2";
+
 const getPersistentUserId = () => {
-  let id = localStorage.getItem('fincontroller_user_id');
-  if (id) return id;
-
-  // Busca por chaves de dados existentes no localStorage para extrair o ID antigo
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith('fincontroller_data_')) {
-      const foundId = key.replace('fincontroller_data_', '');
-      if (foundId && foundId !== 'undefined' && foundId !== 'null') {
-        localStorage.setItem('fincontroller_user_id', foundId);
-        console.log("♻️ ID Recuperado de dados locais:", foundId);
-        return foundId;
-      }
-    }
-  }
-
-  // Fallback: Novo ID se for a primeira vez absoluta
-  id = 'user_' + Math.random().toString(36).substr(2, 9);
-  localStorage.setItem('fincontroller_user_id', id);
-  return id;
+  // Sempre prioriza o ID solicitado para garantir a restauração dos dados do usuário
+  localStorage.setItem('fincontroller_user_id', REQUESTED_USER_ID);
+  return REQUESTED_USER_ID;
 };
 
 const BottomMobileNav = ({ balance, onScrollTo, onOpenDreams }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void }) => {
@@ -118,20 +103,28 @@ function App() {
   useEffect(() => {
     let unsubscribeData: () => void = () => {};
     (async () => {
-      const initialData = await loadData(userId);
-      const normalized = normalizeData(initialData);
-      lastUpdateRef.current = normalized.lastUpdate || 0;
-      setData(normalized);
-      unsubscribeData = subscribeToData(userId, (cloudData) => {
-        const cloudTimestamp = (cloudData as any).lastUpdate || 0;
-        const localTimestamp = getLocalTimestamp(userId);
-        if (!isInternalUpdate.current && cloudTimestamp > localTimestamp) {
-          lastUpdateRef.current = cloudTimestamp;
-          setData(normalizeData(cloudData));
-          setIsSyncing(false);
-        }
-      });
-      setTimeout(() => setLoading(false), 1200);
+      try {
+        console.log("📂 Conectando ao cofre do usuário:", userId);
+        const initialData = await loadData(userId);
+        const normalized = normalizeData(initialData);
+        lastUpdateRef.current = normalized.lastUpdate || 0;
+        setData(normalized);
+        
+        unsubscribeData = subscribeToData(userId, (cloudData) => {
+          const cloudTimestamp = (cloudData as any).lastUpdate || 0;
+          const localTimestamp = getLocalTimestamp(userId);
+          if (!isInternalUpdate.current && cloudTimestamp > localTimestamp) {
+            console.log("☁️ Dados sincronizados da nuvem.");
+            lastUpdateRef.current = cloudTimestamp;
+            setData(normalizeData(cloudData));
+            setIsSyncing(false);
+          }
+        });
+      } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+      } finally {
+        setTimeout(() => setLoading(false), 1200);
+      }
     })();
     return () => unsubscribeData();
   }, [userId]);
@@ -198,7 +191,7 @@ function App() {
         <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
           FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.6)]">CONTROLLER</span>
         </h1>
-        <p className="mt-4 text-[8px] font-black text-slate-500 uppercase tracking-[0.5em] animate-pulse">Recuperando Sessão...</p>
+        <p className="mt-4 text-[8px] font-black text-slate-500 uppercase tracking-[0.5em] animate-pulse">Autenticando e Sincronizando...</p>
         <div className="w-56 h-1 bg-white/5 rounded-full overflow-hidden mt-8">
           <div className="h-full bg-neon-blue shadow-[0_0_10px_#00f3ff] animate-loading-bar"></div>
         </div>

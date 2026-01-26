@@ -49,24 +49,7 @@
         background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                           linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
       }
-      @keyframes loading-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
-      .animate-loading-bar { animation: loading-bar 2s infinite ease-in-out; }
-      
-      /* Melhora na seleção de texto */
-      ::selection {
-        background: #bc13fe;
-        color: white;
-      }
-      
-      /* Remove setas do input number padrão para focar no CurrencyInput */
-      input::-webkit-outer-spin-button,
-      input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      input[type=number] {
-        -moz-appearance: textfield;
-      }
+      ::selection { background: #bc13fe; color: white; }
     </style>
     <script type="importmap">
 {

@@ -5,7 +5,6 @@ import { FinancialData, INITIAL_DATA } from "../types";
 
 const LOCAL_STORAGE_KEY = "fincontroller_data";
 
-// Retorna o timestamp da última atualização salva localmente
 export const getLocalTimestamp = (userId: string): number => {
   const localDataStr = localStorage.getItem(`${LOCAL_STORAGE_KEY}_${userId}`);
   if (!localDataStr) return 0;
@@ -17,7 +16,6 @@ export const getLocalTimestamp = (userId: string): number => {
   }
 };
 
-// Salva IMEDIATAMENTE no localStorage com timestamp
 export const saveToLocal = (userId: string, data: FinancialData): void => {
   const dataToSave = {
     ...data,
@@ -43,7 +41,7 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
           const cloudTimestamp = cloudData.lastUpdate || 0;
           
           if (localTimestamp > cloudTimestamp) {
-            console.log("⚡ Priorizando dados locais (mais recentes)");
+            console.log("⚡ Cloud Sync: Atualizando nuvem com dados locais mais recentes");
             await setDoc(docRef, { ...localData, lastUpdate: Date.now() });
             return localData;
           }
@@ -54,8 +52,10 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
         return localData;
       }
     } catch (error) {
-      console.warn("Cloud load failed, using local fallback", error);
+      console.warn("⚠️ Firebase: Falha ao carregar nuvem, usando local.", error);
     }
+  } else {
+    console.warn("⚠️ Firebase: db não disponível. Operando em modo offline.");
   }
   return localData || INITIAL_DATA;
 };
@@ -69,18 +69,22 @@ export const saveToCloud = async (userId: string, data: FinancialData): Promise<
     };
     await setDoc(doc(db, "users", userId), dataWithTimestamp);
   } catch (error) {
-    console.error("Error saving to Firebase:", error);
+    console.error("❌ Firebase: Erro ao salvar na nuvem:", error);
     throw error;
   }
 };
 
 export const subscribeToData = (userId: string, callback: (data: FinancialData) => void) => {
   if (db) {
-    return onSnapshot(doc(db, "users", userId), (doc) => {
-      if (doc.exists()) {
-        callback(doc.data() as FinancialData);
-      }
-    });
+    try {
+      return onSnapshot(doc(db, "users", userId), (doc) => {
+        if (doc.exists()) {
+          callback(doc.data() as FinancialData);
+        }
+      });
+    } catch (e) {
+      console.error("❌ Firebase: Erro na subscrição:", e);
+    }
   }
   return () => {};
 };

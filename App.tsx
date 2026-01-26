@@ -1,42 +1,32 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { FinancialData, INITIAL_DATA, CustomSection } from './types';
-import { loadData, saveToLocal, saveToCloud, subscribeToData, getLocalTimestamp } from './services/dataService';
+import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
-import { IncomeModule, FixedExpenseModule, InstallmentModule, CreditCardModule, PixModule, CustomSectionModule, RadarModule, DreamsModule } from './components/Modules';
-import { RefreshCw, Plus, Cloud, TrendingUp, TrendingDown, ShieldCheck, Star } from 'lucide-react';
-import { DraggableModuleWrapper } from './components/ui/UIComponents';
+import { CustomSectionModule, CreditCardModule, PixModule, RadarModule, DreamsModule } from './components/Modules';
+import { RefreshCw, Plus, Cloud, ShieldCheck, Star } from 'lucide-react';
+import { DraggableModuleWrapper, Modal, Input, Button, Select } from './components/ui/UIComponents';
 
-// ID de usuário específico solicitado para restauração de dados
 const REQUESTED_USER_ID = "GWDk0P5fbhdiLRovli43syBaHUG2";
 
 const getPersistentUserId = () => {
-  // Sempre prioriza o ID solicitado para garantir a restauração dos dados do usuário
   localStorage.setItem('fincontroller_user_id', REQUESTED_USER_ID);
   return REQUESTED_USER_ID;
 };
 
-const BottomMobileNav = ({ balance, onScrollTo, onOpenDreams }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void }) => {
+const BottomMobileNav = ({ balance, onOpenDreams }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void }) => {
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex items-center justify-between gap-2 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
-      <button onClick={() => onScrollTo('section-incomes')} className="flex flex-col items-center gap-1 text-neon-green/60 hover:text-neon-green transition-colors active:scale-90">
-        <TrendingUp size={16} />
-        <span className="text-[6px] font-black uppercase tracking-tighter">Entradas</span>
-      </button>
-      <button onClick={onOpenDreams} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gradient-to-br from-neon-blue to-neon-pink shadow-lg shadow-neon-blue/20 transform active:scale-95 transition-all">
-        <Star size={16} className="text-white" />
-        <span className="text-[6px] font-black text-white uppercase tracking-tighter">Dreams</span>
-      </button>
-      <div className="flex flex-col items-center bg-black/70 border border-neon-yellow/30 px-3 py-1 rounded-2xl shadow-[0_0_15px_rgba(255,230,0,0.1)]">
-        <span className="text-[6px] text-slate-500 font-black uppercase mb-0.5">Saldo</span>
-        <span className={`text-[10px] font-black tracking-tight ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
-          {fmt(balance)}
+    <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/95 backdrop-blur-xl border-t border-white/10 px-4 py-4 flex items-center justify-between gap-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
+      <div className="flex flex-col items-center bg-black/60 border border-white/10 px-4 py-2 rounded-2xl">
+        <span className="text-[7px] text-slate-500 font-black uppercase mb-0.5 tracking-widest">Saldo Geral</span>
+        <span className={`text-xs font-black tracking-tighter ${balance >= 0 ? 'text-neon-yellow shadow-neon-yellow/10' : 'text-neon-red shadow-neon-red/10'}`}>
+          R$ {fmt(balance)}
         </span>
       </div>
-      <button onClick={() => onScrollTo('section-fixed')} className="flex flex-col items-center gap-1 text-neon-red/60 hover:text-neon-red transition-colors active:scale-90">
-        <TrendingDown size={16} />
-        <span className="text-[6px] font-black uppercase tracking-tighter">Saídas</span>
+      <button onClick={onOpenDreams} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gradient-to-br from-neon-blue to-neon-pink shadow-xl transform active:scale-95 transition-all">
+        <Star size={18} className="text-white" />
+        <span className="text-[8px] font-black text-white uppercase tracking-widest">Dreams</span>
       </button>
     </div>
   );
@@ -49,22 +39,18 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showDreams, setShowDreams] = useState(false);
   
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newSessionType, setNewSessionType] = useState<'income' | 'expense'>('expense');
+  const [newSessionName, setNewSessionName] = useState('');
+  const [newSessionStructure, setNewSessionStructure] = useState<'standard' | 'installment'>('standard');
+
   const isInternalUpdate = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const updateLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastUpdateRef = useRef<number>(0);
 
   const normalizeData = (d: FinancialData) => {
     if (!d) return INITIAL_DATA;
     const clean = { ...INITIAL_DATA, ...d };
-    if (!clean.modulesOrder || clean.modulesOrder.length === 0) {
-      const customIds = clean.customSections?.map(s => s.id) || [];
-      clean.modulesOrder = ['fixed', 'installments', ...customIds];
-    }
-    if (!clean.incomeModulesOrder || clean.incomeModulesOrder.length === 0) {
-      const customIds = clean.customSections?.filter(s => s.type === 'income').map(s => s.id) || [];
-      clean.incomeModulesOrder = ['incomes', ...customIds];
-    }
+    if (!clean.sectionsOrder) clean.sectionsOrder = clean.customSections?.map(s => s.id) || [];
     return clean;
   };
 
@@ -72,13 +58,8 @@ function App() {
     setIsSyncing(true);
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     const performSync = async () => {
-      try {
-        await saveToCloud(userId, targetData);
-        setIsSyncing(false);
-      } catch (err) {
-        console.error("Cloud sync failed:", err);
-        setIsSyncing(false);
-      }
+      try { await saveToCloud(userId, targetData); setIsSyncing(false); }
+      catch (err) { setIsSyncing(false); }
     };
     if (immediate) performSync();
     else saveTimeoutRef.current = setTimeout(performSync, 2000);
@@ -86,11 +67,7 @@ function App() {
 
   const handleUpdate = useCallback((newDataOrUpdater: FinancialData | ((prev: FinancialData) => FinancialData), immediate = false) => {
     const now = Date.now();
-    lastUpdateRef.current = now;
     isInternalUpdate.current = true;
-    if (updateLockRef.current) clearTimeout(updateLockRef.current);
-    updateLockRef.current = setTimeout(() => { isInternalUpdate.current = false; }, 3000);
-
     setData(prev => {
       const next = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
       const nextWithTimestamp = { ...next, lastUpdate: now };
@@ -98,186 +75,174 @@ function App() {
       syncToCloud(nextWithTimestamp, immediate);
       return nextWithTimestamp;
     });
+    setTimeout(() => { isInternalUpdate.current = false; }, 3000);
   }, [userId, syncToCloud]);
 
   useEffect(() => {
     let unsubscribeData: () => void = () => {};
     (async () => {
       try {
-        console.log("📂 Conectando ao cofre do usuário:", userId);
         const initialData = await loadData(userId);
         const normalized = normalizeData(initialData);
-        lastUpdateRef.current = normalized.lastUpdate || 0;
         setData(normalized);
-        
         unsubscribeData = subscribeToData(userId, (cloudData) => {
-          const cloudTimestamp = (cloudData as any).lastUpdate || 0;
-          const localTimestamp = getLocalTimestamp(userId);
-          if (!isInternalUpdate.current && cloudTimestamp > localTimestamp) {
-            console.log("☁️ Dados sincronizados da nuvem.");
-            lastUpdateRef.current = cloudTimestamp;
-            setData(normalizeData(cloudData));
-            setIsSyncing(false);
-          }
+          if (!isInternalUpdate.current) setData(normalizeData(cloudData));
         });
-      } catch (e) {
-        console.error("Erro ao carregar dados:", e);
-      } finally {
-        setTimeout(() => setLoading(false), 1200);
-      }
+      } catch (e) { console.error(e); } finally { setTimeout(() => setLoading(false), 1200); }
     })();
     return () => unsubscribeData();
   }, [userId]);
 
-  const createNewSection = (type: 'income' | 'expense') => {
-    const title = prompt(`Nome da sessão de ${type === 'income' ? 'Entrada' : 'Saída'}?`);
-    if (!title) return;
-    const newSectionId = Math.random().toString(36).substr(2, 9);
+  const handleCreateSession = () => {
+    if (!newSessionName) return;
+    const newId = Math.random().toString(36).substr(2, 9);
     const newSection: CustomSection = {
-      id: newSectionId, title: title.toUpperCase(), items: [], type: type, structure: type === 'expense' ? 'installment' : 'standard'
+      id: newId, title: newSessionName.toUpperCase(), items: [], type: newSessionType, structure: newSessionStructure
     };
-    handleUpdate(prev => {
-      const sections = prev.customSections || [];
-      const updatedData = { ...prev, customSections: [...sections, newSection] };
-      if (type === 'expense') updatedData.modulesOrder = [...(prev.modulesOrder || ['fixed', 'installments']), newSectionId];
-      else updatedData.incomeModulesOrder = [...(prev.incomeModulesOrder || ['incomes']), newSectionId];
-      return updatedData;
-    }, true);
+    handleUpdate(prev => ({
+      ...prev,
+      customSections: [...(prev.customSections || []), newSection],
+      sectionsOrder: [...(prev.sectionsOrder || []), newId]
+    }), true);
+    setIsCreateModalOpen(false);
+    setNewSessionName('');
   };
 
   const deleteSection = (id: string) => {
-    if(confirm("Deseja apagar esta sessão inteira?")) {
-      handleUpdate(prev => ({
-        ...prev, 
-        customSections: (prev.customSections || []).filter(s => s.id !== id),
-        modulesOrder: (prev.modulesOrder || []).filter(oid => oid !== id),
-        incomeModulesOrder: (prev.incomeModulesOrder || []).filter(oid => oid !== id)
-      }), true);
-    }
+    handleUpdate(prev => ({
+      ...prev,
+      customSections: prev.customSections.filter(s => s.id !== id),
+      sectionsOrder: (prev.sectionsOrder || []).filter(oid => oid !== id)
+    }), true);
   };
 
   const updateSection = (updatedSection: CustomSection, immediate = false) => {
-    handleUpdate(prev => ({ ...prev, customSections: (prev.customSections || []).map(s => s.id === updatedSection.id ? updatedSection : s) }), immediate);
+    handleUpdate(prev => ({ ...prev, customSections: prev.customSections.map(s => s.id === updatedSection.id ? updatedSection : s) }), immediate);
   };
 
-  const scrollToId = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      window.scrollTo({ top: element.getBoundingClientRect().top - 80, behavior: 'smooth' });
-    }
+  const handleMoveSection = (from: number, to: number, type: 'income' | 'expense') => {
+    const sectionsOfType = data.customSections.filter(s => s.type === type);
+    const otherSections = data.customSections.filter(s => s.type !== type);
+    
+    const newOrder = [...sectionsOfType];
+    const [moved] = newOrder.splice(from, 1);
+    newOrder.splice(to, 0, moved);
+    
+    handleUpdate(prev => ({
+      ...prev,
+      customSections: [...otherSections, ...newOrder],
+      sectionsOrder: [...otherSections, ...newOrder].map(s => s.id)
+    }), true);
   };
 
   const calculateBalance = () => {
-    const baseInc = data.incomes.filter(i => i.isActive !== false).reduce((a, c) => a + c.value, 0);
-    const customInc = data.customSections?.filter(s => s.type === 'income').reduce((a, s) => a + s.items.filter(i => i.isActive !== false).reduce((ia, i) => ia + i.value, 0), 0) || 0;
-    const fixedExp = data.fixedExpenses.filter(e => e.isActive !== false).reduce((a, c) => a + (c.value - (c.paidAmount || 0)), 0);
-    const instExp = data.installments.filter(e => e.isActive !== false).reduce((a, c) => a + (c.monthlyValue - (c.paidAmount || 0)), 0);
-    const customExp = data.customSections?.filter(s => s.type === 'expense').reduce((a, s) => a + s.items.filter(i => i.isActive !== false).reduce((ia, i) => ia + (i.value - (i.paidAmount || 0)), 0), 0) || 0;
-    return (baseInc + customInc) - (fixedExp + instExp + customExp);
+    const totalInc = data.customSections.filter(s => s.type === 'income').reduce((a, s) => a + s.items.filter(i => i.isActive !== false).reduce((ia, i) => ia + i.value, 0), 0);
+    const totalExp = data.customSections.filter(s => s.type === 'expense').reduce((a, s) => a + s.items.filter(i => i.isActive !== false).reduce((ia, i) => ia + (i.value - (i.paidAmount || 0)), 0), 0);
+    return totalInc - totalExp;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-grid-pattern opacity-5 pointer-events-none"></div>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8">
         <div className="relative mb-14 animate-pulse">
-          <div className="p-8 bg-neon-blue/5 rounded-[3rem] border-2 border-neon-blue/40 shadow-[0_0_60px_rgba(0,243,255,0.2)]">
+          <div className="p-10 bg-neon-blue/5 rounded-[3.5rem] border-2 border-neon-blue/30 shadow-[0_0_80px_rgba(0,243,255,0.15)]">
             <ShieldCheck className="text-neon-blue w-24 h-24 sm:w-32 sm:h-32" strokeWidth={1} />
           </div>
-          <div className="absolute -bottom-3 -right-3 bg-black p-2 rounded-full border border-neon-blue/50">
-            <RefreshCw className="animate-spin text-neon-blue w-6 h-6" />
-          </div>
+          <RefreshCw className="absolute -bottom-2 -right-2 animate-spin text-neon-blue w-8 h-8 p-1.5 bg-black border border-neon-blue/50 rounded-full" />
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
-          FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.6)]">CONTROLLER</span>
-        </h1>
-        <p className="mt-4 text-[8px] font-black text-slate-500 uppercase tracking-[0.5em] animate-pulse">Autenticando e Sincronizando...</p>
-        <div className="w-56 h-1 bg-white/5 rounded-full overflow-hidden mt-8">
-          <div className="h-full bg-neon-blue shadow-[0_0_10px_#00f3ff] animate-loading-bar"></div>
-        </div>
+        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter">FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.5)]">CONTROLLER</span></h1>
       </div>
     );
   }
 
-  const expenseModules = (data.modulesOrder || ['fixed', 'installments']).map((moduleId: string, index: number) => {
-    if (moduleId === 'fixed') return <DraggableModuleWrapper key="fixed" id="fixed" index={index} onMove={(f,t) => { const n = [...(data.modulesOrder||[])]; const [m] = n.splice(f,1); n.splice(t,0,m); handleUpdate({...data, modulesOrder: n}, true); }}><FixedExpenseModule data={data} onUpdate={handleUpdate} /></DraggableModuleWrapper>;
-    if (moduleId === 'installments') return <DraggableModuleWrapper key="installments" id="installments" index={index} onMove={(f,t) => { const n = [...(data.modulesOrder||[])]; const [m] = n.splice(f,1); n.splice(t,0,m); handleUpdate({...data, modulesOrder: n}, true); }}><InstallmentModule data={data} onUpdate={handleUpdate} /></DraggableModuleWrapper>;
-    const section = data.customSections?.find(s => s.id === moduleId && s.type === 'expense');
-    if (section) return <DraggableModuleWrapper key={section.id} id={section.id} index={index} onMove={(f,t) => { const n = [...(data.modulesOrder||[])]; const [m] = n.splice(f,1); n.splice(t,0,m); handleUpdate({...data, modulesOrder: n}, true); }}><CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} /></DraggableModuleWrapper>;
-    return null;
-  });
-
-  const incomeModules = (data.incomeModulesOrder || ['incomes']).map((moduleId: string, index: number) => {
-    if (moduleId === 'incomes') return <DraggableModuleWrapper key="incomes" id="incomes" index={index} onMove={(f,t) => { const n = [...(data.incomeModulesOrder||[])]; const [m] = n.splice(f,1); n.splice(t,0,m); handleUpdate({...data, incomeModulesOrder: n}, true); }}><IncomeModule data={data} onUpdate={handleUpdate} /></DraggableModuleWrapper>;
-    const section = data.customSections?.find(s => s.id === moduleId && s.type === 'income');
-    if (section) return <DraggableModuleWrapper key={section.id} id={section.id} index={index} onMove={(f,t) => { const n = [...(data.incomeModulesOrder||[])]; const [m] = n.splice(f,1); n.splice(t,0,m); handleUpdate({...data, incomeModulesOrder: n}, true); }}><CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} /></DraggableModuleWrapper>;
-    return null;
-  });
-
   return (
-    <div className="min-h-screen text-slate-200 pb-20 selection:bg-neon-pink selection:text-white relative bg-black">
-      <nav className="border-b border-white/5 bg-neon-surface/95 backdrop-blur-md sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2 overflow-hidden">
-          <div className="flex flex-row items-center gap-2 sm:gap-6 min-w-0">
-            <h1 className="font-extrabold text-[11px] sm:text-xl tracking-tighter leading-none shrink-0 cursor-pointer" onClick={() => setShowDreams(false)}>
-              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">CONTROLLER</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-4 shrink-0">
-               <button onClick={() => setShowDreams(!showDreams)} className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all duration-300 ${showDreams ? 'bg-white/10 text-white border border-white/20' : 'bg-gradient-to-r from-neon-blue to-neon-pink text-white shadow-lg hover:shadow-neon-blue/20 hover:scale-105 active:scale-95'}`}>
-                 <Star size={14} className={showDreams ? 'text-neon-yellow' : 'text-white'} /> {showDreams ? 'CONTROLE' : 'MODO DREAMS'}
-               </button>
-               <div className={`flex items-center gap-1 px-1.5 py-1 rounded-full border transition-all duration-500 ${isSyncing ? 'bg-neon-blue/10 border-neon-blue/40 text-neon-blue' : 'bg-neon-green/10 border-neon-green/40 text-neon-green'}`}>
-                 {isSyncing ? <RefreshCw size={8} className="animate-spin" /> : <Cloud size={10} />}
-                 <span className="text-[6px] sm:text-[8px] font-black uppercase tracking-widest">
-                   {isSyncing ? 'Sync' : 'Cloud ON'}
-                 </span>
+    <div className="min-h-screen text-slate-200 pb-32 relative bg-black font-sans">
+      <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-xl sticky top-0 z-50 py-3 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+          <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase cursor-pointer" onClick={() => setShowDreams(false)}>
+            FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
+          </h1>
+          <div className="flex items-center gap-2 sm:gap-4">
+               <Button onClick={() => setShowDreams(!showDreams)} variant={showDreams ? "secondary" : "primary"} className="px-3 sm:px-6">
+                 <Star size={16} className={showDreams ? 'text-neon-yellow' : 'text-white'} /> {showDreams ? 'Módulos' : 'Dreams'}
+               </Button>
+               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isSyncing ? 'border-neon-blue/40 text-neon-blue' : 'border-neon-green/40 text-neon-green'}`}>
+                 <Cloud size={12} className={isSyncing ? 'animate-pulse' : ''} />
+                 <span className="text-[7px] font-black uppercase tracking-[0.2em]">{isSyncing ? 'Sync...' : 'Cloud'}</span>
                </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-4 pb-32 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-10">
         {showDreams ? (
           <DreamsModule data={data} onUpdate={handleUpdate} onBack={() => setShowDreams(false)} />
         ) : (
           <>
             <Dashboard data={data} />
-            <div className="flex flex-col lg:flex-row gap-6 items-start mt-4 sm:mt-6">
-              <div className="flex-1 w-full flex flex-col gap-4">
-                <h3 className="text-[8px] font-extrabold text-neon-green uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-green/30">Recebimentos</h3>
-                {incomeModules}
-                <button onClick={() => createNewSection('income')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-green/40 hover:text-neon-green hover:bg-neon-green/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Adicionar Nova Entrada</button>
+            
+            <div className="flex flex-col lg:flex-row gap-8 items-start mt-10">
+              <div className="flex-1 w-full space-y-6">
+                <div className="flex items-center justify-between pl-4 border-l-4 border-neon-green/50">
+                  <h3 className="text-[10px] font-black text-neon-green uppercase tracking-[0.3em]">Minhas Entradas</h3>
+                  <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+                </div>
+                {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
+                  <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'income')}>
+                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} />
+                  </DraggableModuleWrapper>
+                ))}
+                {data.customSections.filter(s => s.type === 'income').length === 0 && (
+                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20">Nenhuma entrada configurada</div>
+                )}
               </div>
-              <div className="flex-1 w-full flex flex-col gap-4">
-                <h3 className="text-[8px] font-extrabold text-neon-red uppercase tracking-[0.2em] pl-3 border-l-2 border-neon-red/30">Pagamentos</h3>
-                {expenseModules}
-                <button onClick={() => createNewSection('expense')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-600 font-bold hover:border-neon-red/40 hover:text-neon-red hover:bg-neon-red/5 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"><Plus size={16} /> Adicionar Nova Saída</button>
+
+              <div className="flex-1 w-full space-y-6">
+                <div className="flex items-center justify-between pl-4 border-l-4 border-neon-red/50">
+                  <h3 className="text-[10px] font-black text-neon-red uppercase tracking-[0.3em]">Meus Pagamentos</h3>
+                  <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+                </div>
+                {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (
+                  <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'expense')}>
+                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} />
+                  </DraggableModuleWrapper>
+                ))}
+                {data.customSections.filter(s => s.type === 'expense').length === 0 && (
+                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20">Nenhuma saída configurada</div>
+                )}
               </div>
             </div>
-            <div className="mt-12 pt-8 border-t border-white/5">
-              <h3 className="text-[8px] font-extrabold text-slate-500 uppercase tracking-[0.2em] mb-6 text-center lg:text-left">Recursos & Bancos</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <CreditCardModule data={data} onUpdate={handleUpdate} />
-                <RadarModule data={data} onUpdate={handleUpdate} />
-                <PixModule data={data} onUpdate={handleUpdate} />
-              </div>
+
+            <div className="mt-20 pt-10 border-t border-white/5 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <CreditCardModule data={data} onUpdate={handleUpdate} />
+              <RadarModule data={data} onUpdate={handleUpdate} />
+              <PixModule data={data} onUpdate={handleUpdate} />
             </div>
           </>
         )}
       </main>
 
-      <BottomMobileNav balance={calculateBalance()} onScrollTo={scrollToId} onOpenDreams={() => setShowDreams(true)} />
-
-      <footer className="mt-20 py-10 text-center border-t border-white/5 bg-black/40 backdrop-blur-md">
-        <div className="flex flex-col items-center gap-2 px-4">
-          <p className="text-[9px] font-black text-white/70 uppercase tracking-[0.4em]">Financial Controller</p>
-          <div className="h-px w-20 bg-white/5 my-1"></div>
-          <p className="text-[7px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed">
-            {new Date().getFullYear()} • Powered By JOI.A. todos os direitos reservados
-          </p>
+      <Modal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        title={`Nova Sessão de ${newSessionType === 'income' ? 'Entrada' : 'Saída'}`}
+        onConfirm={handleCreateSession}
+      >
+        <div className="space-y-5 py-4">
+          <Input label="Nome da Sessão" placeholder="EX: SALÁRIO, ALUGUEL, LAZER..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
+          <Select 
+            label="Tipo de Registro" 
+            value={newSessionStructure} 
+            onChange={e => setNewSessionStructure(e.target.value as any)}
+            options={[
+              { value: 'standard', label: 'Registro Simples (Apenas Valor)' },
+              { value: 'installment', label: 'Parcelamento (Mensalidade + Total)' }
+            ]}
+          />
         </div>
-      </footer>
+      </Modal>
+
+      <BottomMobileNav balance={calculateBalance()} onScrollTo={() => {}} onOpenDreams={() => setShowDreams(true)} />
     </div>
   );
 }

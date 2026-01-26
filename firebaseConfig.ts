@@ -1,5 +1,5 @@
 
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -15,17 +15,16 @@ let app: FirebaseApp;
 let db: Firestore;
 
 try {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0];
-  }
+  // Inicialização singleton do app
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  // getFirestore é geralmente mais resiliente em carregamentos dinâmicos ESM
+  // Inicialização do Firestore
   db = getFirestore(app);
-  console.log("🚀 Firestore: Conectado com sucesso");
+  
+  console.log("🚀 Firebase: Inicializado com sucesso");
 } catch (error) {
-  console.error("❌ Falha na conexão Firestore:", error);
+  console.error("❌ Firebase: Erro de inicialização:", error);
+  // db permanecerá undefined, o que deve ser tratado nos serviços
 }
 
 export { db };

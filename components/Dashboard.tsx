@@ -12,35 +12,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<0 | 1 | 2>(0);
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // 1. Entradas (Fixas + Custom)
-  const baseIncome = data.incomes
-    .filter(i => i.isActive !== false)
-    .reduce((acc, curr) => acc + curr.value, 0);
-    
-  const customIncomeTotal = data.customSections
+  // 1. Entradas (Custom Sections)
+  const totalIncome = data.customSections
     ?.filter(s => s.type === 'income')
     .reduce((acc, s) => acc + s.items
       .filter(i => i.isActive !== false)
       .reduce((iAcc, item) => iAcc + item.value, 0), 0) || 0;
-  
-  const totalIncome = baseIncome + customIncomeTotal;
 
-  // 2. Saídas (Fixas + Parcelamentos + Custom)
-  const totalFixedExpenses = data.fixedExpenses
-    .filter(e => e.isActive !== false)
-    .reduce((acc, curr) => acc + (curr.value - (curr.paidAmount || 0)), 0);
-  
-  const totalInstallmentMonthly = data.installments
-    .filter(e => e.isActive !== false)
-    .reduce((acc, curr) => acc + (curr.monthlyValue - (curr.paidAmount || 0)), 0);
-
-  const customExpenseTotal = data.customSections
+  // 2. Saídas (Custom Sections)
+  const totalOutflow = data.customSections
     ?.filter(s => s.type === 'expense')
     .reduce((acc, s) => acc + s.items
       .filter(i => i.isActive !== false)
       .reduce((iAcc, item) => iAcc + (item.value - (item.paidAmount || 0)), 0), 0) || 0;
 
-  const totalOutflow = totalFixedExpenses + totalInstallmentMonthly + customExpenseTotal;
   const balance = totalIncome - totalOutflow;
 
   const toggleView = () => setViewMode((prev) => (prev + 1) % 3 as any);

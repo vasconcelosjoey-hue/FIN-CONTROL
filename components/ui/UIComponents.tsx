@@ -8,7 +8,6 @@ export const Card = ({ children, className = "", onClick }: { children?: React.R
   </div>
 );
 
-// Added optional children to fix the missing property error in some build environments
 export const Modal = ({ isOpen, onClose, title, children, confirmText = "Confirmar", confirmVariant = "primary", onConfirm }: { isOpen: boolean, onClose: () => void, title: string, children?: React.ReactNode, confirmText?: string, confirmVariant?: any, onConfirm: () => void }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -229,15 +228,15 @@ export const CurrencyInput = ({
     <div className="flex flex-col gap-1.5 w-full group">
       {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600 uppercase">R$</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-600 uppercase pointer-events-none">R$</span>
         <input 
           {...props}
           type="text"
           value={displayValue}
           onChange={handleChange}
-          className={`bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white font-bold text-sm
+          className={`bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-3 text-white font-bold text-[13px]
                      focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
-                     transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12`}
+                     transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${props.className || ''}`}
         />
       </div>
     </div>
@@ -268,7 +267,7 @@ export const Badge = ({ children, color = 'blue' }: { children?: React.ReactNode
     white: "bg-white/10 text-white border-white/30 shadow-[0_0_5px_rgba(255,255,255,0.3)]",
   };
   return (
-    <span className={`text-[8px] uppercase tracking-widest px-2 py-0.5 rounded-lg border font-black ${colors[color] || colors.blue}`}>
+    <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-lg border font-black ${colors[color] || colors.blue}`}>
       {children}
     </span>
   );

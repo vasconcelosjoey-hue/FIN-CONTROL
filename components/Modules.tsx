@@ -23,7 +23,6 @@ const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
     const month = parseInt(parts[1]);
     
     // JS Date meses são 0-indexed. 
-    // Se month=2 (Fevereiro) e current=1 (1ª parcela), a conta deve dar 1 (Fevereiro).
     // Fórmula: (mês_escolhido - 1) + (parcela_atual - 1)
     const targetDate = new Date(year, (month - 1) + (current - 1), 15);
     
@@ -199,15 +198,15 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                                 >
                                   <CheckCircle2 size={12} />
                                 </button>
-                                <span className="text-[9px] font-black text-neon-yellow ml-2 tracking-widest">{getInstallmentMonth(item.startMonth, item.currentInstallment)}</span>
+                                <span className="text-[10px] font-black text-neon-yellow ml-2 tracking-widest">{getInstallmentMonth(item.startMonth, item.currentInstallment)}</span>
                              </div>
                           </div>
                         )}
-                        <div className="flex items-center gap-2 bg-black/20 px-2 py-1 rounded-xl border border-white/5">
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pago</span>
-                            <div className="w-32">
+                        <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pago</span>
+                            <div className="w-36">
                                 <CurrencyInput 
-                                    className="h-7 text-xs bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
+                                    className="h-8 text-[13px] bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
                                     value={item.paidAmount || 0} 
                                     onValueChange={(v) => handleQuickPay(item.id, v)} 
                                 />
@@ -218,7 +217,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                     
                     <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                       <div className="text-right flex flex-col">
-                        <span className={`font-mono font-black text-xs sm:text-sm leading-none ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red shadow-[0_0_10px_rgba(255,0,85,0.2)]') : 'text-slate-800'}`}>
+                        <span className={`font-mono font-black text-sm sm:text-base leading-none ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red shadow-[0_0_10px_rgba(255,0,85,0.2)]') : 'text-slate-800'}`}>
                             R$ {fmt(item.value - (item.paidAmount || 0))}
                         </span>
                         {item.paidAmount && item.paidAmount > 0 ? (
@@ -291,42 +290,52 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   );
 };
 
-export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (updater: (prev: FinancialData) => FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
+// Fix: Export CreditCardModule
+export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState(0);
   const [closing, setClosing] = useState('');
   const [due, setDue] = useState('');
-  const [invoice, setInvoice] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const handleAdd = () => {
-    if (!name || limit === 0) return;
-    const newCard: CreditCard = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), limit, closingDay: parseInt(closing) || 1, dueDay: parseInt(due) || 1, currentInvoiceValue: invoice };
-    onUpdate(prev => ({ ...prev, creditCards: [...(prev.creditCards || []), newCard] }), true);
-    setName(''); setLimit(0); setClosing(''); setDue(''); setInvoice(0);
+    if (!name) return;
+    const newItem: CreditCard = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: name.toUpperCase(),
+      limit,
+      closingDay: parseInt(closing) || 1,
+      dueDay: parseInt(due) || 1,
+      currentInvoiceValue: current
+    };
+    onUpdate((prev: FinancialData) => ({ ...prev, creditCards: [...(prev.creditCards || []), newItem] }), true);
+    setName(''); setLimit(0); setClosing(''); setDue(''); setCurrent(0);
   };
 
   return (
-    <CollapsibleCard title="Cartões de Crédito" icon={<CCIcon size={18}/>} color="blue">
+    <CollapsibleCard title="Cartões de Crédito" icon={<CCIcon size={18} />} color="pink">
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2"><Input label="Nome do Cartão" value={name} onChange={e => setName(e.target.value)} /></div>
-          <CurrencyInput label="Limite Total" value={limit} onValueChange={setLimit} />
-          <CurrencyInput label="Fatura Atual" value={invoice} onValueChange={setInvoice} />
-          <Input label="Fechamento (Dia)" type="number" value={closing} onChange={e => setClosing(e.target.value)} />
-          <Input label="Vencimento (Dia)" type="number" value={due} onChange={e => setDue(e.target.value)} />
+          <Input label="Cartão" value={name} onChange={e => setName(e.target.value)} />
+          <CurrencyInput label="Limite" value={limit} onValueChange={setLimit} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Fechamento" type="number" value={closing} onChange={e => setClosing(e.target.value)} />
+            <Input label="Vencimento" type="number" value={due} onChange={e => setDue(e.target.value)} />
+          </div>
+          <CurrencyInput label="Fatura Atual" value={current} onValueChange={setCurrent} />
         </div>
       </AddForm>
-      <div className="space-y-2 mt-4">
-        {data.creditCards?.map(card => (
-          <div key={card.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center">
+      <div className="flex flex-col gap-2 mt-4">
+        {(data.creditCards || []).map(card => (
+          <div key={card.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center group">
             <div>
-              <p className="font-black text-xs uppercase text-white">{card.name}</p>
-              <div className="flex gap-2 mt-1">
-                <Badge color="blue">Limite: R$ {fmt(card.limit)}</Badge>
-                <Badge color="red">Fatura: R$ {fmt(card.currentInvoiceValue)}</Badge>
-              </div>
+              <p className="font-black text-xs text-white uppercase tracking-tight">{card.name}</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase">Lim: {fmt(card.limit)} • Fecha dia {card.closingDay}</p>
             </div>
-            <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate(prev => ({ ...prev, creditCards: prev.creditCards.filter(c => c.id !== card.id) }), true)} />
+            <div className="text-right flex items-center gap-3">
+              <span className="font-mono font-black text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</span>
+              <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, creditCards: prev.creditCards.filter(c => c.id !== card.id) }), true)} />
+            </div>
           </div>
         ))}
       </div>
@@ -334,78 +343,33 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (update
   );
 };
 
-export const PixModule: React.FC<{ data: FinancialData, onUpdate: (updater: (prev: FinancialData) => FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
-  const [type, setType] = useState<PixKey['type']>('Aleatória');
-  const [key, setKey] = useState('');
-  const [ben, setBen] = useState('');
-
-  const handleAdd = () => {
-    if (!key) return;
-    const newKey: PixKey = { id: Math.random().toString(36).substr(2, 9), type, key, beneficiary: ben, active: true };
-    onUpdate(prev => ({ ...prev, pixKeys: [...(prev.pixKeys || []), newKey] }), true);
-    setKey(''); setBen('');
-  };
-
-  return (
-    <CollapsibleCard title="Chaves Pix" icon={<Zap size={18}/>} color="yellow">
-      <AddForm onAdd={handleAdd}>
-        <div className="grid grid-cols-1 gap-3">
-          <Select label="Tipo" value={type} onChange={e => setType(e.target.value as any)} options={[
-            {value: 'CPF', label: 'CPF'}, {value: 'CNPJ', label: 'CNPJ'}, {value: 'Telefone', label: 'Telefone'}, {value: 'Email', label: 'E-mail'}, {value: 'Aleatória', label: 'Aleatória'}
-          ]} />
-          <Input 
-            label="Chave" 
-            value={key} 
-            onChange={e => setKey(e.target.value)} 
-            noUppercase={type === 'Aleatória' || type === 'Email'} 
-          />
-          <Input label="Beneficiário" value={ben} onChange={e => setBen(e.target.value)} />
-        </div>
-      </AddForm>
-      <div className="space-y-2 mt-4">
-        {data.pixKeys?.map(pk => (
-          <div key={pk.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <Badge color="yellow">{pk.type}</Badge>
-                <p className={`font-mono text-[10px] text-white truncate max-w-[150px] ${(pk.type !== 'Aleatória' && pk.type !== 'Email') ? 'uppercase' : ''}`}>{pk.key}</p>
-              </div>
-              {pk.beneficiary && <p className="text-[9px] text-slate-500 font-bold mt-1 uppercase truncate">{pk.beneficiary}</p>}
-            </div>
-            <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate(prev => ({ ...prev, pixKeys: prev.pixKeys.filter(k => k.id !== pk.id) }), true)} />
-          </div>
-        ))}
-      </div>
-    </CollapsibleCard>
-  );
-};
-
-export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (updater: (prev: FinancialData) => FinancialData, immediate?: boolean) => void }> = ({ data, onUpdate }) => {
+// Fix: Export RadarModule
+export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);
 
   const handleAdd = () => {
     if (!name || val === 0) return;
     const newItem: RadarItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val };
-    onUpdate(prev => ({ ...prev, radarItems: [...(prev.radarItems || []), newItem] }), true);
+    onUpdate((prev: FinancialData) => ({ ...prev, radarItems: [...(prev.radarItems || []), newItem] }), true);
     setName(''); setVal(0);
   };
 
   return (
-    <CollapsibleCard title="Radar de Gastos" icon={<Target size={18}/>} color="pink">
+    <CollapsibleCard title="Radar de Gastos" icon={<AlertTriangle size={18} />} color="yellow">
       <AddForm onAdd={handleAdd}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Item" value={name} onChange={e => setName(e.target.value)} />
-          <CurrencyInput label="Valor Estimado" value={val} onValueChange={setVal} />
+          <CurrencyInput label="Valor" value={val} onValueChange={setVal} />
         </div>
       </AddForm>
-      <div className="space-y-2 mt-4">
-        {data.radarItems?.map(item => (
+      <div className="flex flex-col gap-2 mt-4">
+        {(data.radarItems || []).map(item => (
           <div key={item.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center">
-            <p className="font-black text-xs uppercase text-white">{item.name}</p>
+            <p className="font-black text-xs text-white uppercase">{item.name}</p>
             <div className="flex items-center gap-3">
-              <span className="font-mono font-black text-xs text-neon-pink">R$ {fmt(item.value)}</span>
-              <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate(prev => ({ ...prev, radarItems: prev.radarItems.filter(i => i.id !== item.id) }), true)} />
+              <span className="font-mono font-black text-neon-yellow">R$ {fmt(item.value)}</span>
+              <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, radarItems: prev.radarItems.filter(i => i.id !== item.id) }), true)} />
             </div>
           </div>
         ))}
@@ -414,70 +378,121 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (updater: (p
   );
 };
 
-export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (updater: (prev: FinancialData) => FinancialData, immediate?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
+// Fix: Export PixModule
+export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
+  const [key, setKey] = useState('');
+  const [type, setType] = useState<any>('Aleatória');
+  const [beneficiary, setBeneficiary] = useState('');
+
+  const handleAdd = () => {
+    if (!key) return;
+    const newItem: PixKey = { id: Math.random().toString(36).substr(2, 9), type, key, beneficiary: beneficiary.toUpperCase(), active: true };
+    onUpdate((prev: FinancialData) => ({ ...prev, pixKeys: [...(prev.pixKeys || []), newItem] }), true);
+    setKey(''); setBeneficiary('');
+  };
+
+  return (
+    <CollapsibleCard title="Chaves Pix" icon={<Zap size={18} />} color="blue">
+      <AddForm onAdd={handleAdd}>
+        <div className="flex flex-col gap-3">
+          <Select label="Tipo" value={type} onChange={e => setType(e.target.value as any)} options={[
+            { value: 'Aleatória', label: 'Aleatória' },
+            { value: 'CPF', label: 'CPF' },
+            { value: 'CNPJ', label: 'CNPJ' },
+            { value: 'Telefone', label: 'Telefone' },
+            { value: 'Email', label: 'Email' }
+          ]} />
+          <Input label="Chave" value={key} onChange={e => setKey(e.target.value)} noUppercase={type === 'Email'} />
+          <Input label="Beneficiário" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} />
+        </div>
+      </AddForm>
+      <div className="flex flex-col gap-2 mt-4">
+        {(data.pixKeys || []).map(pk => (
+          <div key={pk.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center">
+            <div>
+              <p className="font-black text-[10px] text-neon-blue uppercase tracking-widest">{pk.type}</p>
+              <p className="text-xs text-white font-bold">{pk.key}</p>
+              {pk.beneficiary && <p className="text-[8px] text-slate-600 font-black uppercase mt-0.5">{pk.beneficiary}</p>}
+            </div>
+            <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, pixKeys: prev.pixKeys.filter(k => k.id !== pk.id) }), true)} />
+          </div>
+        ))}
+      </div>
+    </CollapsibleCard>
+  );
+};
+
+// Fix: Export DreamsModule
+export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), imm?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);
-  const totalDreamsValue = data.dreams?.filter(d => d.isActive).reduce((acc, curr) => acc + curr.value, 0) || 0;
 
   const handleAdd = () => {
     if (!name || val === 0) return;
     const newItem: DreamItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val, isActive: true };
-    onUpdate(prev => ({ ...prev, dreams: [...(prev.dreams || []), newItem] }), true);
+    onUpdate((prev: FinancialData) => ({ ...prev, dreams: [...(prev.dreams || []), newItem] }), true);
     setName(''); setVal(0);
   };
+
+  const totalDreams = (data.dreams || []).filter(d => d.isActive).reduce((acc, curr) => acc + curr.value, 0);
 
   return (
     <div className="animate-in slide-in-from-right duration-500">
       <div className="flex items-center gap-4 mb-8">
-        <Button onClick={onBack} variant="secondary" className="w-12 h-12 p-0 rounded-2xl"><ArrowLeft size={20} /></Button>
-        <div>
-          <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Meus <span className="text-neon-pink">Dreams</span></h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Planejamento e Conquistas</p>
-        </div>
+        <Button onClick={onBack} variant="ghost" className="p-2 rounded-full"><ArrowLeft size={24} /></Button>
+        <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">My <span className="text-neon-pink">Dreams</span></h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <Card className="border-neon-pink/30 bg-neon-pink/5">
-          <p className="text-[10px] font-black text-neon-pink uppercase tracking-widest mb-1">Orçamento Reservado</p>
-          <CurrencyInput value={data.dreamsTotalBudget} onValueChange={v => onUpdate(prev => ({...prev, dreamsTotalBudget: v}))} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <Card className="lg:col-span-2 border-neon-pink/30 bg-gradient-to-br from-neon-pink/10 to-transparent p-8 flex flex-col justify-center">
+          <p className="text-[10px] text-neon-pink font-black uppercase tracking-[0.4em] mb-2">Meta Total Acumulada</p>
+          <p className="text-5xl sm:text-6xl font-black text-white tracking-tighter">
+            <span className="text-2xl text-slate-600 mr-2">R$</span>
+            {fmt(totalDreams)}
+          </p>
         </Card>
-        <Card className="border-neon-blue/30 bg-neon-blue/5 flex flex-col justify-center">
-          <p className="text-[10px] font-black text-neon-blue uppercase tracking-widest mb-1">Total Necessário</p>
-          <p className="text-2xl font-black text-white">R$ {fmt(totalDreamsValue)}</p>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <Card className="p-6">
-            <h4 className="text-xs font-black uppercase mb-4 text-white flex items-center gap-2"><Trophy size={14} className="text-neon-yellow"/> Adicionar Meta</h4>
-            <div className="space-y-4" onKeyDown={e => e.key === 'Enter' && handleAdd()}>
-              <Input label="Qual o seu sonho?" value={name} onChange={e => setName(e.target.value)} />
-              <CurrencyInput label="Quanto custa?" value={val} onValueChange={setVal} />
-              <Button onClick={handleAdd} className="w-full h-12 bg-neon-pink/20 text-neon-pink border-neon-pink/50 hover:bg-neon-pink hover:text-white">Adicionar aos Dreams</Button>
+        
+        <Card className="border-neon-blue/30 p-8 flex flex-col justify-center">
+          <p className="text-[10px] text-neon-blue font-black uppercase tracking-[0.4em] mb-2">Orçamento Atual</p>
+          <div className="flex flex-col gap-2">
+            <CurrencyInput value={data.dreamsTotalBudget || 0} onValueChange={(v) => onUpdate((prev: FinancialData) => ({ ...prev, dreamsTotalBudget: v }), false)} className="text-2xl font-black text-neon-blue bg-transparent border-none p-0 focus:ring-0" />
+            <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                <div style={{ width: `${Math.min(100, (data.dreamsTotalBudget / (totalDreams || 1)) * 100)}%` }} className="h-full bg-neon-blue shadow-neon-blue transition-all duration-1000"></div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
+      </div>
 
-        <div className="lg:col-span-2 space-y-3">
-          {data.dreams?.map(dream => (
-            <div key={dream.id} className="p-4 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center group">
+      <div className="max-w-3xl mx-auto space-y-8">
+        <AddForm onAdd={handleAdd}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Qual o seu sonho?" placeholder="EX: VIAGEM PARA JAPÃO, NOVO CARRO..." value={name} onChange={e => setName(e.target.value)} />
+            <CurrencyInput label="Valor Estimado" value={val} onValueChange={setVal} />
+          </div>
+        </AddForm>
+
+        <div className="grid grid-cols-1 gap-4">
+          {(data.dreams || []).map(dream => (
+            <div key={dream.id} className="p-5 bg-neon-surface/60 border border-white/5 rounded-3xl flex justify-between items-center group hover:border-neon-pink/30 transition-all">
               <div className="flex items-center gap-4">
-                <button onClick={() => onUpdate(prev => ({...prev, dreams: prev.dreams.map(d => d.id === dream.id ? {...d, isActive: !d.isActive} : d)}), true)} 
-                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${dream.isActive ? 'border-neon-green bg-neon-green/10 text-neon-green shadow-neon-green/20' : 'border-white/10 text-slate-700'}`}>
-                  <Star size={18} fill={dream.isActive ? "currentColor" : "none"} />
-                </button>
+                <div className={`p-3 rounded-2xl ${dream.isActive ? 'bg-neon-pink/10 text-neon-pink' : 'bg-slate-900 text-slate-700'}`}><Trophy size={20} /></div>
                 <div>
-                  <p className={`font-black uppercase tracking-tight text-sm ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
-                  <p className="text-xs font-mono font-bold text-neon-pink">R$ {fmt(dream.value)}</p>
+                    <p className={`font-black text-lg uppercase tracking-tight ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <Badge color={dream.isActive ? 'pink' : 'white'}>{dream.isActive ? 'Em foco' : 'Pausado'}</Badge>
+                        <span className="text-[10px] font-black text-slate-600 uppercase">{((dream.value / (totalDreams || 1)) * 100).toFixed(0)}% do total</span>
+                    </div>
                 </div>
               </div>
-              <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 group-hover:text-neon-red" onClick={() => onUpdate(prev => ({...prev, dreams: prev.dreams.filter(d => d.id !== dream.id)}), true)} />
+              <div className="flex items-center gap-6">
+                <p className={`font-mono font-black text-xl ${dream.isActive ? 'text-white' : 'text-slate-800'}`}>R$ {fmt(dream.value)}</p>
+                <div className="flex items-center gap-2">
+                    <ToggleStatusButton active={dream.isActive} onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, dreams: prev.dreams.map(d => d.id === dream.id ? { ...d, isActive: !d.isActive } : d) }), true)} color="pink" />
+                    <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, dreams: prev.dreams.filter(d => d.id !== dream.id) }), true)} />
+                </div>
+              </div>
             </div>
           ))}
-          {(!data.dreams || data.dreams.length === 0) && (
-            <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] opacity-20 font-black uppercase tracking-widest">Nenhum sonho listado ainda</div>
-          )}
         </div>
       </div>
     </div>

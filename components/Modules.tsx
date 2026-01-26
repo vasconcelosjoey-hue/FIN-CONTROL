@@ -18,11 +18,18 @@ const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits
 const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
   if (!startMonth) return '---';
   try {
-    const [year, month] = startMonth.split('-').map(Number);
-    // A lógica agora garante que startMonth é o mês da parcela 1
-    const date = new Date(year, month - 1 + (current - 1), 15);
-    return date.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
+    const parts = startMonth.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    
+    // JS Date meses são 0-indexed. 
+    // Se month=2 (Fevereiro) e current=1 (1ª parcela), a conta deve dar 1 (Fevereiro).
+    // Fórmula: (mês_escolhido - 1) + (parcela_atual - 1)
+    const targetDate = new Date(year, (month - 1) + (current - 1), 15);
+    
+    return targetDate.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
   } catch (e) {
+    console.error("Erro ao calcular mês:", e);
     return '---';
   }
 };
@@ -132,7 +139,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
     onUpdate({
         ...section,
         items: section.items.map(i => i.id === itemId ? { ...i, paidAmount: paidVal } : i)
-    }, false); // Usamos false para não disparar sync imediato em cada tecla
+    }, false);
   };
 
   return (
@@ -198,9 +205,9 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                         )}
                         <div className="flex items-center gap-2 bg-black/20 px-2 py-1 rounded-xl border border-white/5">
                             <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pago</span>
-                            <div className="w-20">
+                            <div className="w-32">
                                 <CurrencyInput 
-                                    className="h-6 text-[10px] bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
+                                    className="h-7 text-xs bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
                                     value={item.paidAmount || 0} 
                                     onValueChange={(v) => handleQuickPay(item.id, v)} 
                                 />

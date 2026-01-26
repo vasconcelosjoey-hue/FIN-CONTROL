@@ -15,6 +15,18 @@ const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () =>
 
 const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
+  if (!startMonth) return '---';
+  try {
+    const [year, month] = startMonth.split('-').map(Number);
+    // Adicionamos (current - 1) meses à data inicial
+    const date = new Date(year, month - 1 + (current - 1), 15); // Dia 15 para evitar problemas de fuso horário
+    return date.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
+  } catch (e) {
+    return '---';
+  }
+};
+
 const ActionButton = ({ onClick, icon, color = "text-slate-600 hover:text-white" }: { onClick: () => void, icon: React.ReactNode, color?: string }) => (
   <button onClick={(e) => { e.stopPropagation(); onClick(); }} className={`${color} transition-colors p-2 rounded-lg hover:bg-white/5 shrink-0`}>
     {icon}
@@ -90,7 +102,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
       name: name.toUpperCase(), 
       value: val, 
       isActive: true,
-      ...(isInstallment ? { installmentsCount: parseInt(count) || 1, currentInstallment: 1, startMonth: start } : {})
+      ...(isInstallment ? { installmentsCount: parseInt(count) || 1, currentInstallment: 1, startMonth: start || new Date().toISOString().slice(0, 7) } : {})
     };
     onUpdate({ ...section, items: [...section.items, newItem] }, true);
     setName(''); setVal(0); setCount(''); setStart('');
@@ -126,7 +138,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         onEditTitle={(nt) => onUpdate({...section, title: nt}, true)}
       >
         <div className="flex justify-end mb-4">
-           <Button onClick={() => setIsDeleteModalOpen(true)} variant="ghost" className="text-slate-600 hover:text-neon-red px-2 h-7"><Trash2 size={12} /> Excluir Sessão</Button>
+           <button onClick={() => setIsDeleteModalOpen(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-700 hover:text-neon-red flex items-center gap-1 transition-colors"><Trash2 size={10} /> Excluir Sessão</button>
         </div>
         
         <AddForm onAdd={handleAdd}>
@@ -159,15 +171,18 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                       <p className={`font-black text-xs sm:text-sm tracking-tight truncate ${item.isActive !== false ? 'text-white' : 'text-slate-700 line-through'}`}>{item.name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {isInstallment && (
-                          <div className="flex items-center gap-2">
-                             <Badge color="yellow">{item.currentInstallment || 1} / {item.installmentsCount}X</Badge>
-                             <button 
-                                onClick={() => setPayInstallmentModal({ isOpen: true, item })}
-                                className="bg-neon-green/10 text-neon-green p-1 rounded-full border border-neon-green/30 hover:bg-neon-green hover:text-black transition-all"
-                                title="Quitar este mês"
-                             >
-                               <CheckCircle2 size={12} />
-                             </button>
+                          <div className="flex items-center gap-1.5">
+                             <Badge color="yellow">{item.currentInstallment} / {item.installmentsCount}X</Badge>
+                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5">
+                                <button 
+                                  onClick={() => setPayInstallmentModal({ isOpen: true, item })}
+                                  className="bg-neon-green/10 text-neon-green p-1.5 rounded-l-lg border-r border-white/10 hover:bg-neon-green hover:text-black transition-all"
+                                  title="Quitar este mês"
+                                >
+                                  <CheckCircle2 size={12} />
+                                </button>
+                                <span className="text-[9px] font-black text-neon-yellow ml-2 tracking-widest">{getInstallmentMonth(item.startMonth, item.currentInstallment)}</span>
+                             </div>
                           </div>
                         )}
                         {item.paidAmount && item.paidAmount > 0 ? <Badge color="green">Pago: R$ {fmt(item.paidAmount)}</Badge> : null}
@@ -193,19 +208,33 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
       <Modal
         isOpen={payInstallmentModal.isOpen}
         onClose={() => setPayInstallmentModal({ isOpen: false })}
-        title="Quitar Parcela Mensal"
-        confirmText={(payInstallmentModal.item?.currentInstallment || 1) >= (payInstallmentModal.item?.installmentsCount || 1) ? "Quitar e Remover" : "Confirmar Pagamento"}
+        title="Quitar Parcela"
+        confirmText={(payInstallmentModal.item?.currentInstallment || 1) >= (payInstallmentModal.item?.installmentsCount || 1) ? "Quitar e Finalizar" : "Confirmar Pagamento"}
         onConfirm={() => payInstallmentModal.item && handlePayInstallment(payInstallmentModal.item)}
       >
         <div className="space-y-4">
-          <p>Deseja confirmar o pagamento da parcela <strong className="text-white">{payInstallmentModal.item?.currentInstallment}/{payInstallmentModal.item?.installmentsCount}</strong> de <strong className="text-white">{payInstallmentModal.item?.name}</strong>?</p>
+          <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Registro</p>
+            <p className="text-white font-black text-lg uppercase">{payInstallmentModal.item?.name}</p>
+            <div className="flex gap-4 mt-3">
+              <div>
+                <p className="text-[8px] text-slate-600 font-black uppercase">Parcela</p>
+                <p className="text-neon-yellow font-black">{payInstallmentModal.item?.currentInstallment} / {payInstallmentModal.item?.installmentsCount}</p>
+              </div>
+              <div>
+                <p className="text-[8px] text-slate-600 font-black uppercase">Mês de Ref.</p>
+                <p className="text-neon-blue font-black uppercase">{getInstallmentMonth(payInstallmentModal.item?.startMonth, payInstallmentModal.item?.currentInstallment)}</p>
+              </div>
+            </div>
+          </div>
+          
           {(payInstallmentModal.item?.currentInstallment || 1) >= (payInstallmentModal.item?.installmentsCount || 1) ? (
             <div className="p-3 bg-neon-yellow/10 border border-neon-yellow/30 rounded-xl flex items-start gap-3">
               <AlertTriangle className="text-neon-yellow shrink-0" size={18} />
-              <p className="text-xs text-neon-yellow font-bold uppercase tracking-tight">Esta é a última parcela. Após confirmar, este registro será removido automaticamente da lista.</p>
+              <p className="text-xs text-neon-yellow font-bold uppercase tracking-tight">Esta é a última parcela. O registro será finalizado hoje.</p>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 uppercase font-black tracking-widest">A parcela será avançada automaticamente para o próximo mês.</p>
+            <p className="text-xs text-slate-400 font-medium leading-relaxed">Ao confirmar, o sistema avançará para o mês seguinte (<span className="text-white font-bold">{getInstallmentMonth(payInstallmentModal.item?.startMonth, (payInstallmentModal.item?.currentInstallment || 1) + 1)}</span>).</p>
           )}
         </div>
       </Modal>
@@ -218,8 +247,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         confirmVariant="danger"
         onConfirm={onDeleteSection}
       >
-        Você tem certeza que deseja excluir a sessão <strong className="text-white">"{section.title}"</strong>? <br/><br/>
-        Isso apagará permanentemente todos os registros vinculados a ela. Esta ação não pode ser desfeita.
+        Deseja excluir permanentemente a sessão <strong className="text-white">"{section.title}"</strong> e todos os seus registros?
       </Modal>
     </>
   );

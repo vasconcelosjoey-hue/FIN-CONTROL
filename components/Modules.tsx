@@ -24,7 +24,6 @@ const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
     
     // JS Date meses são 0-indexed.
     // O startMonth escolhido pelo usuário é sempre a parcela 1.
-    // Por isso, para a parcela 'current', adicionamos 'current - 1' meses à base.
     const targetDate = new Date(year, (month - 1) + (current - 1), 15);
     
     return targetDate.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
@@ -43,21 +42,32 @@ const ActionButton = ({ onClick, icon, color = "text-slate-600 hover:text-white"
 const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId: string; onMove: (f: number, t: number) => void }> = ({ children, index, listId, onMove }) => {
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
-    // Evita arrastar ao clicar em botões ou inputs
     if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
+    
     e.dataTransfer.setData('type', 'ROW');
     e.dataTransfer.setData('listId', listId);
     e.dataTransfer.setData('rowIndex', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
   };
+
   return (
-    <div draggable onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={e => {
+    <div 
+      draggable 
+      onDragStart={handleDragStart} 
+      onDragOver={e => e.preventDefault()} 
+      onDrop={e => {
         e.preventDefault();
         const type = e.dataTransfer.getData('type');
         const srcListId = e.dataTransfer.getData('listId');
         if (type !== 'ROW' || srcListId !== listId) return;
-        onMove(parseInt(e.dataTransfer.getData('rowIndex')), index);
-    }} className="flex items-center group/row">
-      <div className="mr-3 text-slate-800 group-hover/row:text-neon-blue transition-colors shrink-0 cursor-grab active:cursor-grabbing p-1"><GripVertical size={16} /></div>
+        const fromIdx = parseInt(e.dataTransfer.getData('rowIndex'));
+        if (!isNaN(fromIdx) && fromIdx !== index) onMove(fromIdx, index);
+      }} 
+      className="flex items-center group/row"
+    >
+      <div className="mr-3 text-slate-800 group-hover/row:text-neon-blue transition-colors shrink-0 cursor-grab active:cursor-grabbing p-1">
+        <GripVertical size={16} />
+      </div>
       {children}
     </div>
   );
@@ -171,7 +181,12 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
 
         <div className="flex flex-col gap-2 mt-4">
           {section.items.map((item, idx) => (
-            <DraggableRow key={item.id} index={idx} listId={section.id} onMove={(f, t) => { const n = [...section.items]; const [m] = n.splice(f,1); n.splice(t,0,m); onUpdate({...section, items: n}, true); }}>
+            <DraggableRow key={item.id} index={idx} listId={section.id} onMove={(f, t) => { 
+                const n = [...section.items]; 
+                const [m] = n.splice(f,1); 
+                n.splice(t,0,m); 
+                onUpdate({...section, items: n}, true); 
+            }}>
               <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-3">
                 {editingId === item.id ? (
                   <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>

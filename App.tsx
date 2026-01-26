@@ -120,19 +120,33 @@ function App() {
     handleUpdate(prev => ({ ...prev, customSections: prev.customSections.map(s => s.id === updatedSection.id ? updatedSection : s) }), immediate);
   };
 
-  const handleMoveSection = (from: number, to: number, type: 'income' | 'expense') => {
-    const sectionsOfType = data.customSections.filter(s => s.type === type);
-    const otherSections = data.customSections.filter(s => s.type !== type);
-    
-    const newOrder = [...sectionsOfType];
-    const [moved] = newOrder.splice(from, 1);
-    newOrder.splice(to, 0, moved);
-    
-    handleUpdate(prev => ({
-      ...prev,
-      customSections: [...otherSections, ...newOrder],
-      sectionsOrder: [...otherSections, ...newOrder].map(s => s.id)
-    }), true);
+  const handleMoveSection = (fromIdx: number, toIdx: number, type: 'income' | 'expense') => {
+    setData(prev => {
+      const all = [...prev.customSections];
+      const filtered = all.filter(s => s.type === type);
+      
+      const itemToMove = filtered[fromIdx];
+      const targetItem = filtered[toIdx];
+      
+      if (!itemToMove || !targetItem) return prev;
+      
+      const actualFrom = all.findIndex(s => s.id === itemToMove.id);
+      all.splice(actualFrom, 1);
+      
+      const actualTo = all.findIndex(s => s.id === targetItem.id);
+      all.splice(actualTo, 0, itemToMove);
+      
+      const next = {
+        ...prev,
+        customSections: all,
+        sectionsOrder: all.map(s => s.id),
+        lastUpdate: Date.now()
+      };
+      
+      saveToLocal(userId, next);
+      syncToCloud(next, true);
+      return next;
+    });
   };
 
   const calculateBalance = () => {
@@ -193,7 +207,7 @@ function App() {
                   </DraggableModuleWrapper>
                 ))}
                 {data.customSections.filter(s => s.type === 'income').length === 0 && (
-                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20">Nenhuma entrada configurada</div>
+                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20 uppercase font-black text-[10px] tracking-widest">Nenhuma entrada configurada</div>
                 )}
               </div>
 
@@ -208,7 +222,7 @@ function App() {
                   </DraggableModuleWrapper>
                 ))}
                 {data.customSections.filter(s => s.type === 'expense').length === 0 && (
-                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20">Nenhuma saída configurada</div>
+                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20 uppercase font-black text-[10px] tracking-widest">Nenhuma saída configurada</div>
                 )}
               </div>
             </div>

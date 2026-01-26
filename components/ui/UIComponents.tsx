@@ -190,11 +190,11 @@ export const Input = ({ label, onChange, noUppercase = false, ...props }: React.
   };
 
   return (
-    <div className="flex flex-col gap-1.5 w-full group" onClick={handleWrapperClick}>
+    <div className="flex flex-col gap-1.5 w-full group cursor-pointer" onClick={handleWrapperClick}>
       {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
       <input 
         ref={inputRef}
-        className={`bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm cursor-pointer
+        className={`bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm
                    focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
                    transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${!noUppercase ? 'uppercase' : ''}`}
         onChange={(e) => {
@@ -259,7 +259,7 @@ export const CurrencyInput = ({
 };
 
 export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string, options: {value: string, label: string}[] }) => (
-  <div className="flex flex-col gap-1.5 w-full group">
+  <div className="flex flex-col gap-1.5 w-full group cursor-pointer">
     {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
     <select 
       className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm
@@ -311,18 +311,29 @@ export const DraggableModuleWrapper: React.FC<{ children?: React.ReactNode; id: 
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
+    
     e.dataTransfer.setData('type', 'MODULE');
     e.dataTransfer.setData('moduleIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
   };
+
   return (
-    <div draggable onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={e => {
-        e.preventDefault(); e.stopPropagation();
+    <div 
+      draggable 
+      onDragStart={handleDragStart} 
+      onDragOver={e => e.preventDefault()} 
+      onDrop={e => {
+        e.preventDefault(); 
+        e.stopPropagation();
         if (e.dataTransfer.getData('type') !== 'MODULE') return;
-        const fromIndex = parseInt(e.dataTransfer.getData('moduleIndex'));
-        if (!isNaN(fromIndex) && fromIndex !== index) onMove(fromIndex, index);
-    }} className="relative group transition-transform duration-200">
-      <div className="absolute -left-6 top-6 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing text-slate-500 hover:text-neon-blue transition-all z-10 p-2"><GripVertical size={20} /></div>
+        const fromIdx = parseInt(e.dataTransfer.getData('moduleIndex'));
+        if (!isNaN(fromIdx) && fromIdx !== index) onMove(fromIdx, index);
+      }} 
+      className="relative group transition-transform duration-200"
+    >
+      <div className="absolute -left-7 top-6 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing text-slate-500 hover:text-neon-blue transition-all z-10 p-2">
+        <GripVertical size={20} />
+      </div>
       {children}
     </div>
   );

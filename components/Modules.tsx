@@ -148,7 +148,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
             {isInstallment && (
               <>
                 <div className="sm:col-span-2"><Input label="Parcelas" type="number" value={count} onChange={e => setCount(e.target.value)} placeholder="12" /></div>
-                <div className="sm:col-span-3"><Input label="Início" type="month" value={start} onChange={e => setStart(e.target.value)} /></div>
+                <div className="sm:col-span-3"><Input label="Referência" type="month" value={start} onChange={e => setStart(e.target.value)} /></div>
               </>
             )}
           </div>
@@ -173,7 +173,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                         {isInstallment && (
                           <div className="flex items-center gap-1.5">
                              <Badge color="yellow">{item.currentInstallment} / {item.installmentsCount}X</Badge>
-                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5">
+                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5 shadow-inner">
                                 <button 
                                   onClick={() => setPayInstallmentModal({ isOpen: true, item })}
                                   className="bg-neon-green/10 text-neon-green p-1.5 rounded-l-lg border-r border-white/10 hover:bg-neon-green hover:text-black transition-all"
@@ -222,7 +222,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                 <p className="text-neon-yellow font-black">{payInstallmentModal.item?.currentInstallment} / {payInstallmentModal.item?.installmentsCount}</p>
               </div>
               <div>
-                <p className="text-[8px] text-slate-600 font-black uppercase">Mês de Ref.</p>
+                <p className="text-[8px] text-slate-600 font-black uppercase">Referência</p>
                 <p className="text-neon-blue font-black uppercase">{getInstallmentMonth(payInstallmentModal.item?.startMonth, payInstallmentModal.item?.currentInstallment)}</p>
               </div>
             </div>

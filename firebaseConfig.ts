@@ -11,8 +11,8 @@ const firebaseConfig = {
   appId: "1:406969627066:web:684ac27225416cc6fb6d83"
 };
 
-// Inicializa o Firebase apenas se ainda não houver uma instância
+// Singleton para o Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Inicializa e exporta o Firestore
+// Inicialização do Firestore vinculada ao app
 export const db = getFirestore(app);

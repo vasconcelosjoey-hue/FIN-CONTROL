@@ -10,6 +10,19 @@ export const Card = ({ children, className = "", onClick }: { children?: React.R
 
 // Added optional children to fix the missing property error in some build environments
 export const Modal = ({ isOpen, onClose, title, children, confirmText = "Confirmar", confirmVariant = "primary", onConfirm }: { isOpen: boolean, onClose: () => void, title: string, children?: React.ReactNode, confirmText?: string, confirmVariant?: any, onConfirm: () => void }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      if (e.key === 'Enter') {
+        onConfirm();
+        onClose();
+      }
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onConfirm, onClose]);
+
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">

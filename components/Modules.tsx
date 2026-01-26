@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard } from '../types';
 import { CollapsibleCard, Button, Input, CurrencyInput, Select, Badge, Card, Modal } from './ui/UIComponents';
-import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck } from 'lucide-react';
+import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
-  <div className="mb-4 pt-4 border-t border-white/5">
+  <div className="mb-4 pt-4 border-t border-white/5" onKeyDown={e => e.key === 'Enter' && onAdd()}>
     {children}
     <Button onClick={onAdd} variant="primary" className="w-full mt-4 h-12 shadow-lg">
       <Plus size={18} /> Adicionar Novo Registro
@@ -76,6 +76,8 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<SectionItem>>({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  const [payInstallmentModal, setPayInstallmentModal] = useState<{ isOpen: boolean, item?: SectionItem }>({ isOpen: false });
 
   const total = section.items.filter(i => i.isActive !== false).reduce((acc, curr) => acc + (curr.value - (curr.paidAmount || 0)), 0);
   const color = section.type === 'income' ? 'green' : 'red';
@@ -88,7 +90,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
       name: name.toUpperCase(), 
       value: val, 
       isActive: true,
-      ...(isInstallment ? { installmentsCount: parseInt(count) || 1, startMonth: start } : {})
+      ...(isInstallment ? { installmentsCount: parseInt(count) || 1, currentInstallment: 1, startMonth: start } : {})
     };
     onUpdate({ ...section, items: [...section.items, newItem] }, true);
     setName(''); setVal(0); setCount(''); setStart('');
@@ -98,6 +100,20 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
     if (!editingId) return;
     onUpdate({ ...section, items: section.items.map(i => i.id === editingId ? { ...i, ...editData } : i) }, true);
     setEditingId(null);
+  };
+
+  const handlePayInstallment = (item: SectionItem) => {
+    const isLast = (item.currentInstallment || 1) >= (item.installmentsCount || 1);
+    
+    if (isLast) {
+      onUpdate({ ...section, items: section.items.filter(i => i.id !== item.id) }, true);
+    } else {
+      onUpdate({ 
+        ...section, 
+        items: section.items.map(i => i.id === item.id ? { ...i, currentInstallment: (i.currentInstallment || 1) + 1 } : i) 
+      }, true);
+    }
+    setPayInstallmentModal({ isOpen: false });
   };
 
   return (
@@ -142,7 +158,18 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                     <div className="min-w-0 flex-1">
                       <p className={`font-black text-xs sm:text-sm tracking-tight truncate ${item.isActive !== false ? 'text-white' : 'text-slate-700 line-through'}`}>{item.name}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        {isInstallment && <Badge color="yellow">{item.installmentsCount}x</Badge>}
+                        {isInstallment && (
+                          <div className="flex items-center gap-2">
+                             <Badge color="yellow">{item.currentInstallment || 1} / {item.installmentsCount}X</Badge>
+                             <button 
+                                onClick={() => setPayInstallmentModal({ isOpen: true, item })}
+                                className="bg-neon-green/10 text-neon-green p-1 rounded-full border border-neon-green/30 hover:bg-neon-green hover:text-black transition-all"
+                                title="Quitar este mês"
+                             >
+                               <CheckCircle2 size={12} />
+                             </button>
+                          </div>
+                        )}
                         {item.paidAmount && item.paidAmount > 0 ? <Badge color="green">Pago: R$ {fmt(item.paidAmount)}</Badge> : null}
                       </div>
                     </div>
@@ -162,6 +189,26 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
           )}
         </div>
       </CollapsibleCard>
+
+      <Modal
+        isOpen={payInstallmentModal.isOpen}
+        onClose={() => setPayInstallmentModal({ isOpen: false })}
+        title="Quitar Parcela Mensal"
+        confirmText={(payInstallmentModal.item?.currentInstallment || 1) >= (payInstallmentModal.item?.installmentsCount || 1) ? "Quitar e Remover" : "Confirmar Pagamento"}
+        onConfirm={() => payInstallmentModal.item && handlePayInstallment(payInstallmentModal.item)}
+      >
+        <div className="space-y-4">
+          <p>Deseja confirmar o pagamento da parcela <strong className="text-white">{payInstallmentModal.item?.currentInstallment}/{payInstallmentModal.item?.installmentsCount}</strong> de <strong className="text-white">{payInstallmentModal.item?.name}</strong>?</p>
+          {(payInstallmentModal.item?.currentInstallment || 1) >= (payInstallmentModal.item?.installmentsCount || 1) ? (
+            <div className="p-3 bg-neon-yellow/10 border border-neon-yellow/30 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="text-neon-yellow shrink-0" size={18} />
+              <p className="text-xs text-neon-yellow font-bold uppercase tracking-tight">Esta é a última parcela. Após confirmar, este registro será removido automaticamente da lista.</p>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 uppercase font-black tracking-widest">A parcela será avançada automaticamente para o próximo mês.</p>
+          )}
+        </div>
+      </Modal>
 
       <Modal 
         isOpen={isDeleteModalOpen} 
@@ -240,7 +287,12 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (updater: (pre
           <Select label="Tipo" value={type} onChange={e => setType(e.target.value as any)} options={[
             {value: 'CPF', label: 'CPF'}, {value: 'CNPJ', label: 'CNPJ'}, {value: 'Telefone', label: 'Telefone'}, {value: 'Email', label: 'E-mail'}, {value: 'Aleatória', label: 'Aleatória'}
           ]} />
-          <Input label="Chave" value={key} onChange={e => setKey(e.target.value)} />
+          <Input 
+            label="Chave" 
+            value={key} 
+            onChange={e => setKey(e.target.value)} 
+            noUppercase={type === 'Aleatória' || type === 'Email'} 
+          />
           <Input label="Beneficiário" value={ben} onChange={e => setBen(e.target.value)} />
         </div>
       </AddForm>
@@ -250,7 +302,7 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (updater: (pre
             <div>
               <div className="flex items-center gap-2">
                 <Badge color="yellow">{pk.type}</Badge>
-                <p className="font-mono text-[10px] text-white truncate max-w-[150px]">{pk.key}</p>
+                <p className={`font-mono text-[10px] text-white truncate max-w-[150px] ${(pk.type !== 'Aleatória' && pk.type !== 'Email') ? 'uppercase' : ''}`}>{pk.key}</p>
               </div>
               {pk.beneficiary && <p className="text-[9px] text-slate-500 font-bold mt-1 uppercase truncate">{pk.beneficiary}</p>}
             </div>
@@ -333,7 +385,7 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (updater: (
         <div className="lg:col-span-1">
           <Card className="p-6">
             <h4 className="text-xs font-black uppercase mb-4 text-white flex items-center gap-2"><Trophy size={14} className="text-neon-yellow"/> Adicionar Meta</h4>
-            <div className="space-y-4">
+            <div className="space-y-4" onKeyDown={e => e.key === 'Enter' && handleAdd()}>
               <Input label="Qual o seu sonho?" value={name} onChange={e => setName(e.target.value)} />
               <CurrencyInput label="Quanto custa?" value={val} onValueChange={setVal} />
               <Button onClick={handleAdd} className="w-full h-12 bg-neon-pink/20 text-neon-pink border-neon-pink/50 hover:bg-neon-pink hover:text-white">Adicionar aos Dreams</Button>

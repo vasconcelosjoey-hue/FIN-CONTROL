@@ -12,19 +12,18 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp;
-let db: Firestore;
+let db: Firestore | null = null;
 
 try {
-  // Inicialização singleton do app
+  // Use existing app if already initialized to prevent duplicate initialization errors
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  // Inicialização do Firestore
+  // Initialize Firestore with the app instance
   db = getFirestore(app);
   
-  console.log("🚀 Firebase: Inicializado com sucesso");
+  console.log("🚀 Firebase: Cloud services initialized successfully");
 } catch (error) {
-  console.error("❌ Firebase: Erro de inicialização:", error);
-  // db permanecerá undefined, o que deve ser tratado nos serviços
+  console.error("❌ Firebase: Initialization error:", error);
 }
 
 export { db };

@@ -176,23 +176,38 @@ export const Button = ({ onClick, children, variant = 'primary', className = "",
   );
 };
 
-export const Input = ({ label, onChange, noUppercase = false, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string, noUppercase?: boolean }) => (
-  <div className="flex flex-col gap-1.5 w-full group">
-    {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
-    <input 
-      className={`bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm
-                 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
-                 transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${!noUppercase ? 'uppercase' : ''}`}
-      onChange={(e) => {
-          if (!noUppercase && props.type !== 'number' && props.type !== 'month') {
-            e.target.value = e.target.value.toUpperCase();
-          }
-          onChange?.(e);
-      }}
-      {...props}
-    />
-  </div>
-);
+export const Input = ({ label, onChange, noUppercase = false, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string, noUppercase?: boolean }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  const handleWrapperClick = () => {
+    if ((props.type === 'month' || props.type === 'date' || props.type === 'time') && inputRef.current) {
+      try {
+        inputRef.current.showPicker();
+      } catch (e) {
+        inputRef.current.focus();
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full group" onClick={handleWrapperClick}>
+      {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
+      <input 
+        ref={inputRef}
+        className={`bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm cursor-pointer
+                   focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
+                   transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${!noUppercase ? 'uppercase' : ''}`}
+        onChange={(e) => {
+            if (!noUppercase && props.type !== 'number' && props.type !== 'month') {
+              e.target.value = e.target.value.toUpperCase();
+            }
+            onChange?.(e);
+        }}
+        {...props}
+      />
+    </div>
+  );
+};
 
 export const CurrencyInput = ({ 
   label, 
@@ -228,13 +243,13 @@ export const CurrencyInput = ({
     <div className="flex flex-col gap-1.5 w-full group">
       {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-600 uppercase pointer-events-none">R$</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-500 uppercase pointer-events-none">R$</span>
         <input 
           {...props}
           type="text"
           value={displayValue}
           onChange={handleChange}
-          className={`bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-3 text-white font-bold text-[13px]
+          className={`bg-black/40 border border-white/10 rounded-xl pl-10 pr-3 py-3 text-white font-bold text-[14px]
                      focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
                      transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${props.className || ''}`}
         />
@@ -249,7 +264,7 @@ export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<
     <select 
       className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm
                  focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
-                 transition-all appearance-none w-full h-12"
+                 transition-all appearance-none w-full h-12 cursor-pointer"
       {...props}
     >
       {options.map(opt => <option key={opt.value} value={opt.value} className="bg-neon-surface text-slate-200">{opt.label}</option>)}
@@ -295,7 +310,7 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
 export const DraggableModuleWrapper: React.FC<{ children?: React.ReactNode; id: string; index: number; onMove: (dragIndex: number, hoverIndex: number) => void; }> = ({ children, id, index, onMove }) => {
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'SELECT') { e.preventDefault(); return; }
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
     e.dataTransfer.setData('type', 'MODULE');
     e.dataTransfer.setData('moduleIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
@@ -307,7 +322,7 @@ export const DraggableModuleWrapper: React.FC<{ children?: React.ReactNode; id: 
         const fromIndex = parseInt(e.dataTransfer.getData('moduleIndex'));
         if (!isNaN(fromIndex) && fromIndex !== index) onMove(fromIndex, index);
     }} className="relative group transition-transform duration-200">
-      <div className="absolute -left-5 top-4 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white transition-opacity z-10"><GripVertical size={18} /></div>
+      <div className="absolute -left-6 top-6 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing text-slate-500 hover:text-neon-blue transition-all z-10 p-2"><GripVertical size={20} /></div>
       {children}
     </div>
   );

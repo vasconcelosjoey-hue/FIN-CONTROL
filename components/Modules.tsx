@@ -22,8 +22,9 @@ const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
     const year = parseInt(parts[0]);
     const month = parseInt(parts[1]);
     
-    // JS Date meses são 0-indexed. 
-    // Fórmula: (mês_escolhido - 1) + (parcela_atual - 1)
+    // JS Date meses são 0-indexed.
+    // O startMonth escolhido pelo usuário é sempre a parcela 1.
+    // Por isso, para a parcela 'current', adicionamos 'current - 1' meses à base.
     const targetDate = new Date(year, (month - 1) + (current - 1), 15);
     
     return targetDate.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
@@ -42,7 +43,8 @@ const ActionButton = ({ onClick, icon, color = "text-slate-600 hover:text-white"
 const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId: string; onMove: (f: number, t: number) => void }> = ({ children, index, listId, onMove }) => {
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'SELECT') { e.preventDefault(); return; }
+    // Evita arrastar ao clicar em botões ou inputs
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
     e.dataTransfer.setData('type', 'ROW');
     e.dataTransfer.setData('listId', listId);
     e.dataTransfer.setData('rowIndex', index.toString());
@@ -55,7 +57,7 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
         if (type !== 'ROW' || srcListId !== listId) return;
         onMove(parseInt(e.dataTransfer.getData('rowIndex')), index);
     }} className="flex items-center group/row">
-      <div className="mr-2 text-slate-800 group-hover/row:text-slate-600 transition-colors shrink-0 cursor-grab active:cursor-grabbing"><GripVertical size={14} /></div>
+      <div className="mr-3 text-slate-800 group-hover/row:text-neon-blue transition-colors shrink-0 cursor-grab active:cursor-grabbing p-1"><GripVertical size={16} /></div>
       {children}
     </div>
   );
@@ -204,9 +206,9 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                         )}
                         <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pago</span>
-                            <div className="w-36">
+                            <div className="w-40">
                                 <CurrencyInput 
-                                    className="h-8 text-[13px] bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
+                                    className="h-8 text-[14px] bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
                                     value={item.paidAmount || 0} 
                                     onValueChange={(v) => handleQuickPay(item.id, v)} 
                                 />
@@ -217,7 +219,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                     
                     <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                       <div className="text-right flex flex-col">
-                        <span className={`font-mono font-black text-sm sm:text-base leading-none ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red shadow-[0_0_10px_rgba(255,0,85,0.2)]') : 'text-slate-800'}`}>
+                        <span className={`font-mono font-black text-sm sm:text-lg leading-none ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red shadow-[0_0_10px_rgba(255,0,85,0.2)]') : 'text-slate-800'}`}>
                             R$ {fmt(item.value - (item.paidAmount || 0))}
                         </span>
                         {item.paidAmount && item.paidAmount > 0 ? (
@@ -290,7 +292,6 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   );
 };
 
-// Fix: Export CreditCardModule
 export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState(0);
@@ -343,7 +344,6 @@ export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: Fin
   );
 };
 
-// Fix: Export RadarModule
 export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);
@@ -378,7 +378,6 @@ export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
   );
 };
 
-// Fix: Export PixModule
 export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
   const [key, setKey] = useState('');
   const [type, setType] = useState<any>('Aleatória');
@@ -422,7 +421,6 @@ export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialD
   );
 };
 
-// Fix: Export DreamsModule
 export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), imm?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);

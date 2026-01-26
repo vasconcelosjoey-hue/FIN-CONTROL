@@ -1,6 +1,6 @@
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCc8RhjBVreMRa73AaywBMtDeYCqqssFao",
@@ -11,19 +11,8 @@ const firebaseConfig = {
   appId: "1:406969627066:web:684ac27225416cc6fb6d83"
 };
 
-let app: FirebaseApp;
-let db: Firestore | null = null;
+// Inicializa o Firebase apenas se ainda não houver uma instância
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-try {
-  // Inicialização Singleton: garante que apenas uma instância do app rode no navegador
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  
-  // Vincula o Firestore à instância ativa do App
-  db = getFirestore(app);
-  
-  console.log("🚀 Firebase: Inicializado com sucesso.");
-} catch (error) {
-  console.error("❌ Firebase: Erro fatal na inicialização:", error);
-}
-
-export { db };
+// Inicializa e exporta o Firestore
+export const db = getFirestore(app);

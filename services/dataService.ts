@@ -34,34 +34,40 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        const cloudData = docSnap.data() as any;
-        
-        if (localData) {
-          const localTimestamp = localData.lastUpdate || 0;
-          const cloudTimestamp = cloudData.lastUpdate || 0;
-          
-          if (localTimestamp > cloudTimestamp) {
-            console.log("⚡ Cloud Sync: Atualizando nuvem com dados locais mais recentes");
-            await setDoc(docRef, { ...localData, lastUpdate: Date.now() });
-            return localData;
-          }
+        const cloudData = docSnap.data() as FinancialData;
+        const cloudTimestamp = cloudData.lastUpdate || 0;
+        const localTimestamp = localData?.lastUpdate || 0;
+
+        // Se o dado local for estritamente mais novo que o da nuvem, atualiza a nuvem
+        if (localData && localTimestamp > cloudTimestamp) {
+          console.log("⚡ Sync: Dados locais são mais novos. Enviando para nuvem.");
+          await setDoc(docRef, { ...localData, lastUpdate: Date.now() });
+          return localData;
         }
-        return cloudData as FinancialData;
+
+        // Caso contrário, usa o dado da nuvem (mais comum ao trocar de dispositivo)
+        console.log("☁️ Sync: Dados da nuvem carregados.");
+        saveToLocal(userId, cloudData); // Sincroniza o cache local com a nuvem
+        return cloudData;
       } else if (localData) {
+        // Se não existir na nuvem mas existir local, faz o primeiro upload
+        console.log("📤 Sync: Primeiro upload para a nuvem.");
         await setDoc(docRef, localData);
         return localData;
       }
     } catch (error) {
-      console.warn("⚠️ Firebase: Falha ao carregar nuvem, usando local.", error);
+      console.error("⚠️ Firebase Sync Error:", error);
     }
-  } else {
-    console.warn("⚠️ Firebase: db não disponível. Operando em modo offline.");
   }
+
   return localData || INITIAL_DATA;
 };
 
 export const saveToCloud = async (userId: string, data: FinancialData): Promise<void> => {
-  if (!db) return;
+  if (!db) {
+    console.warn("☁️ SaveToCloud: Firestore não disponível.");
+    return;
+  }
   try {
     const dataWithTimestamp = {
       ...data,
@@ -75,16 +81,16 @@ export const saveToCloud = async (userId: string, data: FinancialData): Promise<
 };
 
 export const subscribeToData = (userId: string, callback: (data: FinancialData) => void) => {
-  if (db) {
-    try {
-      return onSnapshot(doc(db, "users", userId), (doc) => {
-        if (doc.exists()) {
-          callback(doc.data() as FinancialData);
-        }
-      });
-    } catch (e) {
-      console.error("❌ Firebase: Erro na subscrição:", e);
-    }
+  if (!db) return () => {};
+  try {
+    return onSnapshot(doc(db, "users", userId), (doc) => {
+      if (doc.exists()) {
+        const cloudData = doc.data() as FinancialData;
+        callback(cloudData);
+      }
+    });
+  } catch (e) {
+    console.error("❌ Firebase: Erro na subscrição em tempo real:", e);
+    return () => {};
   }
-  return () => {};
 };

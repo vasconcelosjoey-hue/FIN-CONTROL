@@ -15,15 +15,15 @@ let app: FirebaseApp;
 let db: Firestore | null = null;
 
 try {
-  // Use existing app if already initialized to prevent duplicate initialization errors
+  // Inicialização Singleton: garante que apenas uma instância do app rode no navegador
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  // Initialize Firestore with the app instance
+  // Vincula o Firestore à instância ativa do App
   db = getFirestore(app);
   
-  console.log("🚀 Firebase: Cloud services initialized successfully");
+  console.log("🚀 Firebase: Inicializado com sucesso.");
 } catch (error) {
-  console.error("❌ Firebase: Initialization error:", error);
+  console.error("❌ Firebase: Erro fatal na inicialização:", error);
 }
 
 export { db };

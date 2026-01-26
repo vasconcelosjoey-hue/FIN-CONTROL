@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard } from '../types';
 import { CollapsibleCard, Button, Input, CurrencyInput, Select, Badge, Card, Modal } from './ui/UIComponents';
-import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle, DollarSign } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-4 pt-4 border-t border-white/5" onKeyDown={e => e.key === 'Enter' && onAdd()}>
@@ -19,8 +19,8 @@ const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
   if (!startMonth) return '---';
   try {
     const [year, month] = startMonth.split('-').map(Number);
-    // Adicionamos (current - 1) meses à data inicial
-    const date = new Date(year, month - 1 + (current - 1), 15); // Dia 15 para evitar problemas de fuso horário
+    // A lógica agora garante que startMonth é o mês da parcela 1
+    const date = new Date(year, month - 1 + (current - 1), 15);
     return date.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
   } catch (e) {
     return '---';
@@ -122,10 +122,17 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
     } else {
       onUpdate({ 
         ...section, 
-        items: section.items.map(i => i.id === item.id ? { ...i, currentInstallment: (i.currentInstallment || 1) + 1 } : i) 
+        items: section.items.map(i => i.id === item.id ? { ...i, currentInstallment: (i.currentInstallment || 1) + 1, paidAmount: 0 } : i) 
       }, true);
     }
     setPayInstallmentModal({ isOpen: false });
+  };
+
+  const handleQuickPay = (itemId: string, paidVal: number) => {
+    onUpdate({
+        ...section,
+        items: section.items.map(i => i.id === itemId ? { ...i, paidAmount: paidVal } : i)
+    }, false); // Usamos false para não disparar sync imediato em cada tecla
   };
 
   return (
@@ -144,11 +151,11 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             <div className={`${isInstallment ? 'sm:col-span-4' : 'sm:col-span-7'}`}><Input label="Descrição" placeholder="EX: SALÁRIO, ALUGUEL..." value={name} onChange={e => setName(e.target.value)} /></div>
-            <div className={`${isInstallment ? 'sm:col-span-3' : 'sm:col-span-5'}`}><CurrencyInput label={isInstallment ? "Vlr Mensal" : "Valor"} value={val} onValueChange={setVal} /></div>
+            <div className={`${isInstallment ? 'sm:col-span-3' : 'sm:col-span-5'}`}><CurrencyInput label={isInstallment ? "Vlr Parcela" : "Valor"} value={val} onValueChange={setVal} /></div>
             {isInstallment && (
               <>
                 <div className="sm:col-span-2"><Input label="Parcelas" type="number" value={count} onChange={e => setCount(e.target.value)} placeholder="12" /></div>
-                <div className="sm:col-span-3"><Input label="Referência" type="month" value={start} onChange={e => setStart(e.target.value)} /></div>
+                <div className="sm:col-span-3"><Input label="Referência (Mês 1)" type="month" value={start} onChange={e => setStart(e.target.value)} /></div>
               </>
             )}
           </div>
@@ -157,21 +164,25 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         <div className="flex flex-col gap-2 mt-4">
           {section.items.map((item, idx) => (
             <DraggableRow key={item.id} index={idx} listId={section.id} onMove={(f, t) => { const n = [...section.items]; const [m] = n.splice(f,1); n.splice(t,0,m); onUpdate({...section, items: n}, true); }}>
-              <div className="flex-1 flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-2xl transition-all">
+              <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-3">
                 {editingId === item.id ? (
                   <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
-                    <div className={`${isInstallment ? 'sm:col-span-4' : 'sm:col-span-6'}`}><Input label="NOME" value={editData.name || ''} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
-                    <div className="sm:col-span-3"><CurrencyInput label="VALOR" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
-                    <div className="sm:col-span-3"><CurrencyInput label="PAGO" value={editData.paidAmount || 0} onValueChange={v => setEditData({...editData, paidAmount: v})} /></div>
-                    {isInstallment && <div className="sm:col-span-2"><Input label="PARC" type="number" value={String(editData.installmentsCount || '')} onChange={e => setEditData({...editData, installmentsCount: parseInt(e.target.value)})} /></div>}
+                    <div className={`${isInstallment ? 'sm:col-span-4' : 'sm:col-span-8'}`}><Input label="NOME" value={editData.name || ''} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
+                    <div className="sm:col-span-4"><CurrencyInput label="VALOR BASE" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
+                    {isInstallment && (
+                        <>
+                            <div className="sm:col-span-2"><Input label="PARC" type="number" value={String(editData.installmentsCount || '')} onChange={e => setEditData({...editData, installmentsCount: parseInt(e.target.value)})} /></div>
+                            <div className="sm:col-span-3"><Input label="REF (MÊS 1)" type="month" value={editData.startMonth || ''} onChange={e => setEditData({...editData, startMonth: e.target.value})} /></div>
+                        </>
+                    )}
                   </EditRowLayout>
                 ) : (
                   <>
                     <div className="min-w-0 flex-1">
                       <p className={`font-black text-xs sm:text-sm tracking-tight truncate ${item.isActive !== false ? 'text-white' : 'text-slate-700 line-through'}`}>{item.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {isInstallment && (
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 shrink-0">
                              <Badge color="yellow">{item.currentInstallment} / {item.installmentsCount}X</Badge>
                              <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5 shadow-inner">
                                 <button 
@@ -185,14 +196,34 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                              </div>
                           </div>
                         )}
-                        {item.paidAmount && item.paidAmount > 0 ? <Badge color="green">Pago: R$ {fmt(item.paidAmount)}</Badge> : null}
+                        <div className="flex items-center gap-2 bg-black/20 px-2 py-1 rounded-xl border border-white/5">
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pago</span>
+                            <div className="w-20">
+                                <CurrencyInput 
+                                    className="h-6 text-[10px] bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
+                                    value={item.paidAmount || 0} 
+                                    onValueChange={(v) => handleQuickPay(item.id, v)} 
+                                />
+                            </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 ml-2">
-                      <span className={`font-mono font-black text-xs sm:text-sm ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red') : 'text-slate-800'}`}>R$ {fmt(item.value - (item.paidAmount || 0))}</span>
-                      <ToggleStatusButton active={item.isActive !== false} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !i.isActive} : i)}, true)} color={color} />
-                      <ActionButton icon={<Pencil size={14} />} onClick={() => { setEditingId(item.id); setEditData(item); }} />
-                      <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)}, true)} />
+                    
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                      <div className="text-right flex flex-col">
+                        <span className={`font-mono font-black text-xs sm:text-sm leading-none ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red shadow-[0_0_10px_rgba(255,0,85,0.2)]') : 'text-slate-800'}`}>
+                            R$ {fmt(item.value - (item.paidAmount || 0))}
+                        </span>
+                        {item.paidAmount && item.paidAmount > 0 ? (
+                            <span className="text-[8px] font-black text-slate-500 mt-1 uppercase">A pagar</span>
+                        ) : null}
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <ToggleStatusButton active={item.isActive !== false} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !i.isActive} : i)}, true)} color={color} />
+                        <ActionButton icon={<Pencil size={14} />} onClick={() => { setEditingId(item.id); setEditData(item); }} />
+                        <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate({...section, items: section.items.filter(i => i.id !== item.id)}, true)} />
+                      </div>
                     </div>
                   </>
                 )}
@@ -222,7 +253,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                 <p className="text-neon-yellow font-black">{payInstallmentModal.item?.currentInstallment} / {payInstallmentModal.item?.installmentsCount}</p>
               </div>
               <div>
-                <p className="text-[8px] text-slate-600 font-black uppercase">Referência</p>
+                <p className="text-[8px] text-slate-600 font-black uppercase">Vigente</p>
                 <p className="text-neon-blue font-black uppercase">{getInstallmentMonth(payInstallmentModal.item?.startMonth, payInstallmentModal.item?.currentInstallment)}</p>
               </div>
             </div>
@@ -234,7 +265,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
               <p className="text-xs text-neon-yellow font-bold uppercase tracking-tight">Esta é a última parcela. O registro será finalizado hoje.</p>
             </div>
           ) : (
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">Ao confirmar, o sistema avançará para o mês seguinte (<span className="text-white font-bold">{getInstallmentMonth(payInstallmentModal.item?.startMonth, (payInstallmentModal.item?.currentInstallment || 1) + 1)}</span>).</p>
+            <p className="text-xs text-slate-400 font-medium leading-relaxed">Ao confirmar, o sistema zerará o abatimento (Pago) e avançará para o mês seguinte (<span className="text-white font-bold">{getInstallmentMonth(payInstallmentModal.item?.startMonth, (payInstallmentModal.item?.currentInstallment || 1) + 1)}</span>).</p>
           )}
         </div>
       </Modal>

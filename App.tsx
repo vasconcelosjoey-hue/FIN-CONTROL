@@ -3,7 +3,6 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { FinancialData, INITIAL_DATA, CustomSection } from './types';
 import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
-// Fixed: Removed non-existent and unused module imports (CreditCardModule, PixModule, RadarModule)
 import { CustomSectionModule, DreamsModule, GoalsModule } from './components/Modules';
 import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins, LayoutPanelTop, Target } from 'lucide-react';
 import { DraggableModuleWrapper, Modal, Input, Button, Select } from './components/ui/UIComponents';
@@ -11,7 +10,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
-const BottomMobileNav = ({ balance, onOpenDreams, onOpenGoals }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void, onOpenGoals: () => void }) => {
+const BottomMobileNav = ({ balance, onOpenDreams, onOpenGoals, active }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void, onOpenGoals: () => void, active: string }) => {
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/95 backdrop-blur-xl border-t border-white/10 px-4 py-4 flex items-center justify-between gap-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
@@ -22,12 +21,11 @@ const BottomMobileNav = ({ balance, onOpenDreams, onOpenGoals }: { balance: numb
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={onOpenGoals} className="p-3 rounded-2xl bg-white/5 border border-white/10 transition-all">
-          <Target size={18} className="text-neon-blue" />
+        <button onClick={onOpenGoals} className={`p-3 rounded-2xl border transition-all ${active === 'goals' ? 'bg-neon-blue/20 border-neon-blue text-white shadow-neon-blue' : 'bg-white/5 border-white/10 text-slate-500'}`}>
+          <Target size={18} />
         </button>
-        <button onClick={onOpenDreams} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gradient-to-br from-neon-blue to-neon-pink shadow-xl transform active:scale-95 transition-all">
-          <Star size={18} className="text-white" />
-          <span className="text-[8px] font-black text-white uppercase tracking-widest">Dreams</span>
+        <button onClick={onOpenDreams} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${active === 'dreams' ? 'bg-neon-pink/20 border-neon-pink text-white shadow-neon-pink' : 'bg-gradient-to-br from-neon-blue to-neon-pink border-transparent text-white'}`}>
+          <Star size={18} />
         </button>
       </div>
     </div>
@@ -38,7 +36,6 @@ const FloatingControls = ({ balance, isVisible, onCollapse }: { balance: number,
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
     <div className={`fixed bottom-10 left-10 z-[100] hidden lg:flex flex-col gap-4 items-start transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-      {/* Saldo Flutuante */}
       <div className="bg-neon-dark/80 backdrop-blur-2xl border border-neon-yellow/30 p-5 rounded-[2rem] shadow-[0_0_50px_rgba(255,230,0,0.15)] flex flex-col gap-1 items-start min-w-[200px]">
         <div className="flex items-center gap-2 mb-1">
           <Coins size={14} className="text-neon-yellow" />
@@ -51,19 +48,11 @@ const FloatingControls = ({ balance, isVisible, onCollapse }: { balance: number,
           </span>
         </div>
       </div>
-
-      {/* Botão Recolher Tudo Flutuante */}
-      <button 
-        onClick={onCollapse}
-        className="group flex items-center gap-4 bg-neon-dark/80 backdrop-blur-2xl border border-white/10 hover:border-neon-blue/50 p-4 pr-6 rounded-[1.5rem] shadow-2xl transition-all active:scale-95"
-      >
+      <button onClick={onCollapse} className="group flex items-center gap-4 bg-neon-dark/80 backdrop-blur-2xl border border-white/10 hover:border-neon-blue/50 p-4 pr-6 rounded-[1.5rem] shadow-2xl transition-all active:scale-95">
         <div className="p-3 bg-white/5 rounded-xl group-hover:bg-neon-blue/10 group-hover:text-neon-blue transition-colors">
           <ChevronUp size={20} />
         </div>
-        <div className="flex flex-col items-start">
-          <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Recolher Tudo</span>
-          <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Organizar Sessões</span>
-        </div>
+        <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Recolher Tudo</span>
       </button>
     </div>
   );
@@ -87,14 +76,12 @@ function App() {
   const isInternalUpdate = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Monitorar Scroll
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Listener de Autenticação
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -111,6 +98,7 @@ function App() {
     if (!d) return INITIAL_DATA;
     const clean = { ...INITIAL_DATA, ...d };
     if (!clean.goals) clean.goals = [];
+    if (!clean.dreams) clean.dreams = [];
     if (!clean.sectionsOrder) clean.sectionsOrder = clean.customSections?.map(s => s.id) || [];
     return clean;
   };
@@ -141,7 +129,6 @@ function App() {
     setTimeout(() => { isInternalUpdate.current = false; }, 3000);
   }, [user, syncToCloud]);
 
-  // Carregar dados quando o usuário logar
   useEffect(() => {
     if (!user) return;
     let unsubscribeData: () => void = () => {};
@@ -222,7 +209,7 @@ function App() {
     return totalInc - totalExp;
   };
 
-  if (authLoading) return null; // Prevenção de flash de UI
+  if (authLoading) return null;
   if (!user) return <AuthScreen />;
 
   if (loading) {
@@ -234,7 +221,7 @@ function App() {
           </div>
           <RefreshCw className="absolute -bottom-2 -right-2 animate-spin text-neon-blue w-8 h-8 p-1.5 bg-black border border-neon-blue/50 rounded-full" />
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter uppercase">Syncing <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.5)]">Vault...</span></h1>
+        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter uppercase">Syncing <span className="text-neon-blue">Vault...</span></h1>
       </div>
     );
   }
@@ -249,21 +236,31 @@ function App() {
             <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase">
               FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
             </h1>
-            <span className="text-[7px] text-slate-600 font-black uppercase tracking-[0.3em] flex items-center gap-1">
-              <User size={8} /> {user.email || 'Authenticated User'}
-            </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-               <Button onClick={() => setActiveModule(activeModule === 'goals' ? 'dashboard' : 'goals')} variant={activeModule === 'goals' ? 'secondary' : 'primary'} className="px-3 sm:px-6">
-                 <Target size={16} className={activeModule === 'goals' ? 'text-neon-blue' : 'text-white'} /> <span className="hidden sm:inline">Objetivos</span>
-               </Button>
-               <Button onClick={() => setActiveModule(activeModule === 'dreams' ? 'dashboard' : 'dreams')} variant={activeModule === 'dreams' ? 'secondary' : 'primary'} className="px-3 sm:px-6">
-                 <Star size={16} className={activeModule === 'dreams' ? 'text-neon-yellow' : 'text-white'} /> <span className="hidden sm:inline">{activeModule === 'dreams' ? 'Módulos' : 'Dreams'}</span>
-               </Button>
+          <div className="flex items-center gap-1.5 sm:gap-3 bg-white/5 p-1 rounded-2xl border border-white/5">
+               <button 
+                 onClick={() => setActiveModule('dashboard')} 
+                 className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-lg border border-white/20' : 'text-slate-500 hover:text-slate-300'}`}
+               >
+                 Módulos
+               </button>
+               <button 
+                 onClick={() => setActiveModule('dreams')} 
+                 className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dreams' ? 'bg-neon-pink/20 text-white shadow-[0_0_15px_rgba(188,19,254,0.3)] border border-neon-pink/40' : 'text-slate-500 hover:text-slate-300'}`}
+               >
+                 Dreams
+               </button>
+               <button 
+                 onClick={() => setActiveModule('goals')} 
+                 className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'goals' ? 'bg-neon-blue/20 text-white shadow-[0_0_15px_rgba(0,243,255,0.3)] border border-neon-blue/40' : 'text-slate-500 hover:text-slate-300'}`}
+               >
+                 Goals
+               </button>
+               <div className="w-px h-6 bg-white/10 mx-1"></div>
                <button 
                  onClick={() => signOut(auth)}
-                 className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-neon-red hover:border-neon-red/30 transition-all"
+                 className="p-2.5 text-slate-500 hover:text-neon-red transition-all"
                  title="Sair"
                >
                  <LogOut size={16} />
@@ -280,7 +277,6 @@ function App() {
         ) : (
           <>
             <Dashboard data={data} />
-            
             <div className="flex flex-col lg:flex-row gap-8 items-start mt-10">
               <div className="flex-1 w-full space-y-6">
                 <div className="flex items-center justify-between pl-4 border-l-4 border-neon-green/50">
@@ -292,13 +288,7 @@ function App() {
                 </div>
                 {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
                   <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'income')}>
-                    <CustomSectionModule 
-                      section={section} 
-                      onUpdate={updateSection} 
-                      onDeleteSection={() => deleteSection(section.id)} 
-                      isOpen={expandedSections.has(section.id)}
-                      onToggle={() => toggleSection(section.id)}
-                    />
+                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} isOpen={expandedSections.has(section.id)} onToggle={() => toggleSection(section.id)} />
                   </DraggableModuleWrapper>
                 ))}
               </div>
@@ -313,58 +303,24 @@ function App() {
                 </div>
                 {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (
                   <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'expense')}>
-                    <CustomSectionModule 
-                      section={section} 
-                      onUpdate={updateSection} 
-                      onDeleteSection={() => deleteSection(section.id)} 
-                      isOpen={expandedSections.has(section.id)}
-                      onToggle={() => toggleSection(section.id)}
-                    />
+                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} isOpen={expandedSections.has(section.id)} onToggle={() => toggleSection(section.id)} />
                   </DraggableModuleWrapper>
                 ))}
               </div>
             </div>
-
-            <footer className="mt-20 py-10 border-t border-white/5 flex flex-col items-center justify-center gap-4 opacity-40">
-                <div className="flex items-center gap-3">
-                    <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/20"></div>
-                    <span className="text-[10px] font-black tracking-[0.8em] uppercase text-slate-500">Powered by</span>
-                    <div className="h-px w-8 bg-gradient-to-l from-transparent to-white/20"></div>
-                </div>
-                <h2 className="text-xl font-black tracking-tighter text-white">JOI<span className="text-neon-blue">.A.</span></h2>
-                <p className="text-[7px] font-bold uppercase tracking-[0.4em] text-slate-700">Financial Intelligent Systems</p>
-            </footer>
           </>
         )}
       </main>
 
-      <Modal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-        title={`Nova Sessão de ${newSessionType === 'income' ? 'Entrada' : 'Saída'}`}
-        onConfirm={handleCreateSession}
-      >
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title={`Nova Sessão de ${newSessionType === 'income' ? 'Entrada' : 'Saída'}`} onConfirm={handleCreateSession}>
         <div className="space-y-5 py-4">
-          <Input label="Nome da Sessão" placeholder="EX: SALÁRIO, ALUGUEL, LAZER..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
-          <Select 
-            label="Tipo de Registro" 
-            value={newSessionStructure} 
-            onChange={e => setNewSessionStructure(e.target.value as any)}
-            options={[
-              { value: 'standard', label: 'Registro Simples (Apenas Valor)' },
-              { value: 'installment', label: 'Parcelamento (Mensalidade + Total)' }
-            ]}
-          />
+          <Input label="Nome da Sessão" placeholder="EX: SALÁRIO, ALUGUEL..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
+          <Select label="Tipo de Registro" value={newSessionStructure} onChange={e => setNewSessionStructure(e.target.value as any)} options={[{ value: 'standard', label: 'Simples' }, { value: 'installment', label: 'Parcelamento' }]} />
         </div>
       </Modal>
 
       <FloatingControls balance={balance} isVisible={scrollY > 150} onCollapse={collapseAll} />
-      <BottomMobileNav 
-        balance={balance} 
-        onScrollTo={() => {}} 
-        onOpenDreams={() => setActiveModule('dreams')} 
-        onOpenGoals={() => setActiveModule('goals')} 
-      />
+      <BottomMobileNav balance={balance} onScrollTo={() => {}} onOpenDreams={() => setActiveModule('dreams')} onOpenGoals={() => setActiveModule('goals')} active={activeModule} />
     </div>
   );
 }

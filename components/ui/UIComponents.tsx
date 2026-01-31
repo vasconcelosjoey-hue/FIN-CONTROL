@@ -2,8 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Check, X, AlertTriangle } from 'lucide-react';
 
-export const Card = ({ children, className = "", onClick }: { children?: React.ReactNode, className?: string, onClick?: () => void }) => (
-  <div onClick={onClick} className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
+// Added onKeyDown prop to Card component to handle keyboard events
+export const Card = ({ children, className = "", onClick, onKeyDown }: { children?: React.ReactNode, className?: string, onClick?: () => void, onKeyDown?: React.KeyboardEventHandler<HTMLDivElement> }) => (
+  <div onClick={onClick} onKeyDown={onKeyDown} className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
     {children}
   </div>
 );

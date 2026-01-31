@@ -34,21 +34,22 @@ const ActionButton = ({ onClick, icon, color = "text-slate-600 hover:text-white"
   </button>
 );
 
-// Componente DraggableRow aprimorado com lógica de auto-scroll
+// Componente DraggableRow com Reordenação de Precisão e Auto-Scroll
 const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId: string; onMove: (f: number, t: number) => void }> = ({ children, index, listId, onMove }) => {
+  const [dragState, setDragState] = useState<'none' | 'top' | 'bottom'>('none');
   const [isDragging, setIsDragging] = useState(false);
   const scrollInterval = useRef<number | null>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
 
-  // Lógica de Scroll Automático
   const handleDragOverGlobal = (e: DragEvent) => {
-    const threshold = 100; // Distância das bordas em pixels para ativar o scroll
+    const threshold = 120;
     if (e.clientY < threshold) {
       if (!scrollInterval.current) {
-        scrollInterval.current = window.setInterval(() => window.scrollBy(0, -10), 10);
+        scrollInterval.current = window.setInterval(() => window.scrollBy(0, -12), 10);
       }
     } else if (e.clientY > window.innerHeight - threshold) {
       if (!scrollInterval.current) {
-        scrollInterval.current = window.setInterval(() => window.scrollBy(0, 10), 10);
+        scrollInterval.current = window.setInterval(() => window.scrollBy(0, 12), 10);
       }
     } else {
       if (scrollInterval.current) {
@@ -70,13 +71,12 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
     e.dataTransfer.setData('rowIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
     setIsDragging(true);
-    
-    // Adiciona listener para scroll durante o drag
     window.addEventListener('dragover', handleDragOverGlobal);
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
+    setDragState('none');
     window.removeEventListener('dragover', handleDragOverGlobal);
     if (scrollInterval.current) {
       clearInterval(scrollInterval.current);
@@ -84,26 +84,76 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('type');
+    const srcListId = e.dataTransfer.getData('listId');
+    // Só permite drag dentro da mesma lista
+    if (srcListId !== listId) return;
+
+    if (rowRef.current) {
+      const rect = rowRef.current.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      setDragState(e.clientY < mid ? 'top' : 'bottom');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const srcListId = e.dataTransfer.getData('listId');
+    if (srcListId !== listId) return;
+
+    const fromIdx = parseInt(e.dataTransfer.getData('rowIndex'));
+    if (isNaN(fromIdx) || fromIdx === index) {
+      setDragState('none');
+      return;
+    }
+
+    // Calcula a nova posição baseada em onde soltou (metade de cima ou de baixo)
+    let toIdx = index;
+    if (dragState === 'bottom' && fromIdx < index) toIdx = index;
+    if (dragState === 'top' && fromIdx > index) toIdx = index;
+    if (dragState === 'bottom' && fromIdx > index) toIdx = index; // index já é o destino
+    if (dragState === 'top' && fromIdx < index) toIdx = index; // index já é o destino
+
+    // Na prática, se soltar na metade de baixo, o item vai para a posição seguinte
+    // se soltar na metade de cima, ele assume a posição atual.
+    const finalTo = dragState === 'bottom' ? index : index; 
+    // O algoritmo de splice(f,1) e splice(t,0,m) já funciona bem se T for o índice alvo.
+    
+    onMove(fromIdx, index);
+    setDragState('none');
+  };
+
   return (
     <div 
+      ref={rowRef}
       draggable 
       onDragStart={handleDragStart} 
       onDragEnd={handleDragEnd}
-      onDragOver={e => e.preventDefault()} 
-      onDrop={e => {
-        e.preventDefault();
-        const type = e.dataTransfer.getData('type');
-        const srcListId = e.dataTransfer.getData('listId');
-        if (type !== 'ROW' || srcListId !== listId) return;
-        const fromIdx = parseInt(e.dataTransfer.getData('rowIndex'));
-        if (!isNaN(fromIdx) && fromIdx !== index) onMove(fromIdx, index);
-      }} 
-      className={`flex items-center group/row transition-all duration-200 ${isDragging ? 'opacity-30 scale-95 border-2 border-dashed border-neon-blue rounded-2xl' : 'opacity-100 scale-100'}`}
+      onDragOver={handleDragOver}
+      onDragLeave={() => setDragState('none')}
+      onDrop={handleDrop}
+      className={`relative flex items-center group/row transition-all duration-200 py-1
+        ${isDragging ? 'opacity-20 grayscale scale-95' : 'opacity-100 scale-100'}
+        ${dragState === 'top' ? 'pt-4' : ''}
+        ${dragState === 'bottom' ? 'pb-4' : ''}
+      `}
     >
-      <div className="mr-4 text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,1)] transition-all shrink-0 cursor-grab active:cursor-grabbing p-2 bg-neon-blue/10 rounded-xl border border-neon-blue/30 flex items-center justify-center">
-        <GripVertical size={20} />
+      {/* Indicador Visual de Inserção */}
+      {dragState !== 'none' && (
+        <div className={`absolute left-16 right-0 h-1 bg-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.8)] rounded-full z-10 transition-all
+          ${dragState === 'top' ? 'top-0' : 'bottom-0'}
+        `}></div>
+      )}
+
+      <div className="mr-4 text-neon-blue drop-shadow-[0_0_12px_rgba(0,243,255,1)] transition-all shrink-0 cursor-grab active:cursor-grabbing p-2 bg-neon-blue/10 rounded-xl border border-neon-blue/40 flex items-center justify-center hover:bg-neon-blue/20">
+        <GripVertical size={22} />
       </div>
-      {children}
+      
+      <div className="flex-1 pointer-events-none sm:pointer-events-auto">
+        {children}
+      </div>
     </div>
   );
 };
@@ -114,8 +164,8 @@ const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, o
       {children}
     </div>
     <div className="flex flex-col sm:flex-row gap-3 w-full pt-2">
-      <Button onClick={onSave} variant="primary" className="flex-1 h-12 text-[10px]"><Check size={18} /> Confirmar</Button>
-      <Button onClick={onCancel} variant="secondary" className="flex-1 h-12 text-[10px]"><X size={18} /> Cancelar</Button>
+      <Button onClick={onSave} variant="primary" className="flex-1 h-12 text-[10px] font-black"><Check size={18} /> Confirmar</Button>
+      <Button onClick={onCancel} variant="secondary" className="flex-1 h-12 text-[10px] font-black"><X size={18} /> Cancelar</Button>
     </div>
   </div>
 );
@@ -123,13 +173,13 @@ const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, o
 const ToggleStatusButton = ({ active, onClick, color }: { active: boolean, onClick: () => void, color: string }) => (
   <button 
     onClick={(e) => { e.stopPropagation(); onClick(); }}
-    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-[8px] font-black tracking-[0.2em] transition-all active:scale-95 shrink-0 ${
+    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl border text-[9px] font-black tracking-[0.2em] transition-all active:scale-95 shrink-0 ${
       active 
-      ? `bg-neon-green/10 border-neon-green/40 text-neon-green shadow-neon-green/10` 
-      : `bg-neon-red/10 border-neon-red/40 text-neon-red shadow-neon-red/10`
+      ? `bg-neon-green/20 border-neon-green/60 text-neon-green shadow-[0_0_15px_rgba(10,255,104,0.2)]` 
+      : `bg-neon-red/20 border-neon-red/60 text-neon-red shadow-[0_0_15px_rgba(255,0,85,0.2)]`
     }`}
   >
-    <Power size={12} /> {active ? 'ON' : 'OFF'}
+    <Power size={14} /> {active ? 'ON' : 'OFF'}
   </button>
 );
 
@@ -216,15 +266,15 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
           </div>
         </AddForm>
 
-        <div className="flex flex-col gap-3 mt-4">
+        <div className="flex flex-col gap-2 mt-4">
           {section.items.map((item, idx) => (
             <DraggableRow key={item.id} index={idx} listId={section.id} onMove={(f, t) => { 
                 const n = [...section.items]; 
-                const [m] = n.splice(f,1); 
-                n.splice(t,0,m); 
+                const [movedItem] = n.splice(f, 1); 
+                n.splice(t, 0, movedItem); 
                 onUpdate({...section, items: n}, true); 
             }}>
-              <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/[0.03] border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-4">
+              <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/[0.04] border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-4">
                 {editingId === item.id ? (
                   <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
                     <div className={`${isInstallment ? 'sm:col-span-4' : 'sm:col-span-8'}`}><Input label="NOME" value={editData.name || ''} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
@@ -236,7 +286,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                 ) : (
                   <>
                     <div className="min-w-0 flex-1">
-                      <p className={`font-black text-xs sm:text-sm tracking-tight truncate ${item.isActive !== false ? 'text-white' : 'text-slate-700 line-through'}`}>{item.name}</p>
+                      <p className={`font-black text-sm sm:text-base tracking-tight truncate ${item.isActive !== false ? 'text-white' : 'text-slate-700 line-through'}`}>{item.name}</p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {isInstallment && (
                           <div className="flex items-center gap-1.5 shrink-0">
@@ -250,7 +300,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                         <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-white/5 shadow-inner">
                             <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">PAGO</span>
                             <CurrencyInput 
-                                className="h-6 w-32 text-[12px] bg-transparent border-none p-0 focus:ring-0 font-black text-neon-green" 
+                                className="h-6 w-32 text-[14px] bg-transparent border-none p-0 focus:ring-0 font-black text-neon-green" 
                                 value={item.paidAmount || 0} 
                                 onValueChange={(v) => handleQuickPay(item.id, v)} 
                             />
@@ -258,14 +308,14 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
-                      <span className={`font-mono font-black text-base sm:text-lg ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]') : 'text-slate-800'}`}>
+                    <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0">
+                      <span className={`font-mono font-black text-lg sm:text-xl ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]') : 'text-slate-800'}`}>
                         R$ {fmt(item.value - (item.paidAmount || 0))}
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <ToggleStatusButton active={item.isActive !== false} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !i.isActive} : i)}, true)} color={color} />
-                        <ActionButton icon={<Pencil size={14} />} onClick={() => { setEditingId(item.id); setEditData(item); }} />
-                        <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => setItemToDelete(item.id)} />
+                        <ActionButton icon={<Pencil size={16} />} onClick={() => { setEditingId(item.id); setEditData(item); }} />
+                        <ActionButton icon={<Trash2 size={16} />} color="text-slate-700 hover:text-neon-red" onClick={() => setItemToDelete(item.id)} />
                       </div>
                     </div>
                   </>
@@ -330,14 +380,14 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         <div className="grid grid-cols-1 gap-4">
           {(data.dreams || []).map((dream, idx) => (
             <DraggableRow key={dream.id} index={idx} listId="dreams-list" onMove={handleMove}>
-                <div className="flex-1 p-5 bg-neon-surface/60 border border-white/5 rounded-3xl flex justify-between items-center group transition-all">
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${dream.isActive ? 'bg-neon-pink/10 text-neon-pink shadow-neon-pink/20' : 'bg-slate-900 text-slate-700'}`}><Trophy size={20} /></div>
-                        <p className={`font-black text-lg uppercase tracking-tight ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
+                <div className="flex-1 p-6 bg-neon-surface/60 border border-white/5 rounded-3xl flex justify-between items-center group transition-all">
+                    <div className="flex items-center gap-5">
+                        <div className={`p-4 rounded-2xl ${dream.isActive ? 'bg-neon-pink/10 text-neon-pink shadow-[0_0_15px_rgba(188,19,254,0.3)]' : 'bg-slate-900 text-slate-700'}`}><Trophy size={22} /></div>
+                        <p className={`font-black text-xl uppercase tracking-tight ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
                     </div>
                     <div className="flex items-center gap-6">
-                        <p className={`font-mono font-black text-xl ${dream.isActive ? 'text-white' : 'text-slate-800'}`}>R$ {fmt(dream.value)}</p>
-                        <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(dream.id)} />
+                        <p className={`font-mono font-black text-2xl ${dream.isActive ? 'text-white' : 'text-slate-800'}`}>R$ {fmt(dream.value)}</p>
+                        <ActionButton icon={<Trash2 size={18} />} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(dream.id)} />
                     </div>
                 </div>
             </DraggableRow>
@@ -392,18 +442,18 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
         <Card className="lg:col-span-2 border-neon-blue/20 bg-gradient-to-br from-neon-blue/5 to-transparent p-10 flex items-center gap-10">
-          <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
+          <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
             <svg height="100%" width="100%" viewBox="0 0 100 100" className="transform -rotate-90">
               <circle stroke="#1e1e2e" fill="transparent" strokeWidth="8" r="40" cx="50" cy="50" />
-              <circle stroke="#00f3ff" fill="transparent" strokeWidth="8" strokeDasharray="251.2" style={{ strokeDashoffset: 251.2 - (totalPercent / 100) * 251.2 }} strokeLinecap="round" r="40" cx="50" cy="50" className="drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]" />
+              <circle stroke="#00f3ff" fill="transparent" strokeWidth="8" strokeDasharray="251.2" style={{ strokeDashoffset: 251.2 - (totalPercent / 100) * 251.2 }} strokeLinecap="round" r="40" cx="50" cy="50" className="drop-shadow-[0_0_15px_rgba(0,243,255,0.8)]" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-black text-white">{totalPercent.toFixed(0)}%</span>
+              <span className="text-3xl font-black text-white">{totalPercent.toFixed(0)}%</span>
             </div>
           </div>
           <div className="flex-1">
-            <p className="text-[10px] text-white font-black uppercase tracking-[0.4em] mb-4 opacity-70">PONTUAÇÃO GLOBAL DE CONQUISTA</p>
-            <p className="text-5xl font-black text-white tracking-tighter">R$ {fmt(data.goals.reduce((acc, g) => acc + g.currentValue, 0))}</p>
+            <p className="text-[11px] text-white font-black uppercase tracking-[0.4em] mb-4 opacity-90">PONTUAÇÃO GLOBAL DE CONQUISTA</p>
+            <p className="text-6xl font-black text-white tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">R$ {fmt(data.goals.reduce((acc, g) => acc + g.currentValue, 0))}</p>
           </div>
         </Card>
       </div>
@@ -420,27 +470,27 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {data.goals.map((goal, idx) => {
           const progress = (goal.currentValue / goal.targetValue) * 100;
           const isCompleted = progress >= 100;
           return (
             <DraggableRow key={goal.id} index={idx} listId="goals-list" onMove={handleMove}>
-                <Card className={`relative flex flex-col p-6 rounded-[2.5rem] h-full transition-all w-full border-2 ${isCompleted ? 'border-neon-yellow shadow-[0_0_30px_rgba(255,230,0,0.2)] bg-neon-yellow/5' : 'border-white/10'}`}>
-                    <div className="flex justify-between mb-6">
-                        <div className={`p-4 rounded-2xl ${isCompleted ? 'bg-neon-yellow/20 text-neon-yellow shadow-neon-yellow/30' : 'bg-white/5 text-slate-500'}`}>{isCompleted ? <Trophy size={24}/> : <Target size={24}/>}</div>
-                        <ActionButton icon={<Trash2 size={16}/>} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(goal.id)} />
+                <Card className={`relative flex flex-col p-8 rounded-[3rem] h-full transition-all w-full border-2 ${isCompleted ? 'border-neon-yellow shadow-[0_0_40px_rgba(255,230,0,0.25)] bg-neon-yellow/5' : 'border-white/10'}`}>
+                    <div className="flex justify-between mb-8">
+                        <div className={`p-5 rounded-2xl ${isCompleted ? 'bg-neon-yellow/20 text-neon-yellow shadow-neon-yellow/40' : 'bg-white/5 text-slate-500'}`}>{isCompleted ? <Trophy size={28}/> : <Target size={28}/>}</div>
+                        <ActionButton icon={<Trash2 size={20}/>} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(goal.id)} />
                     </div>
-                    <h4 className="text-xl font-black text-white uppercase tracking-tighter mb-4">{goal.name}</h4>
+                    <h4 className="text-2xl font-black text-white uppercase tracking-tighter mb-6">{goal.name}</h4>
                     <div className="mt-auto">
-                        <div className="flex justify-between items-baseline mb-2">
-                            <span className="text-2xl font-black text-white">R$ {fmt(goal.currentValue)}</span>
-                            <span className="text-[10px] text-white opacity-40">/ R$ {fmt(goal.targetValue)}</span>
+                        <div className="flex justify-between items-baseline mb-3">
+                            <span className="text-3xl font-black text-white">R$ {fmt(goal.currentValue)}</span>
+                            <span className="text-[11px] font-black text-white opacity-40">/ R$ {fmt(goal.targetValue)}</span>
                         </div>
-                        <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-                            <div style={{ width: `${progress}%` }} className={`h-full ${isCompleted ? 'bg-neon-yellow shadow-neon-yellow/50' : 'bg-neon-blue shadow-neon-blue/50'} transition-all duration-700`}></div>
+                        <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                            <div style={{ width: `${progress}%` }} className={`h-full ${isCompleted ? 'bg-neon-yellow shadow-[0_0_15px_rgba(255,230,0,0.8)]' : 'bg-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.8)]'} transition-all duration-1000`}></div>
                         </div>
-                        <Button onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} variant={isCompleted ? "secondary" : "primary"} className="w-full mt-6 h-12 rounded-2xl shadow-xl">Aportar</Button>
+                        <Button onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} variant={isCompleted ? "secondary" : "primary"} className="w-full mt-8 h-14 rounded-[1.5rem] shadow-2xl font-black tracking-widest">APORTAR AGORA</Button>
                     </div>
                 </Card>
             </DraggableRow>

@@ -230,44 +230,44 @@ function App() {
 
   return (
     <div className="min-h-screen text-slate-200 pb-32 relative bg-black font-sans">
-      <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-xl sticky top-0 z-50 py-4 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <nav className="border-b border-white/10 bg-neon-surface/95 backdrop-blur-2xl sticky top-0 z-50 py-5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+        <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
           <div className="flex flex-col cursor-pointer" onClick={() => setActiveModule('dashboard')}>
-            <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase">
-              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
+            <h1 className="font-black text-sm sm:text-2xl tracking-tighter uppercase">
+              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_15px_rgba(0,243,255,0.7)]">CONTROLLER</span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-               <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 gap-3">
+          <div className="flex items-center gap-4">
+               <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-3 shadow-inner">
                  <button 
                    onClick={() => setActiveModule('dashboard')} 
-                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-[0_0_30px_rgba(255,255,255,0.1)] border border-white/30 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
+                   className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-[0_0_25px_rgba(255,255,255,0.2)] border-white/40 scale-105' : 'text-slate-500 hover:text-slate-300 border-transparent'}`}
                  >
                    Módulos
                  </button>
                  <button 
                    onClick={() => setActiveModule('dreams')} 
-                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dreams' ? 'bg-neon-pink/20 text-white shadow-[0_0_30px_rgba(188,19,254,0.3)] border border-neon-pink/50 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
+                   className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeModule === 'dreams' ? 'bg-neon-pink/30 text-white shadow-[0_0_25px_rgba(188,19,254,0.4)] border-neon-pink/60 scale-105' : 'text-slate-500 hover:text-slate-300 border-transparent'}`}
                  >
                    Dreams
                  </button>
                  <button 
                    onClick={() => setActiveModule('goals')} 
-                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'goals' ? 'bg-neon-blue/20 text-white shadow-[0_0_30px_rgba(0,243,255,0.3)] border border-neon-blue/50 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
+                   className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeModule === 'goals' ? 'bg-neon-blue/30 text-white shadow-[0_0_25px_rgba(0,243,255,0.4)] border-neon-blue/60 scale-105' : 'text-slate-500 hover:text-slate-300 border-transparent'}`}
                  >
                    Goals
                  </button>
                </div>
                
-               <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
+               <div className="w-px h-10 bg-white/10 mx-3 hidden sm:block"></div>
                
                <button 
                  onClick={() => signOut(auth)}
-                 className="p-3 text-slate-500 hover:text-neon-red hover:bg-neon-red/10 rounded-xl transition-all"
+                 className="p-3.5 text-slate-500 hover:text-neon-red hover:bg-neon-red/10 rounded-2xl transition-all group"
                  title="Sair"
                >
-                 <LogOut size={20} />
+                 <LogOut size={22} className="group-hover:scale-110 transition-transform" />
                </button>
           </div>
         </div>
@@ -281,13 +281,13 @@ function App() {
         ) : (
           <>
             <Dashboard data={data} />
-            <div className="flex flex-col lg:flex-row gap-8 items-start mt-10">
-              <div className="flex-1 w-full space-y-6">
-                <div className="flex items-center justify-between pl-4 border-l-4 border-neon-green/50">
-                  <h3 className="text-[10px] font-black text-neon-green uppercase tracking-[0.3em]">Minhas Entradas</h3>
-                  <div className="flex items-center gap-2">
-                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] opacity-40 hover:opacity-100"><ChevronUp size={12}/> Recolher</Button>
-                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+            <div className="flex flex-col lg:flex-row gap-10 items-start mt-12">
+              <div className="flex-1 w-full space-y-8">
+                <div className="flex items-center justify-between pl-5 border-l-4 border-neon-green/60 bg-gradient-to-r from-neon-green/5 to-transparent py-2 rounded-r-2xl">
+                  <h3 className="text-[11px] font-black text-neon-green uppercase tracking-[0.4em]">Minhas Entradas</h3>
+                  <div className="flex items-center gap-3">
+                    <Button onClick={collapseAll} variant="ghost" className="h-9 px-3 text-[9px] font-black opacity-50 hover:opacity-100"><ChevronUp size={14}/> Recolher</Button>
+                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-9 px-4 text-[9px] font-black"><Plus size={14}/> Nova Sessão</Button>
                   </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
@@ -297,12 +297,12 @@ function App() {
                 ))}
               </div>
 
-              <div className="flex-1 w-full space-y-6">
-                <div className="flex items-center justify-between pl-4 border-l-4 border-neon-red/50">
-                  <h3 className="text-[10px] font-black text-neon-red uppercase tracking-[0.3em]">Meus Pagamentos</h3>
-                  <div className="flex items-center gap-2">
-                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] opacity-40 hover:opacity-100"><ChevronUp size={12}/> Recolher Tudo</Button>
-                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+              <div className="flex-1 w-full space-y-8">
+                <div className="flex items-center justify-between pl-5 border-l-4 border-neon-red/60 bg-gradient-to-r from-neon-red/5 to-transparent py-2 rounded-r-2xl">
+                  <h3 className="text-[11px] font-black text-neon-red uppercase tracking-[0.4em]">Meus Pagamentos</h3>
+                  <div className="flex items-center gap-3">
+                    <Button onClick={collapseAll} variant="ghost" className="h-9 px-3 text-[9px] font-black opacity-50 hover:opacity-100"><ChevronUp size={14}/> Recolher Tudo</Button>
+                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-9 px-4 text-[9px] font-black"><Plus size={14}/> Nova Sessão</Button>
                   </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (
@@ -317,8 +317,8 @@ function App() {
       </main>
 
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title={`Nova Sessão de ${newSessionType === 'income' ? 'Entrada' : 'Saída'}`} onConfirm={handleCreateSession}>
-        <div className="space-y-5 py-4">
-          <Input label="Nome da Sessão" placeholder="EX: SALÁRIO, ALUGUEL..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
+        <div className="space-y-6 py-4">
+          <Input label="Nome da Sessão" placeholder="EX: SALÁRIO, ALUGUEL, CARTÃO..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
           <Select label="Tipo de Registro" value={newSessionStructure} onChange={e => setNewSessionStructure(e.target.value as any)} options={[{ value: 'standard', label: 'Simples' }, { value: 'installment', label: 'Parcelamento' }]} />
         </div>
       </Modal>

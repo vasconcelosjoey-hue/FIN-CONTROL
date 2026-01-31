@@ -230,40 +230,44 @@ function App() {
 
   return (
     <div className="min-h-screen text-slate-200 pb-32 relative bg-black font-sans">
-      <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-xl sticky top-0 z-50 py-3 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+      <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-xl sticky top-0 z-50 py-4 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex flex-col cursor-pointer" onClick={() => setActiveModule('dashboard')}>
             <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase">
               FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-3 bg-white/5 p-1 rounded-2xl border border-white/5">
-               <button 
-                 onClick={() => setActiveModule('dashboard')} 
-                 className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-lg border border-white/20' : 'text-slate-500 hover:text-slate-300'}`}
-               >
-                 Módulos
-               </button>
-               <button 
-                 onClick={() => setActiveModule('dreams')} 
-                 className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dreams' ? 'bg-neon-pink/20 text-white shadow-[0_0_15px_rgba(188,19,254,0.3)] border border-neon-pink/40' : 'text-slate-500 hover:text-slate-300'}`}
-               >
-                 Dreams
-               </button>
-               <button 
-                 onClick={() => setActiveModule('goals')} 
-                 className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'goals' ? 'bg-neon-blue/20 text-white shadow-[0_0_15px_rgba(0,243,255,0.3)] border border-neon-blue/40' : 'text-slate-500 hover:text-slate-300'}`}
-               >
-                 Goals
-               </button>
-               <div className="w-px h-6 bg-white/10 mx-1"></div>
+          <div className="flex items-center gap-3">
+               <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 gap-2">
+                 <button 
+                   onClick={() => setActiveModule('dashboard')} 
+                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-white/20' : 'text-slate-500 hover:text-slate-300'}`}
+                 >
+                   Módulos
+                 </button>
+                 <button 
+                   onClick={() => setActiveModule('dreams')} 
+                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dreams' ? 'bg-neon-pink/20 text-white shadow-[0_0_20px_rgba(188,19,254,0.3)] border border-neon-pink/40' : 'text-slate-500 hover:text-slate-300'}`}
+                 >
+                   Dreams
+                 </button>
+                 <button 
+                   onClick={() => setActiveModule('goals')} 
+                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'goals' ? 'bg-neon-blue/20 text-white shadow-[0_0_20px_rgba(0,243,255,0.3)] border border-neon-blue/40' : 'text-slate-500 hover:text-slate-300'}`}
+                 >
+                   Goals
+                 </button>
+               </div>
+               
+               <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
+               
                <button 
                  onClick={() => signOut(auth)}
-                 className="p-2.5 text-slate-500 hover:text-neon-red transition-all"
+                 className="p-3 text-slate-500 hover:text-neon-red hover:bg-neon-red/10 rounded-xl transition-all"
                  title="Sair"
                >
-                 <LogOut size={16} />
+                 <LogOut size={20} />
                </button>
           </div>
         </div>

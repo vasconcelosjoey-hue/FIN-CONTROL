@@ -24,7 +24,6 @@ const getInstallmentMonth = (startMonth?: string, current: number = 1) => {
     const targetDate = new Date(year, (month - 1) + (current - 1), 15);
     return targetDate.toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
   } catch (e) {
-    console.error("Erro ao calcular mês:", e);
     return '---';
   }
 };
@@ -36,6 +35,8 @@ const ActionButton = ({ onClick, icon, color = "text-slate-600 hover:text-white"
 );
 
 const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId: string; onMove: (f: number, t: number) => void }> = ({ children, index, listId, onMove }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
@@ -44,12 +45,16 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
     e.dataTransfer.setData('listId', listId);
     e.dataTransfer.setData('rowIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
+    setIsDragging(true);
   };
+
+  const handleDragEnd = () => setIsDragging(false);
 
   return (
     <div 
       draggable 
       onDragStart={handleDragStart} 
+      onDragEnd={handleDragEnd}
       onDragOver={e => e.preventDefault()} 
       onDrop={e => {
         e.preventDefault();
@@ -59,10 +64,10 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
         const fromIdx = parseInt(e.dataTransfer.getData('rowIndex'));
         if (!isNaN(fromIdx) && fromIdx !== index) onMove(fromIdx, index);
       }} 
-      className="flex items-center group/row"
+      className={`flex items-center group/row transition-all duration-300 ${isDragging ? 'opacity-20 scale-95 blur-sm' : 'opacity-100 scale-100'}`}
     >
-      <div className="mr-3 text-slate-800 group-hover/row:text-neon-blue transition-colors shrink-0 cursor-grab active:cursor-grabbing p-1">
-        <GripVertical size={16} />
+      <div className="mr-4 text-neon-blue drop-shadow-[0_0_8px_rgba(0,243,255,0.8)] group-hover/row:scale-110 transition-transform shrink-0 cursor-grab active:cursor-grabbing p-1 bg-neon-blue/5 rounded-lg border border-neon-blue/20">
+        <GripVertical size={18} />
       </div>
       {children}
     </div>
@@ -75,7 +80,7 @@ const EditRowLayout: React.FC<{ children: React.ReactNode, onSave: () => void, o
       {children}
     </div>
     <div className="flex flex-col sm:flex-row gap-3 w-full pt-2">
-      <Button onClick={onSave} variant="primary" className="flex-1 h-12 text-[10px]"><Check size={18} /> Confirmar Alteração</Button>
+      <Button onClick={onSave} variant="primary" className="flex-1 h-12 text-[10px]"><Check size={18} /> Confirmar</Button>
       <Button onClick={onCancel} variant="secondary" className="flex-1 h-12 text-[10px]"><X size={18} /> Cancelar</Button>
     </div>
   </div>
@@ -149,13 +154,6 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
     }, false);
   };
 
-  const confirmDeleteItem = () => {
-    if (itemToDelete) {
-      onUpdate({ ...section, items: section.items.filter(i => i.id !== itemToDelete) }, true);
-      setItemToDelete(null);
-    }
-  };
-
   return (
     <>
       <CollapsibleCard 
@@ -184,7 +182,7 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
           </div>
         </AddForm>
 
-        <div className="flex flex-col gap-2 mt-4">
+        <div className="flex flex-col gap-3 mt-4">
           {section.items.map((item, idx) => (
             <DraggableRow key={item.id} index={idx} listId={section.id} onMove={(f, t) => { 
                 const n = [...section.items]; 
@@ -192,58 +190,44 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                 n.splice(t,0,m); 
                 onUpdate({...section, items: n}, true); 
             }}>
-              <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-3">
+              <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/[0.03] border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-4">
                 {editingId === item.id ? (
                   <EditRowLayout onSave={handleSaveEdit} onCancel={() => setEditingId(null)}>
                     <div className={`${isInstallment ? 'sm:col-span-4' : 'sm:col-span-8'}`}><Input label="NOME" value={editData.name || ''} onChange={e => setEditData({...editData, name: e.target.value})} /></div>
-                    <div className="sm:col-span-4"><CurrencyInput label="VALOR BASE" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
+                    <div className="sm:col-span-4"><CurrencyInput label="VALOR" value={editData.value || 0} onValueChange={v => setEditData({...editData, value: v})} /></div>
                     {isInstallment && (
-                        <>
-                            <div className="sm:col-span-2"><Input label="PARC" type="number" value={String(editData.installmentsCount || '')} onChange={e => setEditData({...editData, installmentsCount: parseInt(e.target.value)})} /></div>
-                            <div className="sm:col-span-3"><Input label="REF (MÊS 1)" type="month" value={editData.startMonth || ''} onChange={e => setEditData({...editData, startMonth: e.target.value})} /></div>
-                        </>
+                        <div className="sm:col-span-2"><Input label="PARC" type="number" value={String(editData.installmentsCount || '')} onChange={e => setEditData({...editData, installmentsCount: parseInt(e.target.value)})} /></div>
                     )}
                   </EditRowLayout>
                 ) : (
                   <>
                     <div className="min-w-0 flex-1">
                       <p className={`font-black text-xs sm:text-sm tracking-tight truncate ${item.isActive !== false ? 'text-white' : 'text-slate-700 line-through'}`}>{item.name}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {isInstallment && (
                           <div className="flex items-center gap-1.5 shrink-0">
-                             <Badge color="yellow">{item.currentInstallment} / {item.installmentsCount}X</Badge>
-                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5 shadow-inner">
-                                <button 
-                                  onClick={() => setPayInstallmentModal({ isOpen: true, item })}
-                                  className="bg-neon-green/10 text-neon-green p-1.5 rounded-l-lg border-r border-white/10 hover:bg-neon-green hover:text-black transition-all"
-                                  title="Quitar este mês"
-                                >
-                                  <CheckCircle2 size={12} />
-                                </button>
-                                <span className="text-[10px] font-black text-neon-yellow ml-2 tracking-widest">{getInstallmentMonth(item.startMonth, item.currentInstallment)}</span>
+                             <Badge color="yellow">{item.currentInstallment}/{item.installmentsCount}X</Badge>
+                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5">
+                                <button onClick={() => setPayInstallmentModal({ isOpen: true, item })} className="bg-neon-green/10 text-neon-green p-1.5 rounded-l-lg hover:bg-neon-green hover:text-black transition-all"><CheckCircle2 size={12} /></button>
+                                <span className="text-[10px] font-black text-neon-yellow ml-2">{getInstallmentMonth(item.startMonth, item.currentInstallment)}</span>
                              </div>
                           </div>
                         )}
-                        <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pago</span>
-                            <div className="w-40">
-                                <CurrencyInput 
-                                    className="h-8 text-[14px] bg-transparent border-none p-0 focus:ring-0 focus:shadow-none font-black text-neon-green" 
-                                    value={item.paidAmount || 0} 
-                                    onValueChange={(v) => handleQuickPay(item.id, v)} 
-                                />
-                            </div>
+                        <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-white/5">
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">PAGO</span>
+                            <CurrencyInput 
+                                className="h-6 w-32 text-[12px] bg-transparent border-none p-0 focus:ring-0 font-black text-neon-green" 
+                                value={item.paidAmount || 0} 
+                                onValueChange={(v) => handleQuickPay(item.id, v)} 
+                            />
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                      <div className="text-right flex flex-col">
-                        <span className={`font-mono font-black text-sm sm:text-lg leading-none ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-neon-red shadow-[0_0_10px_rgba(255,0,85,0.2)]') : 'text-slate-800'}`}>
-                            R$ {fmt(item.value - (item.paidAmount || 0))}
-                        </span>
-                      </div>
-                      
+                    <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                      <span className={`font-mono font-black text-base sm:text-lg ${item.isActive !== false ? (section.type === 'income' ? 'text-neon-green' : 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]') : 'text-slate-800'}`}>
+                        R$ {fmt(item.value - (item.paidAmount || 0))}
+                      </span>
                       <div className="flex items-center gap-1">
                         <ToggleStatusButton active={item.isActive !== false} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !i.isActive} : i)}, true)} color={color} />
                         <ActionButton icon={<Pencil size={14} />} onClick={() => { setEditingId(item.id); setEditData(item); }} />
@@ -258,38 +242,16 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         </div>
       </CollapsibleCard>
 
-      <Modal 
-        isOpen={!!itemToDelete} 
-        onClose={() => setItemToDelete(null)} 
-        title="Excluir Registro?" 
-        confirmText="Sim, Apagar" 
-        confirmVariant="danger"
-        onConfirm={confirmDeleteItem}
-      >
-        Tem certeza que deseja apagar este registro permanentemente?
+      <Modal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} title="Excluir Registro?" confirmText="Sim, Apagar" confirmVariant="danger" onConfirm={() => { if (itemToDelete) onUpdate({ ...section, items: section.items.filter(i => i.id !== itemToDelete) }, true); setItemToDelete(null); }}>
+        Tem certeza que deseja apagar permanentemente este registro?
       </Modal>
 
-      <Modal
-        isOpen={payInstallmentModal.isOpen}
-        onClose={() => setPayInstallmentModal({ isOpen: false })}
-        title="Quitar Parcela"
-        confirmText={(payInstallmentModal.item?.currentInstallment || 1) >= (payInstallmentModal.item?.installmentsCount || 1) ? "Quitar e Finalizar" : "Confirmar Pagamento"}
-        onConfirm={() => payInstallmentModal.item && handlePayInstallment(payInstallmentModal.item)}
-      >
-        <div className="space-y-4">
-          <p className="text-xs text-slate-400">Confirmar pagamento da parcela vigente?</p>
-        </div>
-      </Modal>
-
-      <Modal 
-        isOpen={isDeleteModalOpen} 
-        onClose={() => setIsDeleteModalOpen(false)} 
-        title="Excluir Sessão?" 
-        confirmText="Sim, Apagar Tudo" 
-        confirmVariant="danger"
-        onConfirm={onDeleteSection}
-      >
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Excluir Sessão?" confirmText="Sim, Apagar Tudo" confirmVariant="danger" onConfirm={onDeleteSection}>
         Deseja excluir permanentemente a sessão <strong className="text-white">"{section.title}"</strong>?
+      </Modal>
+
+      <Modal isOpen={payInstallmentModal.isOpen} onClose={() => setPayInstallmentModal({ isOpen: false })} title="Avançar Parcela?" confirmText="Confirmar" onConfirm={() => payInstallmentModal.item && handlePayInstallment(payInstallmentModal.item)}>
+        Deseja confirmar o pagamento deste mês e avançar para a próxima parcela?
       </Modal>
     </>
   );
@@ -316,19 +278,17 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
     }, true);
   };
 
-  const totalDreams = (data.dreams || []).filter(d => d.isActive).reduce((acc, curr) => acc + curr.value, 0);
-
   return (
     <div className="animate-in slide-in-from-right duration-500">
       <div className="flex items-center gap-4 mb-8">
         <Button onClick={onBack} variant="ghost" className="p-2 rounded-full"><ArrowLeft size={24} /></Button>
-        <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">My <span className="text-neon-pink">Dreams</span></h2>
+        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">My <span className="text-neon-pink">Dreams</span></h2>
       </div>
 
       <div className="max-w-3xl mx-auto space-y-8">
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Qual o seu sonho?" placeholder="EX: VIAGEM PARA JAPÃO, NOVO CARRO..." value={name} onChange={e => setName(e.target.value)} />
+            <Input label="Qual o seu sonho?" value={name} onChange={e => setName(e.target.value)} />
             <CurrencyInput label="Valor Estimado" value={val} onValueChange={setVal} />
           </div>
         </AddForm>
@@ -336,37 +296,22 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
         <div className="grid grid-cols-1 gap-4">
           {(data.dreams || []).map((dream, idx) => (
             <DraggableRow key={dream.id} index={idx} listId="dreams-list" onMove={handleMove}>
-                <div className="flex-1 p-5 bg-neon-surface/60 border border-white/5 rounded-3xl flex justify-between items-center group hover:border-neon-pink/30 transition-all">
+                <div className="flex-1 p-5 bg-neon-surface/60 border border-white/5 rounded-3xl flex justify-between items-center group transition-all">
                     <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-2xl ${dream.isActive ? 'bg-neon-pink/10 text-neon-pink' : 'bg-slate-900 text-slate-700'}`}><Trophy size={20} /></div>
-                        <div>
-                            <p className={`font-black text-lg uppercase tracking-tight ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
-                        </div>
+                        <p className={`font-black text-lg uppercase tracking-tight ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
                     </div>
                     <div className="flex items-center gap-6">
                         <p className={`font-mono font-black text-xl ${dream.isActive ? 'text-white' : 'text-slate-800'}`}>R$ {fmt(dream.value)}</p>
-                        <div className="flex items-center gap-2">
-                            <ToggleStatusButton active={dream.isActive} onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, dreams: prev.dreams.map(d => d.id === dream.id ? { ...d, isActive: !d.isActive } : d) }), true)} color="pink" />
-                            <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(dream.id)} />
-                        </div>
+                        <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(dream.id)} />
                     </div>
                 </div>
             </DraggableRow>
           ))}
         </div>
       </div>
-
-      <Modal 
-        isOpen={!!itemToDelete} 
-        onClose={() => setItemToDelete(null)} 
-        title="Remover Sonho?" 
-        onConfirm={() => {
-            if(itemToDelete) onUpdate(prev => ({ ...prev, dreams: prev.dreams.filter(d => d.id !== itemToDelete) }), true);
-            setItemToDelete(null);
-        }}
-        confirmVariant="danger"
-      >
-        Confirmar exclusão deste sonho do seu quadro?
+      <Modal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} title="Remover Sonho?" onConfirm={() => { if(itemToDelete) onUpdate(prev => ({ ...prev, dreams: prev.dreams.filter(d => d.id !== itemToDelete) }), true); setItemToDelete(null); }} confirmVariant="danger">
+        Confirmar exclusão deste sonho?
       </Modal>
     </div>
   );
@@ -380,25 +325,15 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
 
   const handleAddGoal = () => {
     if (!name || target <= 0) return;
-    const colors: ('blue' | 'pink' | 'green' | 'yellow')[] = ['blue', 'pink', 'green', 'yellow'];
     const newGoal: Goal = {
       id: Math.random().toString(36).substr(2, 9),
       name: name.toUpperCase(),
       targetValue: target,
       currentValue: 0,
-      color: colors[data.goals.length % colors.length]
+      color: 'blue'
     };
     onUpdate(prev => ({ ...prev, goals: [...(prev.goals || []), newGoal] }), true);
     setName(''); setTarget(0);
-  };
-
-  const handleDeposit = () => {
-    if (!depositModal.goal) return;
-    onUpdate(prev => ({
-      ...prev,
-      goals: prev.goals.map(g => g.id === depositModal.goal!.id ? { ...g, currentValue: Math.min(g.targetValue, g.currentValue + depositModal.amount) } : g)
-    }), true);
-    setDepositModal({ isOpen: false, amount: 0 });
   };
 
   const handleMove = (from: number, to: number) => {
@@ -410,9 +345,9 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
     }, true);
   };
 
-  const totalTarget = data.goals.reduce((acc, g) => acc + g.targetValue, 0);
-  const totalCurrent = data.goals.reduce((acc, g) => acc + g.currentValue, 0);
-  const totalPercent = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+  const totalPercent = data.goals.reduce((acc, g) => acc + g.targetValue, 0) > 0 
+    ? (data.goals.reduce((acc, g) => acc + g.currentValue, 0) / data.goals.reduce((acc, g) => acc + g.targetValue, 0)) * 100 
+    : 0;
 
   return (
     <div className="animate-in slide-in-from-right duration-500 pb-20">
@@ -423,23 +358,18 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
         <Card className="lg:col-span-2 border-neon-blue/20 bg-gradient-to-br from-neon-blue/5 to-transparent p-10 flex items-center gap-10">
-          <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+          <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
             <svg height="100%" width="100%" viewBox="0 0 100 100" className="transform -rotate-90">
               <circle stroke="#1e1e2e" fill="transparent" strokeWidth="8" r="40" cx="50" cy="50" />
-              <circle stroke="#00f3ff" fill="transparent" strokeWidth="8" strokeDasharray="251.2" style={{ strokeDashoffset: 251.2 - (totalPercent / 100) * 251.2 }} strokeLinecap="round" r="40" cx="50" cy="50" className="drop-shadow-[0_0_10px_rgba(0,243,255,0.6)] transition-all duration-1000 ease-out" />
+              <circle stroke="#00f3ff" fill="transparent" strokeWidth="8" strokeDasharray="251.2" style={{ strokeDashoffset: 251.2 - (totalPercent / 100) * 251.2 }} strokeLinecap="round" r="40" cx="50" cy="50" className="drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-3xl font-black text-white">{totalPercent.toFixed(0)}%</span>
+              <span className="text-2xl font-black text-white">{totalPercent.toFixed(0)}%</span>
             </div>
           </div>
           <div className="flex-1">
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-4">Patrimônio em Metas</p>
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-2">
-                <span className="text-sm font-bold text-slate-600">R$</span>
-                <span className="text-5xl font-black text-white tracking-tighter">{fmt(totalCurrent)}</span>
-              </div>
-            </div>
+            <p className="text-[10px] text-white font-black uppercase tracking-[0.4em] mb-4 opacity-70">PONTUAÇÃO GLOBAL DE CONQUISTA</p>
+            <p className="text-5xl font-black text-white tracking-tighter">R$ {fmt(data.goals.reduce((acc, g) => acc + g.currentValue, 0))}</p>
           </div>
         </Card>
       </div>
@@ -447,10 +377,10 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
       <div className="max-w-4xl mx-auto mb-16">
         <Card className="p-8 border-neon-blue/40 bg-neon-blue/5" onKeyDown={e => e.key === 'Enter' && handleAddGoal()}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-            <Input label="Qual o nome da conquista?" placeholder="EX: APARTAMENTO, VIAGEM..." value={name} onChange={e => setName(e.target.value)} />
+            <Input label="NOME DO GOAL" value={name} onChange={e => setName(e.target.value)} />
             <div className="flex items-end gap-4">
-              <CurrencyInput label="Valor Alvo" value={target} onValueChange={setTarget} />
-              <Button onClick={handleAddGoal} className="h-12 w-12 rounded-xl p-0 shrink-0"><Plus size={24} /></Button>
+              <CurrencyInput label="VALOR ALVO" value={target} onValueChange={setTarget} />
+              <Button onClick={handleAddGoal} className="h-12 w-12 rounded-xl p-0"><Plus size={24} /></Button>
             </div>
           </div>
         </Card>
@@ -462,54 +392,34 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
           const isCompleted = progress >= 100;
           return (
             <DraggableRow key={goal.id} index={idx} listId="goals-list" onMove={handleMove}>
-                <div className="relative w-full h-full">
-                    {isCompleted && <div className="absolute -inset-1 bg-gradient-to-r from-neon-yellow to-neon-blue rounded-[2.5rem] blur opacity-30 animate-pulse"></div>}
-                    <Card className={`relative flex flex-col p-6 rounded-[2rem] h-full transition-all duration-500 w-full ${isCompleted ? 'border-neon-yellow/60 shadow-[0_0_30px_rgba(255,230,0,0.15)] bg-neon-yellow/5' : 'border-white/10'}`}>
-                        <div className="flex justify-between items-start mb-6">
-                            <div className={`p-4 rounded-2xl ${isCompleted ? 'bg-neon-yellow/10 text-neon-yellow' : 'bg-white/5 text-slate-500'}`}>
-                                {isCompleted ? <Trophy size={24} /> : <Target size={24} />}
-                            </div>
-                            <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(goal.id)} />
+                <Card className={`relative flex flex-col p-6 rounded-[2.5rem] h-full transition-all w-full border-2 ${isCompleted ? 'border-neon-yellow shadow-[0_0_30px_rgba(255,230,0,0.2)] bg-neon-yellow/5' : 'border-white/10'}`}>
+                    <div className="flex justify-between mb-6">
+                        <div className={`p-4 rounded-2xl ${isCompleted ? 'bg-neon-yellow/20 text-neon-yellow' : 'bg-white/5 text-slate-500'}`}>{isCompleted ? <Trophy size={24}/> : <Target size={24}/>}</div>
+                        <ActionButton icon={<Trash2 size={16}/>} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(goal.id)} />
+                    </div>
+                    <h4 className="text-xl font-black text-white uppercase tracking-tighter mb-4">{goal.name}</h4>
+                    <div className="mt-auto">
+                        <div className="flex justify-between items-baseline mb-2">
+                            <span className="text-2xl font-black text-white">R$ {fmt(goal.currentValue)}</span>
+                            <span className="text-[10px] text-white opacity-40">/ R$ {fmt(goal.targetValue)}</span>
                         </div>
-                        <h4 className={`text-xl font-black uppercase tracking-tighter mb-1 ${isCompleted ? 'text-neon-yellow' : 'text-white'}`}>{goal.name}</h4>
-                        <div className="mt-auto pt-6">
-                            <p className="text-2xl font-black text-white tracking-tighter">R$ {fmt(goal.currentValue)}</p>
-                            <div className="relative w-full h-3 bg-white/5 rounded-full overflow-hidden mt-4">
-                                <div style={{ width: `${progress}%` }} className={`h-full transition-all duration-1000 ${isCompleted ? 'bg-neon-yellow shadow-neon-yellow' : 'bg-neon-blue shadow-neon-blue'}`}></div>
-                            </div>
-                            <Button onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} variant={isCompleted ? "secondary" : "primary"} className="w-full mt-6 h-12 rounded-2xl">
-                                <DollarSign size={16} /> Aportar
-                            </Button>
+                        <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                            <div style={{ width: `${progress}%` }} className={`h-full ${isCompleted ? 'bg-neon-yellow' : 'bg-neon-blue'} shadow-[0_0_10px_currentColor]`}></div>
                         </div>
-                    </Card>
-                </div>
+                        <Button onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} variant={isCompleted ? "secondary" : "primary"} className="w-full mt-6 h-12 rounded-2xl">Aportar</Button>
+                    </div>
+                </Card>
             </DraggableRow>
           );
         })}
       </div>
 
-      <Modal 
-        isOpen={depositModal.isOpen} 
-        onClose={() => setDepositModal({ isOpen: false, amount: 0 })}
-        title={`Aportar em ${depositModal.goal?.name}`}
-        onConfirm={handleDeposit}
-      >
-        <div className="py-4">
-          <CurrencyInput value={depositModal.amount} onValueChange={(v) => setDepositModal(prev => ({ ...prev, amount: v }))} label="Valor do Aporte" />
-        </div>
+      <Modal isOpen={depositModal.isOpen} onClose={() => setDepositModal({ isOpen: false, amount: 0 })} title={`Aporte em ${depositModal.goal?.name}`} onConfirm={() => { if(depositModal.goal) onUpdate(prev => ({ ...prev, goals: prev.goals.map(g => g.id === depositModal.goal!.id ? { ...g, currentValue: Math.min(g.targetValue, g.currentValue + depositModal.amount) } : g) }), true); setDepositModal({ isOpen: false, amount: 0 }); }}>
+        <CurrencyInput value={depositModal.amount} onValueChange={(v) => setDepositModal(p => ({ ...p, amount: v }))} label="Valor do Aporte" />
       </Modal>
 
-      <Modal 
-        isOpen={!!itemToDelete} 
-        onClose={() => setItemToDelete(null)} 
-        title="Apagar Objetivo?" 
-        onConfirm={() => {
-            if(itemToDelete) onUpdate(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== itemToDelete) }), true);
-            setItemToDelete(null);
-        }}
-        confirmVariant="danger"
-      >
-        Deseja excluir permanentemente este objetivo? O progresso salvo será perdido.
+      <Modal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} title="Apagar Objetivo?" onConfirm={() => { if(itemToDelete) onUpdate(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== itemToDelete) }), true); setItemToDelete(null); }} confirmVariant="danger">
+        Deseja apagar este objetivo permanentemente?
       </Modal>
     </div>
   );

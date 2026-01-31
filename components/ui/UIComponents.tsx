@@ -47,6 +47,8 @@ export const CollapsibleCard = ({
   totalValue, 
   color = 'blue', 
   children, 
+  isOpen: controlledOpen,
+  onToggle,
   defaultOpen = false,
   icon,
   onEditTitle
@@ -55,11 +57,20 @@ export const CollapsibleCard = ({
   totalValue?: string, 
   color?: 'blue' | 'green' | 'red' | 'yellow' | 'pink' | 'white', 
   children?: React.ReactNode, 
+  isOpen?: boolean,
+  onToggle?: () => void,
   defaultOpen?: boolean,
   icon?: React.ReactNode,
   onEditTitle?: (newTitle: string) => void
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  
+  const toggle = () => {
+    if (onToggle) onToggle();
+    else setInternalOpen(!internalOpen);
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +113,7 @@ export const CollapsibleCard = ({
         className="p-4 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors gap-2"
         onClick={(e) => {
             if (!isEditing && !(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
-                setIsOpen(!isOpen);
+                toggle();
             }
         }}
       >

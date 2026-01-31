@@ -4,15 +4,11 @@ import { FinancialData, INITIAL_DATA, CustomSection } from './types';
 import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
 import { CustomSectionModule, CreditCardModule, PixModule, RadarModule, DreamsModule } from './components/Modules';
-import { RefreshCw, Plus, Cloud, ShieldCheck, Star } from 'lucide-react';
+import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins } from 'lucide-react';
 import { DraggableModuleWrapper, Modal, Input, Button, Select } from './components/ui/UIComponents';
-
-const REQUESTED_USER_ID = "GWDk0P5fbhdiLRovli43syBaHUG2";
-
-const getPersistentUserId = () => {
-  localStorage.setItem('fincontroller_user_id', REQUESTED_USER_ID);
-  return REQUESTED_USER_ID;
-};
+import { AuthScreen } from './components/AuthScreen';
+import { auth } from './firebaseConfig';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
 const BottomMobileNav = ({ balance, onOpenDreams }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void }) => {
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -32,12 +28,35 @@ const BottomMobileNav = ({ balance, onOpenDreams }: { balance: number, onScrollT
   );
 };
 
+const FloatingBalance = ({ balance, isVisible }: { balance: number, isVisible: boolean }) => {
+  const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    <div className={`fixed bottom-10 left-10 z-[100] hidden lg:block transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+      <div className="bg-neon-dark/80 backdrop-blur-2xl border border-neon-yellow/30 p-5 rounded-[2rem] shadow-[0_0_50px_rgba(255,230,0,0.15)] flex flex-col gap-1 items-start min-w-[200px]">
+        <div className="flex items-center gap-2 mb-1">
+          <Coins size={14} className="text-neon-yellow" />
+          <span className="text-[8px] font-black text-neon-yellow uppercase tracking-[0.4em]">Saldo Previsto</span>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xs font-bold text-slate-500">R$</span>
+          <span className={`text-3xl font-black tracking-tighter ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
+            {fmt(balance)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
-  const [userId] = useState(getPersistentUserId());
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [data, setData] = useState<FinancialData>(INITIAL_DATA);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showDreams, setShowDreams] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newSessionType, setNewSessionType] = useState<'income' | 'expense'>('expense');
@@ -47,6 +66,26 @@ function App() {
   const isInternalUpdate = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Monitorar Scroll
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Listener de Autenticação
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+      if (!currentUser) {
+        setLoading(false);
+        setData(INITIAL_DATA);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const normalizeData = (d: FinancialData) => {
     if (!d) return INITIAL_DATA;
     const clean = { ...INITIAL_DATA, ...d };
@@ -55,43 +94,59 @@ function App() {
   };
 
   const syncToCloud = useCallback((targetData: FinancialData, immediate = false) => {
+    if (!user) return;
     setIsSyncing(true);
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     const performSync = async () => {
-      try { await saveToCloud(userId, targetData); setIsSyncing(false); }
+      try { await saveToCloud(user.uid, targetData); setIsSyncing(false); }
       catch (err) { setIsSyncing(false); }
     };
     if (immediate) performSync();
     else saveTimeoutRef.current = setTimeout(performSync, 2000);
-  }, [userId]);
+  }, [user]);
 
   const handleUpdate = useCallback((newDataOrUpdater: FinancialData | ((prev: FinancialData) => FinancialData), immediate = false) => {
+    if (!user) return;
     const now = Date.now();
     isInternalUpdate.current = true;
     setData(prev => {
       const next = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
       const nextWithTimestamp = { ...next, lastUpdate: now };
-      saveToLocal(userId, nextWithTimestamp);
+      saveToLocal(user.uid, nextWithTimestamp);
       syncToCloud(nextWithTimestamp, immediate);
       return nextWithTimestamp;
     });
     setTimeout(() => { isInternalUpdate.current = false; }, 3000);
-  }, [userId, syncToCloud]);
+  }, [user, syncToCloud]);
 
+  // Carregar dados quando o usuário logar
   useEffect(() => {
+    if (!user) return;
     let unsubscribeData: () => void = () => {};
+    setLoading(true);
     (async () => {
       try {
-        const initialData = await loadData(userId);
+        const initialData = await loadData(user.uid);
         const normalized = normalizeData(initialData);
         setData(normalized);
-        unsubscribeData = subscribeToData(userId, (cloudData) => {
+        unsubscribeData = subscribeToData(user.uid, (cloudData) => {
           if (!isInternalUpdate.current) setData(normalizeData(cloudData));
         });
-      } catch (e) { console.error(e); } finally { setTimeout(() => setLoading(false), 1200); }
+      } catch (e) { console.error(e); } finally { setTimeout(() => setLoading(false), 800); }
     })();
     return () => unsubscribeData();
-  }, [userId]);
+  }, [user]);
+
+  const toggleSection = (id: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const collapseAll = () => setExpandedSections(new Set());
 
   const handleCreateSession = () => {
     if (!newSessionName) return;
@@ -121,29 +176,19 @@ function App() {
   };
 
   const handleMoveSection = (fromIdx: number, toIdx: number, type: 'income' | 'expense') => {
+    if (!user) return;
     setData(prev => {
       const all = [...prev.customSections];
       const filtered = all.filter(s => s.type === type);
-      
       const itemToMove = filtered[fromIdx];
       const targetItem = filtered[toIdx];
-      
       if (!itemToMove || !targetItem) return prev;
-      
       const actualFrom = all.findIndex(s => s.id === itemToMove.id);
       all.splice(actualFrom, 1);
-      
       const actualTo = all.findIndex(s => s.id === targetItem.id);
       all.splice(actualTo, 0, itemToMove);
-      
-      const next = {
-        ...prev,
-        customSections: all,
-        sectionsOrder: all.map(s => s.id),
-        lastUpdate: Date.now()
-      };
-      
-      saveToLocal(userId, next);
+      const next = { ...prev, customSections: all, sectionsOrder: all.map(s => s.id), lastUpdate: Date.now() };
+      saveToLocal(user.uid, next);
       syncToCloud(next, true);
       return next;
     });
@@ -155,6 +200,9 @@ function App() {
     return totalInc - totalExp;
   };
 
+  if (authLoading) return null; // Prevenção de flash de UI
+  if (!user) return <AuthScreen />;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8">
@@ -164,25 +212,40 @@ function App() {
           </div>
           <RefreshCw className="absolute -bottom-2 -right-2 animate-spin text-neon-blue w-8 h-8 p-1.5 bg-black border border-neon-blue/50 rounded-full" />
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter">FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.5)]">CONTROLLER</span></h1>
+        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter uppercase">Syncing <span className="text-neon-blue drop-shadow-[0_0_20px_rgba(0,243,255,0.5)]">Vault...</span></h1>
       </div>
     );
   }
+
+  const balance = calculateBalance();
 
   return (
     <div className="min-h-screen text-slate-200 pb-32 relative bg-black font-sans">
       <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-xl sticky top-0 z-50 py-3 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase cursor-pointer" onClick={() => setShowDreams(false)}>
-            FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
-          </h1>
+          <div className="flex flex-col cursor-pointer" onClick={() => setShowDreams(false)}>
+            <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase">
+              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
+            </h1>
+            <span className="text-[7px] text-slate-600 font-black uppercase tracking-[0.3em] flex items-center gap-1">
+              <User size={8} /> {user.displayName || 'Authenticated User'}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2 sm:gap-4">
                <Button onClick={() => setShowDreams(!showDreams)} variant={showDreams ? "secondary" : "primary"} className="px-3 sm:px-6">
-                 <Star size={16} className={showDreams ? 'text-neon-yellow' : 'text-white'} /> {showDreams ? 'Módulos' : 'Dreams'}
+                 <Star size={16} className={showDreams ? 'text-neon-yellow' : 'text-white'} /> <span className="hidden sm:inline">{showDreams ? 'Módulos' : 'Dreams'}</span>
                </Button>
-               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isSyncing ? 'border-neon-blue/40 text-neon-blue' : 'border-neon-green/40 text-neon-green'}`}>
+               <button 
+                 onClick={() => signOut(auth)}
+                 className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-neon-red hover:border-neon-red/30 transition-all"
+                 title="Sair"
+               >
+                 <LogOut size={16} />
+               </button>
+               <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border ${isSyncing ? 'border-neon-blue/40 text-neon-blue' : 'border-neon-green/40 text-neon-green'}`}>
                  <Cloud size={12} className={isSyncing ? 'animate-pulse' : ''} />
-                 <span className="text-[7px] font-black uppercase tracking-[0.2em]">{isSyncing ? 'Sync...' : 'Cloud'}</span>
+                 <span className="text-[7px] font-black uppercase tracking-[0.2em]">{isSyncing ? 'Sync...' : 'Secure'}</span>
                </div>
           </div>
         </div>
@@ -199,31 +262,43 @@ function App() {
               <div className="flex-1 w-full space-y-6">
                 <div className="flex items-center justify-between pl-4 border-l-4 border-neon-green/50">
                   <h3 className="text-[10px] font-black text-neon-green uppercase tracking-[0.3em]">Minhas Entradas</h3>
-                  <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] opacity-40 hover:opacity-100"><ChevronUp size={12}/> Recolher</Button>
+                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+                  </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
                   <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'income')}>
-                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} />
+                    <CustomSectionModule 
+                      section={section} 
+                      onUpdate={updateSection} 
+                      onDeleteSection={() => deleteSection(section.id)} 
+                      isOpen={expandedSections.has(section.id)}
+                      onToggle={() => toggleSection(section.id)}
+                    />
                   </DraggableModuleWrapper>
                 ))}
-                {data.customSections.filter(s => s.type === 'income').length === 0 && (
-                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20 uppercase font-black text-[10px] tracking-widest">Nenhuma entrada configurada</div>
-                )}
               </div>
 
               <div className="flex-1 w-full space-y-6">
                 <div className="flex items-center justify-between pl-4 border-l-4 border-neon-red/50">
                   <h3 className="text-[10px] font-black text-neon-red uppercase tracking-[0.3em]">Meus Pagamentos</h3>
-                  <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] opacity-40 hover:opacity-100"><ChevronUp size={12}/> Recolher Tudo</Button>
+                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px]"><Plus size={12}/> Criar Sessão</Button>
+                  </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (
                   <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'expense')}>
-                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} />
+                    <CustomSectionModule 
+                      section={section} 
+                      onUpdate={updateSection} 
+                      onDeleteSection={() => deleteSection(section.id)} 
+                      isOpen={expandedSections.has(section.id)}
+                      onToggle={() => toggleSection(section.id)}
+                    />
                   </DraggableModuleWrapper>
                 ))}
-                {data.customSections.filter(s => s.type === 'expense').length === 0 && (
-                  <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20 uppercase font-black text-[10px] tracking-widest">Nenhuma saída configurada</div>
-                )}
               </div>
             </div>
 
@@ -260,7 +335,8 @@ function App() {
         </div>
       </Modal>
 
-      <BottomMobileNav balance={calculateBalance()} onScrollTo={() => {}} onOpenDreams={() => setShowDreams(true)} />
+      <FloatingBalance balance={balance} isVisible={scrollY > 150} />
+      <BottomMobileNav balance={balance} onScrollTo={() => {}} onOpenDreams={() => setShowDreams(true)} />
     </div>
   );
 }

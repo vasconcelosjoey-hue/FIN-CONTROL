@@ -98,7 +98,7 @@ const ToggleStatusButton = ({ active, onClick, color }: { active: boolean, onCli
   </button>
 );
 
-export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (s: CustomSection, immediate?: boolean) => void, onDeleteSection: () => void }> = ({ section, onUpdate, onDeleteSection }) => {
+export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (s: CustomSection, immediate?: boolean) => void, onDeleteSection: () => void, isOpen?: boolean, onToggle?: () => void }> = ({ section, onUpdate, onDeleteSection, isOpen, onToggle }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);
   const [count, setCount] = useState('');
@@ -159,6 +159,8 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
         title={section.title} 
         totalValue={`R$ ${fmt(total)}`} 
         color={color} 
+        isOpen={isOpen}
+        onToggle={onToggle}
         icon={section.type === 'income' ? <Wallet size={18}/> : (isInstallment ? <CalendarCheck size={18}/> : <Zap size={18}/>)} 
         onEditTitle={(nt) => onUpdate({...section, title: nt}, true)}
       >

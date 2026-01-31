@@ -49,12 +49,22 @@ export interface DreamItem {
   isActive: boolean;
 }
 
+export interface Goal {
+  id: string;
+  name: string;
+  targetValue: number;
+  currentValue: number;
+  color: 'blue' | 'pink' | 'green' | 'yellow';
+  deadline?: string;
+}
+
 export interface FinancialData {
   customSections: CustomSection[];
   creditCards: CreditCard[];
   pixKeys: PixKey[];
   radarItems: RadarItem[];
   dreams: DreamItem[];
+  goals: Goal[];
   dreamsTotalBudget: number;
   sectionsOrder?: string[];
   lastUpdate?: number;
@@ -66,6 +76,7 @@ export const INITIAL_DATA: FinancialData = {
   pixKeys: [],
   radarItems: [],
   dreams: [],
+  goals: [],
   dreamsTotalBudget: 0,
   sectionsOrder: [],
   lastUpdate: 0,

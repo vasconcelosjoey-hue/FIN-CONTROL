@@ -3,14 +3,15 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { FinancialData, INITIAL_DATA, CustomSection } from './types';
 import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
-import { CustomSectionModule, CreditCardModule, PixModule, RadarModule, DreamsModule } from './components/Modules';
-import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins, LayoutPanelTop } from 'lucide-react';
+// Fixed: Removed non-existent and unused module imports (CreditCardModule, PixModule, RadarModule)
+import { CustomSectionModule, DreamsModule, GoalsModule } from './components/Modules';
+import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins, LayoutPanelTop, Target } from 'lucide-react';
 import { DraggableModuleWrapper, Modal, Input, Button, Select } from './components/ui/UIComponents';
 import { AuthScreen } from './components/AuthScreen';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
-const BottomMobileNav = ({ balance, onOpenDreams }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void }) => {
+const BottomMobileNav = ({ balance, onOpenDreams, onOpenGoals }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void, onOpenGoals: () => void }) => {
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/95 backdrop-blur-xl border-t border-white/10 px-4 py-4 flex items-center justify-between gap-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
@@ -20,10 +21,15 @@ const BottomMobileNav = ({ balance, onOpenDreams }: { balance: number, onScrollT
           R$ {fmt(balance)}
         </span>
       </div>
-      <button onClick={onOpenDreams} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gradient-to-br from-neon-blue to-neon-pink shadow-xl transform active:scale-95 transition-all">
-        <Star size={18} className="text-white" />
-        <span className="text-[8px] font-black text-white uppercase tracking-widest">Dreams</span>
-      </button>
+      <div className="flex items-center gap-2">
+        <button onClick={onOpenGoals} className="p-3 rounded-2xl bg-white/5 border border-white/10 transition-all">
+          <Target size={18} className="text-neon-blue" />
+        </button>
+        <button onClick={onOpenDreams} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gradient-to-br from-neon-blue to-neon-pink shadow-xl transform active:scale-95 transition-all">
+          <Star size={18} className="text-white" />
+          <span className="text-[8px] font-black text-white uppercase tracking-widest">Dreams</span>
+        </button>
+      </div>
     </div>
   );
 };
@@ -69,7 +75,7 @@ function App() {
   const [data, setData] = useState<FinancialData>(INITIAL_DATA);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [showDreams, setShowDreams] = useState(false);
+  const [activeModule, setActiveModule] = useState<'dashboard' | 'dreams' | 'goals'>('dashboard');
   const [scrollY, setScrollY] = useState(0);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
@@ -104,6 +110,7 @@ function App() {
   const normalizeData = (d: FinancialData) => {
     if (!d) return INITIAL_DATA;
     const clean = { ...INITIAL_DATA, ...d };
+    if (!clean.goals) clean.goals = [];
     if (!clean.sectionsOrder) clean.sectionsOrder = clean.customSections?.map(s => s.id) || [];
     return clean;
   };
@@ -238,7 +245,7 @@ function App() {
     <div className="min-h-screen text-slate-200 pb-32 relative bg-black font-sans">
       <nav className="border-b border-white/5 bg-neon-surface/90 backdrop-blur-xl sticky top-0 z-50 py-3 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex flex-col cursor-pointer" onClick={() => setShowDreams(false)}>
+          <div className="flex flex-col cursor-pointer" onClick={() => setActiveModule('dashboard')}>
             <h1 className="font-black text-xs sm:text-xl tracking-tighter uppercase">
               FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
             </h1>
@@ -248,8 +255,11 @@ function App() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-               <Button onClick={() => setShowDreams(!showDreams)} variant={showDreams ? "secondary" : "primary"} className="px-3 sm:px-6">
-                 <Star size={16} className={showDreams ? 'text-neon-yellow' : 'text-white'} /> <span className="hidden sm:inline">{showDreams ? 'Módulos' : 'Dreams'}</span>
+               <Button onClick={() => setActiveModule(activeModule === 'goals' ? 'dashboard' : 'goals')} variant={activeModule === 'goals' ? 'secondary' : 'primary'} className="px-3 sm:px-6">
+                 <Target size={16} className={activeModule === 'goals' ? 'text-neon-blue' : 'text-white'} /> <span className="hidden sm:inline">Objetivos</span>
+               </Button>
+               <Button onClick={() => setActiveModule(activeModule === 'dreams' ? 'dashboard' : 'dreams')} variant={activeModule === 'dreams' ? 'secondary' : 'primary'} className="px-3 sm:px-6">
+                 <Star size={16} className={activeModule === 'dreams' ? 'text-neon-yellow' : 'text-white'} /> <span className="hidden sm:inline">{activeModule === 'dreams' ? 'Módulos' : 'Dreams'}</span>
                </Button>
                <button 
                  onClick={() => signOut(auth)}
@@ -258,17 +268,15 @@ function App() {
                >
                  <LogOut size={16} />
                </button>
-               <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border ${isSyncing ? 'border-neon-blue/40 text-neon-blue' : 'border-neon-green/40 text-neon-green'}`}>
-                 <Cloud size={12} className={isSyncing ? 'animate-pulse' : ''} />
-                 <span className="text-[7px] font-black uppercase tracking-[0.2em]">{isSyncing ? 'Sync...' : 'Secure'}</span>
-               </div>
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-10">
-        {showDreams ? (
-          <DreamsModule data={data} onUpdate={handleUpdate} onBack={() => setShowDreams(false)} />
+        {activeModule === 'dreams' ? (
+          <DreamsModule data={data} onUpdate={handleUpdate} onBack={() => setActiveModule('dashboard')} />
+        ) : activeModule === 'goals' ? (
+          <GoalsModule data={data} onUpdate={handleUpdate} onBack={() => setActiveModule('dashboard')} />
         ) : (
           <>
             <Dashboard data={data} />
@@ -351,7 +359,12 @@ function App() {
       </Modal>
 
       <FloatingControls balance={balance} isVisible={scrollY > 150} onCollapse={collapseAll} />
-      <BottomMobileNav balance={balance} onScrollTo={() => {}} onOpenDreams={() => setShowDreams(true)} />
+      <BottomMobileNav 
+        balance={balance} 
+        onScrollTo={() => {}} 
+        onOpenDreams={() => setActiveModule('dreams')} 
+        onOpenGoals={() => setActiveModule('goals')} 
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard } from '../types';
+import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard, Goal } from '../types';
 import { CollapsibleCard, Button, Input, CurrencyInput, Select, Badge, Card, Modal } from './ui/UIComponents';
-import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle, DollarSign } from 'lucide-react';
+import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle, DollarSign, Rocket, Sparkles, TrendingUp } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-4 pt-4 border-t border-white/5" onKeyDown={e => e.key === 'Enter' && onAdd()}>
@@ -309,135 +309,6 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   );
 };
 
-export const CreditCardModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
-  const [name, setName] = useState('');
-  const [limit, setLimit] = useState(0);
-  const [closing, setClosing] = useState('');
-  const [due, setDue] = useState('');
-  const [current, setCurrent] = useState(0);
-
-  const handleAdd = () => {
-    if (!name) return;
-    const newItem: CreditCard = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: name.toUpperCase(),
-      limit,
-      closingDay: parseInt(closing) || 1,
-      dueDay: parseInt(due) || 1,
-      currentInvoiceValue: current
-    };
-    onUpdate((prev: FinancialData) => ({ ...prev, creditCards: [...(prev.creditCards || []), newItem] }), true);
-    setName(''); setLimit(0); setClosing(''); setDue(''); setCurrent(0);
-  };
-
-  return (
-    <CollapsibleCard title="Cartões de Crédito" icon={<CCIcon size={18} />} color="pink">
-      <AddForm onAdd={handleAdd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Cartão" value={name} onChange={e => setName(e.target.value)} />
-          <CurrencyInput label="Limite" value={limit} onValueChange={setLimit} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Fechamento" type="number" value={closing} onChange={e => setClosing(e.target.value)} />
-            <Input label="Vencimento" type="number" value={due} onChange={e => setDue(e.target.value)} />
-          </div>
-          <CurrencyInput label="Fatura Atual" value={current} onValueChange={setCurrent} />
-        </div>
-      </AddForm>
-      <div className="flex flex-col gap-2 mt-4">
-        {(data.creditCards || []).map(card => (
-          <div key={card.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center group">
-            <div>
-              <p className="font-black text-xs text-white uppercase tracking-tight">{card.name}</p>
-              <p className="text-[10px] text-slate-500 font-bold uppercase">Lim: {fmt(card.limit)} • Fecha dia {card.closingDay}</p>
-            </div>
-            <div className="text-right flex items-center gap-3">
-              <span className="font-mono font-black text-neon-pink">R$ {fmt(card.currentInvoiceValue)}</span>
-              <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, creditCards: prev.creditCards.filter(c => c.id !== card.id) }), true)} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </CollapsibleCard>
-  );
-};
-
-export const RadarModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
-  const [name, setName] = useState('');
-  const [val, setVal] = useState(0);
-
-  const handleAdd = () => {
-    if (!name || val === 0) return;
-    const newItem: RadarItem = { id: Math.random().toString(36).substr(2, 9), name: name.toUpperCase(), value: val };
-    onUpdate((prev: FinancialData) => ({ ...prev, radarItems: [...(prev.radarItems || []), newItem] }), true);
-    setName(''); setVal(0);
-  };
-
-  return (
-    <CollapsibleCard title="Radar de Gastos" icon={<AlertTriangle size={18} />} color="yellow">
-      <AddForm onAdd={handleAdd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Item" value={name} onChange={e => setName(e.target.value)} />
-          <CurrencyInput label="Valor" value={val} onValueChange={setVal} />
-        </div>
-      </AddForm>
-      <div className="flex flex-col gap-2 mt-4">
-        {(data.radarItems || []).map(item => (
-          <div key={item.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center">
-            <p className="font-black text-xs text-white uppercase">{item.name}</p>
-            <div className="flex items-center gap-3">
-              <span className="font-mono font-black text-neon-yellow">R$ {fmt(item.value)}</span>
-              <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, radarItems: prev.radarItems.filter(i => i.id !== item.id) }), true)} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </CollapsibleCard>
-  );
-};
-
-export const PixModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), immediate?: boolean) => void }> = ({ data, onUpdate }) => {
-  const [key, setKey] = useState('');
-  const [type, setType] = useState<any>('Aleatória');
-  const [beneficiary, setBeneficiary] = useState('');
-
-  const handleAdd = () => {
-    if (!key) return;
-    const newItem: PixKey = { id: Math.random().toString(36).substr(2, 9), type, key, beneficiary: beneficiary.toUpperCase(), active: true };
-    onUpdate((prev: FinancialData) => ({ ...prev, pixKeys: [...(prev.pixKeys || []), newItem] }), true);
-    setKey(''); setBeneficiary('');
-  };
-
-  return (
-    <CollapsibleCard title="Chaves Pix" icon={<Zap size={18} />} color="blue">
-      <AddForm onAdd={handleAdd}>
-        <div className="flex flex-col gap-3">
-          <Select label="Tipo" value={type} onChange={e => setType(e.target.value as any)} options={[
-            { value: 'Aleatória', label: 'Aleatória' },
-            { value: 'CPF', label: 'CPF' },
-            { value: 'CNPJ', label: 'CNPJ' },
-            { value: 'Telefone', label: 'Telefone' },
-            { value: 'Email', label: 'Email' }
-          ]} />
-          <Input label="Chave" value={key} onChange={e => setKey(e.target.value)} noUppercase={type === 'Email'} />
-          <Input label="Beneficiário" value={beneficiary} onChange={e => setBeneficiary(e.target.value)} />
-        </div>
-      </AddForm>
-      <div className="flex flex-col gap-2 mt-4">
-        {(data.pixKeys || []).map(pk => (
-          <div key={pk.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center">
-            <div>
-              <p className="font-black text-[10px] text-neon-blue uppercase tracking-widest">{pk.type}</p>
-              <p className="text-xs text-white font-bold">{pk.key}</p>
-              {pk.beneficiary && <p className="text-[8px] text-slate-600 font-black uppercase mt-0.5">{pk.beneficiary}</p>}
-            </div>
-            <ActionButton icon={<Trash2 size={14} />} color="text-slate-700 hover:text-neon-red" onClick={() => onUpdate((prev: FinancialData) => ({ ...prev, pixKeys: prev.pixKeys.filter(k => k.id !== pk.id) }), true)} />
-          </div>
-        ))}
-      </div>
-    </CollapsibleCard>
-  );
-};
-
 export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), imm?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);
@@ -510,6 +381,186 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
           ))}
         </div>
       </div>
+    </div>
+  );
+};
+
+export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: FinancialData | ((p: FinancialData) => FinancialData), imm?: boolean) => void, onBack: () => void }> = ({ data, onUpdate, onBack }) => {
+  const [name, setName] = useState('');
+  const [target, setTarget] = useState(0);
+  const [depositModal, setDepositModal] = useState<{ isOpen: boolean, goal?: Goal, amount: number }>({ isOpen: false, amount: 0 });
+
+  const handleAddGoal = () => {
+    if (!name || target <= 0) return;
+    const colors: ('blue' | 'pink' | 'green' | 'yellow')[] = ['blue', 'pink', 'green', 'yellow'];
+    const newGoal: Goal = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: name.toUpperCase(),
+      targetValue: target,
+      currentValue: 0,
+      color: colors[data.goals.length % colors.length]
+    };
+    onUpdate(prev => ({ ...prev, goals: [...(prev.goals || []), newGoal] }), true);
+    setName(''); setTarget(0);
+  };
+
+  const handleDeposit = () => {
+    if (!depositModal.goal) return;
+    const isCompletedBefore = depositModal.goal.currentValue >= depositModal.goal.targetValue;
+    const newAmount = depositModal.goal.currentValue + depositModal.amount;
+    const isCompletedAfter = newAmount >= depositModal.goal.targetValue;
+
+    onUpdate(prev => ({
+      ...prev,
+      goals: prev.goals.map(g => g.id === depositModal.goal!.id ? { ...g, currentValue: Math.min(g.targetValue, newAmount) } : g)
+    }), true);
+
+    setDepositModal({ isOpen: false, amount: 0 });
+  };
+
+  const totalTarget = data.goals.reduce((acc, g) => acc + g.targetValue, 0);
+  const totalCurrent = data.goals.reduce((acc, g) => acc + g.currentValue, 0);
+  const totalPercent = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+
+  return (
+    <div className="animate-in slide-in-from-right duration-500 pb-20">
+      <div className="flex items-center gap-4 mb-10">
+        <Button onClick={onBack} variant="ghost" className="p-2 rounded-full"><ArrowLeft size={24} /></Button>
+        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Financial <span className="text-neon-blue">Goals</span></h2>
+      </div>
+
+      {/* Global Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <Card className="lg:col-span-2 border-neon-blue/20 bg-gradient-to-br from-neon-blue/5 to-transparent p-10 flex items-center gap-10">
+          <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+            <svg height="100%" width="100%" viewBox="0 0 100 100" className="transform -rotate-90">
+              <circle stroke="#1e1e2e" fill="transparent" strokeWidth="8" r="40" cx="50" cy="50" />
+              <circle 
+                stroke="#00f3ff" 
+                fill="transparent" 
+                strokeWidth="8" 
+                strokeDasharray="251.2" 
+                style={{ strokeDashoffset: 251.2 - (totalPercent / 100) * 251.2 }} 
+                strokeLinecap="round" 
+                r="40" cx="50" cy="50" 
+                className="drop-shadow-[0_0_10px_rgba(0,243,255,0.6)] transition-all duration-1000 ease-out" 
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span className="text-3xl font-black text-white">{totalPercent.toFixed(0)}%</span>
+              <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest">Global Score</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-4">Patrimônio Alocado em Metas</p>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-bold text-slate-600">R$</span>
+                <span className="text-5xl font-black text-white tracking-tighter">{fmt(totalCurrent)}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <TrendingUp size={14} className="text-neon-green" />
+                <span className="text-[9px] font-black text-neon-green uppercase tracking-widest">Faltam R$ {fmt(totalTarget - totalCurrent)} para a vitória</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-8 border-white/5 bg-black/40 flex flex-col justify-center gap-6">
+          <div className="space-y-1">
+            <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest">Total de Metas Ativas</p>
+            <p className="text-4xl font-black text-white">{data.goals.length}</p>
+          </div>
+          <div className="w-full h-px bg-white/5"></div>
+          <div className="space-y-1">
+            <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest">Metas Concluídas</p>
+            <p className="text-4xl font-black text-neon-green">{data.goals.filter(g => g.currentValue >= g.targetValue).length}</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Add New Goal */}
+      <div className="max-w-4xl mx-auto mb-16">
+        <Card className="p-8 border-neon-blue/40 bg-neon-blue/5">
+          <h3 className="text-white font-black uppercase tracking-widest text-xs mb-6 flex items-center gap-2"><Rocket size={16} /> Decolar Novo Objetivo</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <Input label="Qual o nome da conquista?" placeholder="EX: APARTAMENTO, VIAGEM, FOREX..." value={name} onChange={e => setName(e.target.value)} />
+            <div className="flex items-end gap-4">
+              <CurrencyInput label="Valor Alvo (Target)" value={target} onValueChange={setTarget} />
+              <Button onClick={handleAddGoal} className="h-12 w-12 rounded-xl p-0 shrink-0"><Plus size={24} /></Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Goals List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {data.goals.map(goal => {
+          const progress = (goal.currentValue / goal.targetValue) * 100;
+          const isCompleted = progress >= 100;
+          
+          return (
+            <div key={goal.id} className="relative group">
+              {isCompleted && <div className="absolute -inset-1 bg-gradient-to-r from-neon-yellow to-neon-blue rounded-[2.5rem] blur opacity-30 animate-pulse"></div>}
+              <Card className={`relative flex flex-col p-6 rounded-[2rem] h-full transition-all duration-500 ${isCompleted ? 'border-neon-yellow/60 shadow-[0_0_30px_rgba(255,230,0,0.15)] bg-neon-yellow/5' : 'border-white/10 hover:border-white/20'}`}>
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`p-4 rounded-2xl ${isCompleted ? 'bg-neon-yellow/10 text-neon-yellow shadow-[0_0_15px_rgba(255,230,0,0.3)]' : 'bg-white/5 text-slate-500'}`}>
+                    {isCompleted ? <Trophy size={24} /> : <Target size={24} />}
+                  </div>
+                  <ActionButton icon={<Trash2 size={16} />} color="text-slate-800 hover:text-neon-red" onClick={() => onUpdate(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== goal.id) }), true)} />
+                </div>
+
+                <div className="flex-1">
+                  <h4 className={`text-xl font-black uppercase tracking-tighter mb-1 ${isCompleted ? 'text-neon-yellow' : 'text-white'}`}>{goal.name}</h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">Faltam R$ {fmt(goal.targetValue - goal.currentValue)}</p>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-2xl font-black text-white tracking-tighter">R$ {fmt(goal.currentValue)}</span>
+                      <span className="text-[10px] font-black text-slate-600 uppercase">/ R$ {fmt(goal.targetValue)}</span>
+                    </div>
+                    
+                    <div className="relative w-full h-3 bg-white/5 rounded-full overflow-hidden">
+                      <div 
+                        style={{ width: `${progress}%` }} 
+                        className={`h-full transition-all duration-1000 shadow-[0_0_10px_currentColor] rounded-full ${
+                          isCompleted ? 'bg-neon-yellow text-neon-yellow' : 'bg-neon-blue text-neon-blue'
+                        }`}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-slate-600">
+                      <span>{progress.toFixed(0)}% PROGRESSO</span>
+                      {isCompleted && <span className="text-neon-yellow animate-bounce flex items-center gap-1"><Sparkles size={8}/> CONQUISTADO!</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                  <Button 
+                    onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} 
+                    variant={isCompleted ? "secondary" : "primary"}
+                    className="flex-1 h-12 rounded-2xl"
+                  >
+                    <DollarSign size={16} /> Aportar
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          );
+        })}
+      </div>
+
+      <Modal 
+        isOpen={depositModal.isOpen} 
+        onClose={() => setDepositModal({ isOpen: false, amount: 0 })}
+        title={`Aportar em ${depositModal.goal?.name}`}
+        onConfirm={handleDeposit}
+      >
+        <div className="space-y-6 py-4">
+          <p className="text-xs text-slate-400 font-medium">Quanto você deseja adicionar ao seu objetivo hoje?</p>
+          <CurrencyInput value={depositModal.amount} onValueChange={(v) => setDepositModal(prev => ({ ...prev, amount: v }))} />
+        </div>
+      </Modal>
     </div>
   );
 };

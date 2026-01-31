@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard, Goal } from '../types';
 import { CollapsibleCard, Button, Input, CurrencyInput, Select, Badge, Card, Modal } from './ui/UIComponents';
 import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle, DollarSign, Rocket, Sparkles, TrendingUp } from 'lucide-react';
@@ -34,21 +34,55 @@ const ActionButton = ({ onClick, icon, color = "text-slate-600 hover:text-white"
   </button>
 );
 
+// Componente DraggableRow aprimorado com lógica de auto-scroll
 const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId: string; onMove: (f: number, t: number) => void }> = ({ children, index, listId, onMove }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const scrollInterval = useRef<number | null>(null);
+
+  // Lógica de Scroll Automático
+  const handleDragOverGlobal = (e: DragEvent) => {
+    const threshold = 100; // Distância das bordas em pixels para ativar o scroll
+    if (e.clientY < threshold) {
+      if (!scrollInterval.current) {
+        scrollInterval.current = window.setInterval(() => window.scrollBy(0, -10), 10);
+      }
+    } else if (e.clientY > window.innerHeight - threshold) {
+      if (!scrollInterval.current) {
+        scrollInterval.current = window.setInterval(() => window.scrollBy(0, 10), 10);
+      }
+    } else {
+      if (scrollInterval.current) {
+        clearInterval(scrollInterval.current);
+        scrollInterval.current = null;
+      }
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) {
+      e.preventDefault();
+      return;
+    }
     
     e.dataTransfer.setData('type', 'ROW');
     e.dataTransfer.setData('listId', listId);
     e.dataTransfer.setData('rowIndex', index.toString());
     e.dataTransfer.effectAllowed = 'move';
     setIsDragging(true);
+    
+    // Adiciona listener para scroll durante o drag
+    window.addEventListener('dragover', handleDragOverGlobal);
   };
 
-  const handleDragEnd = () => setIsDragging(false);
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    window.removeEventListener('dragover', handleDragOverGlobal);
+    if (scrollInterval.current) {
+      clearInterval(scrollInterval.current);
+      scrollInterval.current = null;
+    }
+  };
 
   return (
     <div 
@@ -64,10 +98,10 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
         const fromIdx = parseInt(e.dataTransfer.getData('rowIndex'));
         if (!isNaN(fromIdx) && fromIdx !== index) onMove(fromIdx, index);
       }} 
-      className={`flex items-center group/row transition-all duration-300 ${isDragging ? 'opacity-20 scale-95 blur-sm' : 'opacity-100 scale-100'}`}
+      className={`flex items-center group/row transition-all duration-200 ${isDragging ? 'opacity-30 scale-95 border-2 border-dashed border-neon-blue rounded-2xl' : 'opacity-100 scale-100'}`}
     >
-      <div className="mr-4 text-neon-blue drop-shadow-[0_0_8px_rgba(0,243,255,0.8)] group-hover/row:scale-110 transition-transform shrink-0 cursor-grab active:cursor-grabbing p-1 bg-neon-blue/5 rounded-lg border border-neon-blue/20">
-        <GripVertical size={18} />
+      <div className="mr-4 text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,1)] transition-all shrink-0 cursor-grab active:cursor-grabbing p-2 bg-neon-blue/10 rounded-xl border border-neon-blue/30 flex items-center justify-center">
+        <GripVertical size={20} />
       </div>
       {children}
     </div>
@@ -207,13 +241,13 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                         {isInstallment && (
                           <div className="flex items-center gap-1.5 shrink-0">
                              <Badge color="yellow">{item.currentInstallment}/{item.installmentsCount}X</Badge>
-                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5">
+                             <div className="flex items-center bg-black/40 rounded-lg pr-2 border border-white/5 shadow-inner">
                                 <button onClick={() => setPayInstallmentModal({ isOpen: true, item })} className="bg-neon-green/10 text-neon-green p-1.5 rounded-l-lg hover:bg-neon-green hover:text-black transition-all"><CheckCircle2 size={12} /></button>
                                 <span className="text-[10px] font-black text-neon-yellow ml-2">{getInstallmentMonth(item.startMonth, item.currentInstallment)}</span>
                              </div>
                           </div>
                         )}
-                        <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-white/5 shadow-inner">
                             <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">PAGO</span>
                             <CurrencyInput 
                                 className="h-6 w-32 text-[12px] bg-transparent border-none p-0 focus:ring-0 font-black text-neon-green" 
@@ -298,7 +332,7 @@ export const DreamsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financi
             <DraggableRow key={dream.id} index={idx} listId="dreams-list" onMove={handleMove}>
                 <div className="flex-1 p-5 bg-neon-surface/60 border border-white/5 rounded-3xl flex justify-between items-center group transition-all">
                     <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${dream.isActive ? 'bg-neon-pink/10 text-neon-pink' : 'bg-slate-900 text-slate-700'}`}><Trophy size={20} /></div>
+                        <div className={`p-3 rounded-2xl ${dream.isActive ? 'bg-neon-pink/10 text-neon-pink shadow-neon-pink/20' : 'bg-slate-900 text-slate-700'}`}><Trophy size={20} /></div>
                         <p className={`font-black text-lg uppercase tracking-tight ${dream.isActive ? 'text-white' : 'text-slate-700 line-through'}`}>{dream.name}</p>
                     </div>
                     <div className="flex items-center gap-6">
@@ -394,7 +428,7 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
             <DraggableRow key={goal.id} index={idx} listId="goals-list" onMove={handleMove}>
                 <Card className={`relative flex flex-col p-6 rounded-[2.5rem] h-full transition-all w-full border-2 ${isCompleted ? 'border-neon-yellow shadow-[0_0_30px_rgba(255,230,0,0.2)] bg-neon-yellow/5' : 'border-white/10'}`}>
                     <div className="flex justify-between mb-6">
-                        <div className={`p-4 rounded-2xl ${isCompleted ? 'bg-neon-yellow/20 text-neon-yellow' : 'bg-white/5 text-slate-500'}`}>{isCompleted ? <Trophy size={24}/> : <Target size={24}/>}</div>
+                        <div className={`p-4 rounded-2xl ${isCompleted ? 'bg-neon-yellow/20 text-neon-yellow shadow-neon-yellow/30' : 'bg-white/5 text-slate-500'}`}>{isCompleted ? <Trophy size={24}/> : <Target size={24}/>}</div>
                         <ActionButton icon={<Trash2 size={16}/>} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(goal.id)} />
                     </div>
                     <h4 className="text-xl font-black text-white uppercase tracking-tighter mb-4">{goal.name}</h4>
@@ -404,9 +438,9 @@ export const GoalsModule: React.FC<{ data: FinancialData, onUpdate: (d: Financia
                             <span className="text-[10px] text-white opacity-40">/ R$ {fmt(goal.targetValue)}</span>
                         </div>
                         <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-                            <div style={{ width: `${progress}%` }} className={`h-full ${isCompleted ? 'bg-neon-yellow' : 'bg-neon-blue'} shadow-[0_0_10px_currentColor]`}></div>
+                            <div style={{ width: `${progress}%` }} className={`h-full ${isCompleted ? 'bg-neon-yellow shadow-neon-yellow/50' : 'bg-neon-blue shadow-neon-blue/50'} transition-all duration-700`}></div>
                         </div>
-                        <Button onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} variant={isCompleted ? "secondary" : "primary"} className="w-full mt-6 h-12 rounded-2xl">Aportar</Button>
+                        <Button onClick={() => setDepositModal({ isOpen: true, goal, amount: 0 })} variant={isCompleted ? "secondary" : "primary"} className="w-full mt-6 h-12 rounded-2xl shadow-xl">Aportar</Button>
                     </div>
                 </Card>
             </DraggableRow>

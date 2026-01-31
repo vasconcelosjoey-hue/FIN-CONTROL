@@ -239,22 +239,22 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-               <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 gap-2">
+               <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 gap-3">
                  <button 
                    onClick={() => setActiveModule('dashboard')} 
-                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-white/20' : 'text-slate-500 hover:text-slate-300'}`}
+                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-[0_0_30px_rgba(255,255,255,0.1)] border border-white/30 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
                  >
                    Módulos
                  </button>
                  <button 
                    onClick={() => setActiveModule('dreams')} 
-                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dreams' ? 'bg-neon-pink/20 text-white shadow-[0_0_20px_rgba(188,19,254,0.3)] border border-neon-pink/40' : 'text-slate-500 hover:text-slate-300'}`}
+                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'dreams' ? 'bg-neon-pink/20 text-white shadow-[0_0_30px_rgba(188,19,254,0.3)] border border-neon-pink/50 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
                  >
                    Dreams
                  </button>
                  <button 
                    onClick={() => setActiveModule('goals')} 
-                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'goals' ? 'bg-neon-blue/20 text-white shadow-[0_0_20px_rgba(0,243,255,0.3)] border border-neon-blue/40' : 'text-slate-500 hover:text-slate-300'}`}
+                   className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${activeModule === 'goals' ? 'bg-neon-blue/20 text-white shadow-[0_0_30px_rgba(0,243,255,0.3)] border border-neon-blue/50 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
                  >
                    Goals
                  </button>

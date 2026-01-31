@@ -227,11 +227,15 @@ function App() {
               </div>
             </div>
 
-            <div className="mt-20 pt-10 border-t border-white/5 grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <CreditCardModule data={data} onUpdate={handleUpdate} />
-              <RadarModule data={data} onUpdate={handleUpdate} />
-              <PixModule data={data} onUpdate={handleUpdate} />
-            </div>
+            <footer className="mt-20 py-10 border-t border-white/5 flex flex-col items-center justify-center gap-4 opacity-40">
+                <div className="flex items-center gap-3">
+                    <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/20"></div>
+                    <span className="text-[10px] font-black tracking-[0.8em] uppercase text-slate-500">Powered by</span>
+                    <div className="h-px w-8 bg-gradient-to-l from-transparent to-white/20"></div>
+                </div>
+                <h2 className="text-xl font-black tracking-tighter text-white">JOI<span className="text-neon-blue">.A.</span></h2>
+                <p className="text-[7px] font-bold uppercase tracking-[0.4em] text-slate-700">Financial Intelligent Systems</p>
+            </footer>
           </>
         )}
       </main>

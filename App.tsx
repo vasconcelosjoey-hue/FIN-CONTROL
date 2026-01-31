@@ -4,7 +4,7 @@ import { FinancialData, INITIAL_DATA, CustomSection } from './types';
 import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
 import { CustomSectionModule, CreditCardModule, PixModule, RadarModule, DreamsModule } from './components/Modules';
-import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins } from 'lucide-react';
+import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins, LayoutPanelTop } from 'lucide-react';
 import { DraggableModuleWrapper, Modal, Input, Button, Select } from './components/ui/UIComponents';
 import { AuthScreen } from './components/AuthScreen';
 import { auth } from './firebaseConfig';
@@ -28,10 +28,11 @@ const BottomMobileNav = ({ balance, onOpenDreams }: { balance: number, onScrollT
   );
 };
 
-const FloatingBalance = ({ balance, isVisible }: { balance: number, isVisible: boolean }) => {
+const FloatingControls = ({ balance, isVisible, onCollapse }: { balance: number, isVisible: boolean, onCollapse: () => void }) => {
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
-    <div className={`fixed bottom-10 left-10 z-[100] hidden lg:block transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+    <div className={`fixed bottom-10 left-10 z-[100] hidden lg:flex flex-col gap-4 items-start transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+      {/* Saldo Flutuante */}
       <div className="bg-neon-dark/80 backdrop-blur-2xl border border-neon-yellow/30 p-5 rounded-[2rem] shadow-[0_0_50px_rgba(255,230,0,0.15)] flex flex-col gap-1 items-start min-w-[200px]">
         <div className="flex items-center gap-2 mb-1">
           <Coins size={14} className="text-neon-yellow" />
@@ -44,6 +45,20 @@ const FloatingBalance = ({ balance, isVisible }: { balance: number, isVisible: b
           </span>
         </div>
       </div>
+
+      {/* Botão Recolher Tudo Flutuante */}
+      <button 
+        onClick={onCollapse}
+        className="group flex items-center gap-4 bg-neon-dark/80 backdrop-blur-2xl border border-white/10 hover:border-neon-blue/50 p-4 pr-6 rounded-[1.5rem] shadow-2xl transition-all active:scale-95"
+      >
+        <div className="p-3 bg-white/5 rounded-xl group-hover:bg-neon-blue/10 group-hover:text-neon-blue transition-colors">
+          <ChevronUp size={20} />
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Recolher Tudo</span>
+          <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Organizar Sessões</span>
+        </div>
+      </button>
     </div>
   );
 };
@@ -228,7 +243,7 @@ function App() {
               FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]">CONTROLLER</span>
             </h1>
             <span className="text-[7px] text-slate-600 font-black uppercase tracking-[0.3em] flex items-center gap-1">
-              <User size={8} /> {user.displayName || 'Authenticated User'}
+              <User size={8} /> {user.email || 'Authenticated User'}
             </span>
           </div>
 
@@ -335,7 +350,7 @@ function App() {
         </div>
       </Modal>
 
-      <FloatingBalance balance={balance} isVisible={scrollY > 150} />
+      <FloatingControls balance={balance} isVisible={scrollY > 150} onCollapse={collapseAll} />
       <BottomMobileNav balance={balance} onScrollTo={() => {}} onOpenDreams={() => setShowDreams(true)} />
     </div>
   );

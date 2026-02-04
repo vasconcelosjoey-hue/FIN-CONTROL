@@ -10,22 +10,27 @@ import { AuthScreen } from './components/AuthScreen';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
-const BottomMobileNav = ({ balance, onOpenDreams, onOpenGoals, active }: { balance: number, onScrollTo: (id: string) => void, onOpenDreams: () => void, onOpenGoals: () => void, active: string }) => {
+const BottomMobileNav = ({ balance, onOpenDreams, onOpenGoals, active, onOpenDash }: { balance: number, onOpenDash: () => void, onOpenDreams: () => void, onOpenGoals: () => void, active: string }) => {
   const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/95 backdrop-blur-xl border-t border-white/10 px-4 py-4 flex items-center justify-between gap-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
-      <div className="flex flex-col items-center bg-black/60 border border-white/10 px-4 py-2 rounded-2xl">
-        <span className="text-[7px] text-slate-500 font-black uppercase mb-0.5 tracking-widest">Saldo Geral</span>
-        <span className={`text-xs font-black tracking-tighter ${balance >= 0 ? 'text-neon-yellow shadow-neon-yellow/10' : 'text-neon-red shadow-neon-red/10'}`}>
+    <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-neon-dark/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex items-center justify-between gap-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
+      <button onClick={onOpenDash} className={`p-3 rounded-2xl border transition-all ${active === 'dashboard' ? 'bg-white/10 border-white/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>
+        <LayoutPanelTop size={20} />
+      </button>
+      
+      <div className="flex flex-col items-center bg-black/60 border border-white/10 px-3 py-1.5 rounded-2xl min-w-[100px]">
+        <span className="text-[7px] text-slate-600 font-black uppercase mb-0.5 tracking-widest">Saldo</span>
+        <span className={`text-[10px] font-black tracking-tighter ${balance >= 0 ? 'text-neon-yellow' : 'text-neon-red'}`}>
           R$ {fmt(balance)}
         </span>
       </div>
+
       <div className="flex items-center gap-2">
-        <button onClick={onOpenGoals} className={`p-3 rounded-2xl border transition-all ${active === 'goals' ? 'bg-neon-blue/20 border-neon-blue text-white shadow-neon-blue' : 'bg-white/5 border-white/10 text-slate-500'}`}>
-          <Target size={18} />
+        <button onClick={onOpenGoals} className={`p-3 rounded-2xl border transition-all ${active === 'goals' ? 'bg-neon-blue/20 border-neon-blue text-white shadow-neon-blue' : 'bg-white/5 border-white/5 text-slate-500'}`}>
+          <Target size={20} />
         </button>
-        <button onClick={onOpenDreams} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${active === 'dreams' ? 'bg-neon-pink/20 border-neon-pink text-white shadow-neon-pink' : 'bg-gradient-to-br from-neon-blue to-neon-pink border-transparent text-white'}`}>
-          <Star size={18} />
+        <button onClick={onOpenDreams} className={`p-3 rounded-2xl border transition-all ${active === 'dreams' ? 'bg-neon-pink/20 border-neon-pink text-white shadow-neon-pink' : 'bg-white/5 border-white/5 text-slate-500'}`}>
+          <Star size={20} />
         </button>
       </div>
     </div>
@@ -63,7 +68,6 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [data, setData] = useState<FinancialData>(INITIAL_DATA);
   const [loading, setLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [activeModule, setActiveModule] = useState<'dashboard' | 'dreams' | 'goals'>('dashboard');
   const [scrollY, setScrollY] = useState(0);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
@@ -99,17 +103,17 @@ function App() {
     const clean = { ...INITIAL_DATA, ...d };
     if (!clean.goals) clean.goals = [];
     if (!clean.dreams) clean.dreams = [];
+    if (!clean.customSections) clean.customSections = [];
     if (!clean.sectionsOrder) clean.sectionsOrder = clean.customSections?.map(s => s.id) || [];
     return clean;
   };
 
   const syncToCloud = useCallback((targetData: FinancialData, immediate = false) => {
     if (!user) return;
-    setIsSyncing(true);
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     const performSync = async () => {
-      try { await saveToCloud(user.uid, targetData); setIsSyncing(false); }
-      catch (err) { setIsSyncing(false); }
+      try { await saveToCloud(user.uid, targetData); }
+      catch (err) { console.error(err); }
     };
     if (immediate) performSync();
     else saveTimeoutRef.current = setTimeout(performSync, 2000);
@@ -216,12 +220,12 @@ function App() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8">
         <div className="relative mb-14 animate-pulse">
-          <div className="p-10 bg-neon-blue/5 rounded-[3.5rem] border-2 border-neon-blue/30 shadow-[0_0_80px_rgba(0,243,255,0.15)]">
-            <ShieldCheck className="text-neon-blue w-24 h-24 sm:w-32 sm:h-32" strokeWidth={1} />
+          <div className="p-8 bg-neon-blue/5 rounded-full border-2 border-neon-blue/30 shadow-[0_0_80px_rgba(0,243,255,0.15)]">
+            <ShieldCheck className="text-neon-blue w-16 h-16 sm:w-32 sm:h-32" strokeWidth={1} />
           </div>
           <RefreshCw className="absolute -bottom-2 -right-2 animate-spin text-neon-blue w-8 h-8 p-1.5 bg-black border border-neon-blue/50 rounded-full" />
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter uppercase">Syncing <span className="text-neon-blue">Vault...</span></h1>
+        <h1 className="text-2xl sm:text-6xl font-black text-white tracking-tighter uppercase">Syncing <span className="text-neon-blue">Vault...</span></h1>
       </div>
     );
   }
@@ -229,51 +233,28 @@ function App() {
   const balance = calculateBalance();
 
   return (
-    <div className="min-h-screen text-slate-200 pb-32 relative bg-black font-sans">
-      <nav className="border-b border-white/10 bg-neon-surface/95 backdrop-blur-2xl sticky top-0 z-50 py-5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
-        <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
+    <div className="min-h-screen text-slate-200 pb-20 sm:pb-32 relative bg-black font-sans">
+      <nav className="border-b border-white/10 bg-neon-surface/95 backdrop-blur-2xl sticky top-0 z-50 py-3 sm:py-5 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
           <div className="flex flex-col cursor-pointer" onClick={() => setActiveModule('dashboard')}>
-            <h1 className="font-black text-sm sm:text-2xl tracking-tighter uppercase">
-              FINANCIAL <span className="text-neon-blue drop-shadow-[0_0_15px_rgba(0,243,255,0.7)]">CONTROLLER</span>
+            <h1 className="font-black text-[12px] sm:text-2xl tracking-tighter uppercase leading-none">
+              FINANCIAL <span className="text-neon-blue">VAULT</span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
-               <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-3 shadow-inner">
-                 <button 
-                   onClick={() => setActiveModule('dashboard')} 
-                   className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeModule === 'dashboard' ? 'bg-white/10 text-white shadow-[0_0_25px_rgba(255,255,255,0.2)] border-white/40 scale-105' : 'text-slate-500 hover:text-slate-300 border-transparent'}`}
-                 >
-                   Módulos
-                 </button>
-                 <button 
-                   onClick={() => setActiveModule('dreams')} 
-                   className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeModule === 'dreams' ? 'bg-neon-pink/30 text-white shadow-[0_0_25px_rgba(188,19,254,0.4)] border-neon-pink/60 scale-105' : 'text-slate-500 hover:text-slate-300 border-transparent'}`}
-                 >
-                   Dreams
-                 </button>
-                 <button 
-                   onClick={() => setActiveModule('goals')} 
-                   className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeModule === 'goals' ? 'bg-neon-blue/30 text-white shadow-[0_0_25px_rgba(0,243,255,0.4)] border-neon-blue/60 scale-105' : 'text-slate-500 hover:text-slate-300 border-transparent'}`}
-                 >
-                   Goals
-                 </button>
+          <div className="flex items-center gap-2 sm:gap-4">
+               <div className="hidden sm:flex bg-black/40 p-1 rounded-2xl border border-white/5 gap-2">
+                 <button onClick={() => setActiveModule('dashboard')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dashboard' ? 'bg-white/10 text-white border-white/40' : 'text-slate-500 hover:text-slate-300'}`}>Módulos</button>
+                 <button onClick={() => setActiveModule('dreams')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dreams' ? 'bg-neon-pink/30 text-white border-neon-pink/60' : 'text-slate-500 hover:text-slate-300'}`}>Dreams</button>
+                 <button onClick={() => setActiveModule('goals')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'goals' ? 'bg-neon-blue/30 text-white border-neon-blue/60' : 'text-slate-500 hover:text-slate-300'}`}>Goals</button>
                </div>
                
-               <div className="w-px h-10 bg-white/10 mx-3 hidden sm:block"></div>
-               
-               <button 
-                 onClick={() => signOut(auth)}
-                 className="p-3.5 text-slate-500 hover:text-neon-red hover:bg-neon-red/10 rounded-2xl transition-all group"
-                 title="Sair"
-               >
-                 <LogOut size={22} className="group-hover:scale-110 transition-transform" />
-               </button>
+               <button onClick={() => signOut(auth)} className="p-2 sm:p-3.5 text-slate-500 hover:text-neon-red hover:bg-neon-red/10 rounded-xl transition-all"><LogOut size={18} className="sm:w-5 sm:h-5" /></button>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-10">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-10">
         {activeModule === 'dreams' ? (
           <DreamsModule data={data} onUpdate={handleUpdate} onBack={() => setActiveModule('dashboard')} />
         ) : activeModule === 'goals' ? (
@@ -281,13 +262,13 @@ function App() {
         ) : (
           <>
             <Dashboard data={data} />
-            <div className="flex flex-col lg:flex-row gap-10 items-start mt-12">
-              <div className="flex-1 w-full space-y-8">
-                <div className="flex items-center justify-between pl-5 border-l-4 border-neon-green/60 bg-gradient-to-r from-neon-green/5 to-transparent py-2 rounded-r-2xl">
-                  <h3 className="text-[11px] font-black text-neon-green uppercase tracking-[0.4em]">Minhas Entradas</h3>
-                  <div className="flex items-center gap-3">
-                    <Button onClick={collapseAll} variant="ghost" className="h-9 px-3 text-[9px] font-black opacity-50 hover:opacity-100"><ChevronUp size={14}/> Recolher</Button>
-                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-9 px-4 text-[9px] font-black"><Plus size={14}/> Nova Sessão</Button>
+            <div className="flex flex-col lg:flex-row gap-6 sm:gap-10 items-start mt-8 sm:mt-12">
+              <div className="flex-1 w-full space-y-4 sm:space-y-8">
+                <div className="flex items-center justify-between pl-3 sm:pl-5 border-l-4 border-neon-green/60 bg-gradient-to-r from-neon-green/5 to-transparent py-1.5 rounded-r-xl">
+                  <h3 className="text-[10px] font-black text-neon-green uppercase tracking-[0.2em]">Entradas</h3>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] sm:text-[9px] font-black opacity-50"><ChevronUp size={12}/> Recolher</Button>
+                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px] sm:text-[9px] font-black"><Plus size={12}/> Criar</Button>
                   </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
@@ -297,12 +278,12 @@ function App() {
                 ))}
               </div>
 
-              <div className="flex-1 w-full space-y-8">
-                <div className="flex items-center justify-between pl-5 border-l-4 border-neon-red/60 bg-gradient-to-r from-neon-red/5 to-transparent py-2 rounded-r-2xl">
-                  <h3 className="text-[11px] font-black text-neon-red uppercase tracking-[0.4em]">Meus Pagamentos</h3>
-                  <div className="flex items-center gap-3">
-                    <Button onClick={collapseAll} variant="ghost" className="h-9 px-3 text-[9px] font-black opacity-50 hover:opacity-100"><ChevronUp size={14}/> Recolher Tudo</Button>
-                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-9 px-4 text-[9px] font-black"><Plus size={14}/> Nova Sessão</Button>
+              <div className="flex-1 w-full space-y-4 sm:space-y-8">
+                <div className="flex items-center justify-between pl-3 sm:pl-5 border-l-4 border-neon-red/60 bg-gradient-to-r from-neon-red/5 to-transparent py-1.5 rounded-r-xl">
+                  <h3 className="text-[10px] font-black text-neon-red uppercase tracking-[0.2em]">Pagamentos</h3>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] sm:text-[9px] font-black opacity-50"><ChevronUp size={12}/> Recolher</Button>
+                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px] sm:text-[9px] font-black"><Plus size={12}/> Criar</Button>
                   </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (
@@ -316,15 +297,15 @@ function App() {
         )}
       </main>
 
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title={`Nova Sessão de ${newSessionType === 'income' ? 'Entrada' : 'Saída'}`} onConfirm={handleCreateSession}>
-        <div className="space-y-6 py-4">
-          <Input label="Nome da Sessão" placeholder="EX: SALÁRIO, ALUGUEL, CARTÃO..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
-          <Select label="Tipo de Registro" value={newSessionStructure} onChange={e => setNewSessionStructure(e.target.value as any)} options={[{ value: 'standard', label: 'Simples' }, { value: 'installment', label: 'Parcelamento' }]} />
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nova Sessão" onConfirm={handleCreateSession}>
+        <div className="space-y-4 py-2">
+          <Input label="NOME DA SESSÃO" placeholder="EX: ALUGUEL, SALÁRIO..." value={newSessionName} onChange={e => setNewSessionName(e.target.value)} />
+          <Select label="ESTRUTURA" value={newSessionStructure} onChange={e => setNewSessionStructure(e.target.value as any)} options={[{ value: 'standard', label: 'Simples' }, { value: 'installment', label: 'Parcelamento' }]} />
         </div>
       </Modal>
 
       <FloatingControls balance={balance} isVisible={scrollY > 150} onCollapse={collapseAll} />
-      <BottomMobileNav balance={balance} onScrollTo={() => {}} onOpenDreams={() => setActiveModule('dreams')} onOpenGoals={() => setActiveModule('goals')} active={activeModule} />
+      <BottomMobileNav balance={balance} onOpenDash={() => setActiveModule('dashboard')} onOpenDreams={() => setActiveModule('dreams')} onOpenGoals={() => setActiveModule('goals')} active={activeModule} />
     </div>
   );
 }

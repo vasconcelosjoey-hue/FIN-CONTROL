@@ -2,9 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Check, X, AlertTriangle } from 'lucide-react';
 
-// Added onKeyDown prop to Card component to handle keyboard events
 export const Card = ({ children, className = "", onClick, onKeyDown }: { children?: React.ReactNode, className?: string, onClick?: () => void, onKeyDown?: React.KeyboardEventHandler<HTMLDivElement> }) => (
-  <div onClick={onClick} onKeyDown={onKeyDown} className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
+  <div onClick={onClick} onKeyDown={onKeyDown} className={`bg-neon-surface/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 sm:p-4 shadow-glass hover:border-white/20 transition-all duration-300 ${className}`}>
     {children}
   </div>
 );
@@ -25,18 +24,18 @@ export const Modal = ({ isOpen, onClose, title, children, confirmText = "Confirm
 
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-neon-dark border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-300">
-        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-4 flex items-center gap-2">
-          {confirmVariant === 'danger' && <AlertTriangle className="text-neon-red" size={24} />}
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-neon-dark border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-300">
+        <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-4 flex items-center gap-2">
+          {confirmVariant === 'danger' && <AlertTriangle className="text-neon-red" size={20} />}
           {title}
         </h3>
-        <div className="mb-8 text-slate-400 font-medium leading-relaxed">
+        <div className="mb-6 text-slate-400 text-sm font-medium leading-relaxed">
           {children}
         </div>
         <div className="flex gap-3">
-          <Button onClick={onClose} variant="secondary" className="flex-1 py-4">Cancelar</Button>
-          <Button onClick={() => { onConfirm(); onClose(); }} variant={confirmVariant} className="flex-1 py-4">{confirmText}</Button>
+          <Button onClick={onClose} variant="secondary" className="flex-1 py-3 text-[10px]">Cancelar</Button>
+          <Button onClick={() => { onConfirm(); onClose(); }} variant={confirmVariant} className="flex-1 py-3 text-[10px]">{confirmText}</Button>
         </div>
       </div>
     </div>
@@ -111,7 +110,7 @@ export const CollapsibleCard = ({
   return (
     <div className={`bg-neon-surface/80 backdrop-blur-xl border rounded-2xl transition-all duration-300 ${colors[color]} ${isOpen ? 'shadow-lg' : 'shadow-sm'}`}>
       <div 
-        className="p-4 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors gap-2"
+        className="p-3 sm:p-4 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors gap-2"
         onClick={(e) => {
             if (!isEditing && !(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
                 toggle();
@@ -137,9 +136,9 @@ export const CollapsibleCard = ({
             </div>
           ) : (
             <div className="flex items-center gap-2 group min-w-0">
-                <h3 className="text-sm sm:text-base font-black text-white tracking-tighter uppercase drop-shadow-sm truncate">{title}</h3>
+                <h3 className="text-xs sm:text-base font-black text-white tracking-tighter uppercase drop-shadow-sm truncate">{title}</h3>
                 {onEditTitle && (
-                    <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-white p-1">
+                    <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="opacity-0 sm:group-hover:opacity-100 transition-opacity text-slate-500 hover:text-white p-1">
                         <Pencil size={12} />
                     </button>
                 )}
@@ -149,21 +148,21 @@ export const CollapsibleCard = ({
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {totalValue && (
-            <span className={`font-mono font-black text-sm sm:text-base ${textColors[color]} drop-shadow-[0_0_8px_currentColor] whitespace-nowrap`}>
+            <span className={`font-mono font-black text-xs sm:text-base ${textColors[color]} drop-shadow-[0_0_8px_currentColor] whitespace-nowrap`}>
               {totalValue}
             </span>
           )}
           <div className="text-slate-500 shrink-0">
-            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </div>
       </div>
       
       <div 
-        className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         style={{ maxHeight: isOpen ? '20000px' : '0px' }}
       >
-        <div className="p-4 pt-0 border-t border-white/5 text-sm">
+        <div className="p-3 sm:p-4 pt-0 border-t border-white/5">
           {children}
         </div>
       </div>
@@ -172,13 +171,13 @@ export const CollapsibleCard = ({
 };
 
 export const Button = ({ onClick, children, variant = 'primary', className = "", disabled = false }: { onClick?: () => void, children?: React.ReactNode, variant?: 'primary' | 'secondary' | 'danger' | 'ghost', className?: string, disabled?: boolean }) => {
-  const base = "px-4 py-2 rounded-xl font-black tracking-widest transition-all duration-300 transform active:scale-95 text-[10px] sm:text-xs flex items-center justify-center gap-2 uppercase";
+  const base = "px-3 py-2 rounded-xl font-black tracking-widest transition-all duration-300 transform active:scale-95 text-[9px] sm:text-xs flex items-center justify-center gap-2 uppercase select-none";
   
   const variants = {
-    primary: "bg-neon-blue/10 text-neon-blue border border-neon-blue/50 hover:bg-neon-blue hover:text-black hover:shadow-neon-blue",
-    secondary: "bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/30 hover:text-white",
-    danger: "bg-neon-red/10 text-neon-red border border-neon-red/50 hover:bg-neon-red hover:text-white hover:shadow-neon-red",
-    ghost: "text-slate-500 hover:text-white hover:bg-white/5 border border-transparent"
+    primary: "bg-neon-blue/10 text-neon-blue border border-neon-blue/50 hover:bg-neon-blue hover:text-black",
+    secondary: "bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white",
+    danger: "bg-neon-red/10 text-neon-red border border-neon-red/50 hover:bg-neon-red hover:text-white",
+    ghost: "text-slate-500 hover:text-white hover:bg-white/5"
   };
   
   return (
@@ -202,13 +201,13 @@ export const Input = ({ label, onChange, noUppercase = false, ...props }: React.
   };
 
   return (
-    <div className="flex flex-col gap-1.5 w-full group cursor-pointer" onClick={handleWrapperClick}>
-      {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
+    <div className="flex flex-col gap-1 w-full group cursor-pointer" onClick={handleWrapperClick}>
+      {label && <label className="text-[9px] text-slate-500 font-black ml-1 uppercase tracking-[0.2em]">{label}</label>}
       <input 
         ref={inputRef}
-        className={`bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm
-                   focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
-                   transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${!noUppercase ? 'uppercase' : ''}`}
+        className={`bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-bold text-sm sm:text-sm
+                   focus:outline-none focus:border-neon-blue 
+                   transition-all placeholder:text-slate-800 placeholder:text-[9px] w-full h-10 sm:h-12 ${!noUppercase ? 'uppercase' : ''}`}
         onChange={(e) => {
             if (!noUppercase && props.type !== 'number' && props.type !== 'month') {
               e.target.value = e.target.value.toUpperCase();
@@ -252,18 +251,19 @@ export const CurrencyInput = ({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 w-full group">
-      {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
+    <div className="flex flex-col gap-1 w-full group">
+      {label && <label className="text-[9px] text-slate-500 font-black ml-1 uppercase tracking-[0.2em]">{label}</label>}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-500 uppercase pointer-events-none">R$</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-500 uppercase pointer-events-none">R$</span>
         <input 
           {...props}
           type="text"
+          inputMode="numeric"
           value={displayValue}
           onChange={handleChange}
-          className={`bg-black/40 border border-white/10 rounded-xl pl-10 pr-3 py-3 text-white font-bold text-[14px]
-                     focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
-                     transition-all placeholder:text-slate-800 placeholder:text-[10px] w-full h-12 ${props.className || ''}`}
+          className={`bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white font-bold text-sm sm:text-sm
+                     focus:outline-none focus:border-neon-blue 
+                     transition-all placeholder:text-slate-800 placeholder:text-[9px] w-full h-10 sm:h-12 ${props.className || ''}`}
         />
       </div>
     </div>
@@ -271,12 +271,12 @@ export const CurrencyInput = ({
 };
 
 export const Select = ({ label, options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string, options: {value: string, label: string}[] }) => (
-  <div className="flex flex-col gap-1.5 w-full group cursor-pointer">
-    {label && <label className="text-[10px] text-slate-500 font-black ml-1 group-focus-within:text-neon-blue transition-colors uppercase tracking-[0.2em]">{label}</label>}
+  <div className="flex flex-col gap-1 w-full group cursor-pointer">
+    {label && <label className="text-[9px] text-slate-500 font-black ml-1 uppercase tracking-[0.2em]">{label}</label>}
     <select 
-      className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold text-sm
-                 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_12px_rgba(0,243,255,0.15)] 
-                 transition-all appearance-none w-full h-12 cursor-pointer"
+      className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-bold text-sm
+                 focus:outline-none focus:border-neon-blue 
+                 transition-all appearance-none w-full h-10 sm:h-12 cursor-pointer"
       {...props}
     >
       {options.map(opt => <option key={opt.value} value={opt.value} className="bg-neon-surface text-slate-200">{opt.label}</option>)}
@@ -294,7 +294,7 @@ export const Badge = ({ children, color = 'blue' }: { children?: React.ReactNode
     white: "bg-white/10 text-white border-white/30 shadow-[0_0_5px_rgba(255,255,255,0.3)]",
   };
   return (
-    <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-lg border font-black ${colors[color] || colors.blue}`}>
+    <span className={`text-[8px] sm:text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-lg border font-black ${colors[color] || colors.blue}`}>
       {children}
     </span>
   );
@@ -309,7 +309,7 @@ export const DonutChart = ({ income, expense }: { income: number, expense: numbe
   const incomePercent = total > 0 ? (income / total) * 100 : 0;
   const incomeOffset = circumference - (incomePercent / 100) * circumference;
   return (
-    <div className="relative w-24 h-24 flex items-center justify-center">
+    <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
       <svg height="100%" width="100%" viewBox="0 0 80 80" className="transform -rotate-90">
         <circle stroke="#1e1e2e" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx="40" cy="40" />
         <circle stroke="#ff0055" fill="transparent" strokeWidth={stroke} strokeDasharray={`${circumference} ${circumference}`} style={{ strokeDashoffset: 0 }} strokeLinecap="round" r={normalizedRadius} cx="40" cy="40" className="drop-shadow-[0_0_3px_rgba(255,0,85,0.5)]" />
@@ -343,7 +343,7 @@ export const DraggableModuleWrapper: React.FC<{ children?: React.ReactNode; id: 
       }} 
       className="relative group transition-transform duration-200"
     >
-      <div className="absolute -left-7 top-6 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing text-slate-500 hover:text-neon-blue transition-all z-10 p-2">
+      <div className="absolute -left-7 top-6 opacity-0 sm:group-hover:opacity-40 cursor-grab active:cursor-grabbing text-slate-500 hover:text-neon-blue transition-all z-10 p-2 hidden sm:block">
         <GripVertical size={20} />
       </div>
       {children}

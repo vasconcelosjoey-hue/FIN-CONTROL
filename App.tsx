@@ -57,7 +57,7 @@ const FloatingControls = ({ balance, isVisible, onCollapse }: { balance: number,
         <div className="p-3 bg-white/5 rounded-xl group-hover:bg-neon-blue/10 group-hover:text-neon-blue transition-colors">
           <ChevronUp size={20} />
         </div>
-        <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Recolher Tudo</span>
+        <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">RECOLHER TUDO</span>
       </button>
     </div>
   );
@@ -219,13 +219,13 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8">
-        <div className="relative mb-14 animate-pulse">
-          <div className="p-8 bg-neon-blue/5 rounded-full border-2 border-neon-blue/30 shadow-[0_0_80px_rgba(0,243,255,0.15)]">
-            <ShieldCheck className="text-neon-blue w-16 h-16 sm:w-32 sm:h-32" strokeWidth={1} />
-          </div>
-          <RefreshCw className="absolute -bottom-2 -right-2 animate-spin text-neon-blue w-8 h-8 p-1.5 bg-black border border-neon-blue/50 rounded-full" />
+        <h1 className="text-3xl sm:text-6xl font-black text-white tracking-tighter uppercase mb-2">
+          FINANCIAL <span className="text-neon-blue">CONTROLLER</span>
+        </h1>
+        <p className="text-[10px] sm:text-sm text-slate-500 font-black uppercase tracking-[0.5em]">powered by JOI.A.</p>
+        <div className="mt-10">
+          <RefreshCw className="animate-spin text-neon-blue w-8 h-8 mx-auto" strokeWidth={3} />
         </div>
-        <h1 className="text-2xl sm:text-6xl font-black text-white tracking-tighter uppercase">Syncing <span className="text-neon-blue">Vault...</span></h1>
       </div>
     );
   }
@@ -267,8 +267,8 @@ function App() {
                 <div className="flex items-center justify-between pl-3 sm:pl-5 border-l-4 border-neon-green/60 bg-gradient-to-r from-neon-green/5 to-transparent py-1.5 rounded-r-xl">
                   <h3 className="text-[10px] font-black text-neon-green uppercase tracking-[0.2em]">Entradas</h3>
                   <div className="flex items-center gap-2">
-                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] sm:text-[9px] font-black opacity-50"><ChevronUp size={12}/> Recolher</Button>
-                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px] sm:text-[9px] font-black"><Plus size={12}/> Criar</Button>
+                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] sm:text-[9px] font-black text-slate-200 opacity-90 hover:opacity-100"><ChevronUp size={12}/> RECOLHER TUDO</Button>
+                    <Button onClick={() => { setNewSessionType('income'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px] sm:text-[9px] font-black"><Plus size={12}/> NOVA SESSÃO</Button>
                   </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
@@ -282,8 +282,8 @@ function App() {
                 <div className="flex items-center justify-between pl-3 sm:pl-5 border-l-4 border-neon-red/60 bg-gradient-to-r from-neon-red/5 to-transparent py-1.5 rounded-r-xl">
                   <h3 className="text-[10px] font-black text-neon-red uppercase tracking-[0.2em]">Pagamentos</h3>
                   <div className="flex items-center gap-2">
-                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] sm:text-[9px] font-black opacity-50"><ChevronUp size={12}/> Recolher</Button>
-                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px] sm:text-[9px] font-black"><Plus size={12}/> Criar</Button>
+                    <Button onClick={collapseAll} variant="ghost" className="h-8 px-2 text-[8px] sm:text-[9px] font-black text-slate-200 opacity-90 hover:opacity-100"><ChevronUp size={12}/> RECOLHER TUDO</Button>
+                    <Button onClick={() => { setNewSessionType('expense'); setIsCreateModalOpen(true); }} variant="secondary" className="h-8 px-3 text-[8px] sm:text-[9px] font-black"><Plus size={12}/> NOVA SESSÃO</Button>
                   </div>
                 </div>
                 {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (

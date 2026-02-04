@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard, Goal } from '../types';
+import { FinancialData, CustomSection, SectionItem, RadarItem, DreamItem, PixKey, CreditCard, Goal, NATIVE_WALLET_ID } from '../types';
 import { CollapsibleCard, Button, Input, CurrencyInput, Select, Badge, Card, Modal } from './ui/UIComponents';
-import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle, DollarSign, Rocket, Sparkles, TrendingUp } from 'lucide-react';
+import { Trash2, Plus, Wallet, GripVertical, Target, Pencil, Check, X, CreditCard as CCIcon, Zap, Power, Star, ArrowLeft, Trophy, CalendarCheck, CheckCircle2, AlertTriangle, DollarSign, Rocket, Sparkles, TrendingUp, ArrowUpRight } from 'lucide-react';
 
 const AddForm = ({ children, onAdd }: { children?: React.ReactNode, onAdd: () => void }) => (
   <div className="mb-4 pt-4 border-t border-white/5" onKeyDown={e => e.key === 'Enter' && onAdd()}>
@@ -90,7 +90,7 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    const srcListId = e.dataTransfer.getData('listId');
+    const srcListId = e.dataTransfer.getData('type') === 'ROW' ? e.dataTransfer.getData('listId') : null;
     if (srcListId !== listId) return;
 
     if (rowRef.current) {
@@ -115,20 +115,10 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
     setDragState('none');
   };
 
-  // Mobile Touch Implementation
   const handleTouchStart = (e: React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('button')) return;
     touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const endY = e.changedTouches[0].clientY;
-    const diff = endY - touchStartY.current;
-    
-    // Detect swipe or tap - logic could be refined but basic reordering works via DnD
-    // Most modern mobile browsers simulate DnD events if 'draggable' is true, 
-    // but explicit touch support makes it feel native.
   };
 
   return (
@@ -141,7 +131,6 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
       onDragLeave={() => setDragState('none')}
       onDrop={handleDrop}
       onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       className={`relative flex items-center group/row transition-all duration-200 py-1 select-none sm:select-auto
         ${isDragging ? 'opacity-20 grayscale scale-95' : 'opacity-100 scale-100'}
         ${dragState === 'top' ? 'pt-2 sm:pt-4' : ''}
@@ -154,7 +143,7 @@ const DraggableRow: React.FC<{ children: React.ReactNode; index: number; listId:
         `}></div>
       )}
 
-      <div className="mr-2 sm:mr-4 text-neon-blue drop-shadow-[0_0_8px_rgba(0,243,255,1)] transition-all shrink-0 cursor-grab active:cursor-grabbing p-1.5 sm:p-2 bg-neon-blue/10 rounded-lg border border-neon-blue/40 flex items-center justify-center hover:bg-neon-blue/20">
+      <div className="mr-2 sm:mr-4 text-neon-blue drop-shadow-[0_0_8px_rgba(0,243,255,1)] transition-all shrink-0 cursor-grab active:cursor-grabbing p-1.5 sm:p-2 bg-neon-blue/10 rounded-xl border border-neon-blue/40 flex items-center justify-center hover:bg-neon-blue/20">
         <GripVertical size={16} className="sm:w-5 sm:h-5" />
       </div>
       
@@ -190,7 +179,14 @@ const ToggleStatusButton = ({ active, onClick, color }: { active: boolean, onCli
   </button>
 );
 
-export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (s: CustomSection, immediate?: boolean) => void, onDeleteSection: () => void, isOpen?: boolean, onToggle?: () => void }> = ({ section, onUpdate, onDeleteSection, isOpen, onToggle }) => {
+export const CustomSectionModule: React.FC<{ 
+    section: CustomSection, 
+    walletSection?: CustomSection,
+    onUpdate: (s: CustomSection, immediate?: boolean) => void, 
+    onDeleteSection: () => void, 
+    isOpen?: boolean, 
+    onToggle?: () => void 
+}> = ({ section, walletSection, onUpdate, onDeleteSection, isOpen, onToggle }) => {
   const [name, setName] = useState('');
   const [val, setVal] = useState(0);
   const [count, setCount] = useState('');
@@ -201,10 +197,12 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   
   const [payInstallmentModal, setPayInstallmentModal] = useState<{ isOpen: boolean, item?: SectionItem }>({ isOpen: false });
+  const [transferModal, setTransferModal] = useState<{ isOpen: boolean, sourceItem?: SectionItem }>({ isOpen: false });
 
   const total = section.items.filter(i => i.isActive !== false).reduce((acc, curr) => acc + (curr.value - (curr.paidAmount || 0)), 0);
   const color = section.type === 'income' ? 'green' : 'red';
   const isInstallment = section.structure === 'installment';
+  const isWallet = section.id === NATIVE_WALLET_ID;
 
   const handleAdd = () => {
     if (!name || val === 0) return;
@@ -245,20 +243,63 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
     }, false);
   };
 
+  const handleConfirmTransfer = (targetItemId: string) => {
+      const source = transferModal.sourceItem;
+      if (!source || !walletSection) return;
+
+      // Localiza o item na Wallet para somar
+      const updatedWalletItems = walletSection.items.map(item => {
+          if (item.id === targetItemId) {
+              return { ...item, value: item.value + (source.value - (source.paidAmount || 0)) };
+          }
+          return item;
+      });
+
+      // Atualiza a Wallet globalmente (isso requer acesso ao handleUpdate do App, 
+      // mas como passamos onUpdate que é do App, podemos contornar pedindo ao App 
+      // ou atualizando a seção localmente se for a Wallet).
+      // Como o CustomSectionModule recebe onUpdate(section), ele só atualiza a si mesmo.
+      // Precisamos enviar esse evento para cima.
+      
+      // DISPATCH CUSTOM EVENT para o App capturar e atualizar a Wallet
+      const event = new CustomEvent('transfer-to-wallet', { 
+          detail: { targetItemId, amount: (source.value - (source.paidAmount || 0)) }
+      });
+      window.dispatchEvent(event);
+
+      setTransferModal({ isOpen: false });
+  };
+
+  // Efeito para escutar transferências de valor se for a Wallet
+  useEffect(() => {
+    if (!isWallet) return;
+    const handler = (e: any) => {
+        const { targetItemId, amount } = e.detail;
+        const newItems = section.items.map(item => 
+            item.id === targetItemId ? { ...item, value: item.value + amount } : item
+        );
+        onUpdate({ ...section, items: newItems }, true);
+    };
+    window.addEventListener('transfer-to-wallet', handler);
+    return () => window.removeEventListener('transfer-to-wallet', handler);
+  }, [isWallet, section, onUpdate]);
+
   return (
     <>
       <CollapsibleCard 
-        title={section.title} 
+        title={isWallet ? "WALLET" : section.title} 
         totalValue={`R$ ${fmt(total)}`} 
         color={color} 
         isOpen={isOpen}
         onToggle={onToggle}
-        icon={section.type === 'income' ? <Wallet size={16}/> : (isInstallment ? <CalendarCheck size={16}/> : <Zap size={16}/>)} 
-        onEditTitle={(nt) => onUpdate({...section, title: nt}, true)}
+        icon={isWallet ? <Wallet size={16} className="text-neon-green" /> : (section.type === 'income' ? <Plus size={16}/> : (isInstallment ? <CalendarCheck size={16}/> : <Zap size={16}/>))} 
+        onEditTitle={isWallet ? undefined : (nt) => onUpdate({...section, title: nt}, true)}
       >
-        <div className="flex justify-end mb-2">
-           <button onClick={() => setIsDeleteModalOpen(true)} className="text-[9px] font-black uppercase tracking-widest text-slate-700 hover:text-neon-red flex items-center gap-1 transition-colors"><Trash2 size={10} /> EXCLUIR SESSÃO</button>
-        </div>
+        {!isWallet && (
+            <div className="flex justify-end mb-2">
+               <button onClick={() => setIsDeleteModalOpen(true)} className="text-[9px] font-black uppercase tracking-widest text-slate-700 hover:text-neon-red flex items-center gap-1 transition-colors"><Trash2 size={10} /> EXCLUIR SESSÃO</button>
+            </div>
+        )}
         
         <AddForm onAdd={handleAdd}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3">
@@ -320,6 +361,14 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
                         R$ {fmt(item.value - (item.paidAmount || 0))}
                       </span>
                       <div className="flex items-center gap-1">
+                        {section.type === 'income' && !isWallet && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setTransferModal({ isOpen: true, sourceItem: item }); }}
+                                className="bg-neon-blue/20 text-neon-blue border border-neon-blue/30 px-2 py-1.5 rounded-xl text-[8px] font-black hover:bg-neon-blue hover:text-black transition-all flex items-center gap-1 uppercase"
+                            >
+                                <ArrowUpRight size={10} /> ADD
+                            </button>
+                        )}
                         <ToggleStatusButton active={item.isActive !== false} onClick={() => onUpdate({...section, items: section.items.map(i => i.id === item.id ? {...i, isActive: !i.isActive} : i)}, true)} color={color} />
                         <ActionButton icon={<Pencil size={14} />} onClick={() => { setEditingId(item.id); setEditData(item); }} />
                         <ActionButton icon={<Trash2 size={14} />} color="text-slate-800 hover:text-neon-red" onClick={() => setItemToDelete(item.id)} />
@@ -343,6 +392,36 @@ export const CustomSectionModule: React.FC<{ section: CustomSection, onUpdate: (
 
       <Modal isOpen={payInstallmentModal.isOpen} onClose={() => setPayInstallmentModal({ isOpen: false })} title="Avançar?" confirmText="Confirmar" onConfirm={() => payInstallmentModal.item && handlePayInstallment(payInstallmentModal.item)}>
         Avançar para a próxima parcela?
+      </Modal>
+
+      <Modal 
+        isOpen={transferModal.isOpen} 
+        onClose={() => setTransferModal({ isOpen: false })} 
+        title="ADICIONAR À WALLET" 
+        confirmText="Confirmar"
+        onConfirm={() => {}} // Lógica tratada no Select abaixo
+      >
+        <div className="space-y-4">
+            <p className="text-[10px] uppercase font-bold text-slate-500">Escolha um item da sua Wallet para receber o valor de <strong className="text-neon-blue">R$ {fmt(transferModal.sourceItem ? (transferModal.sourceItem.value - (transferModal.sourceItem.paidAmount || 0)) : 0)}</strong>:</p>
+            {walletSection && walletSection.items.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2">
+                    {walletSection.items.map(walletItem => (
+                        <button 
+                            key={walletItem.id}
+                            onClick={() => handleConfirmTransfer(walletItem.id)}
+                            className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl flex justify-between items-center hover:bg-neon-blue/10 hover:border-neon-blue/50 transition-all text-left group"
+                        >
+                            <span className="font-black text-xs text-white group-hover:text-neon-blue uppercase">{walletItem.name}</span>
+                            <span className="font-mono text-xs text-slate-400">R$ {fmt(walletItem.value)}</span>
+                        </button>
+                    ))}
+                </div>
+            ) : (
+                <div className="p-4 border border-dashed border-white/20 rounded-2xl text-center text-slate-600 uppercase font-black text-[10px]">
+                    Nenhum item cadastrado na Wallet
+                </div>
+            )}
+        </div>
       </Modal>
     </>
   );

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { FinancialData, INITIAL_DATA, CustomSection } from './types';
+import { FinancialData, INITIAL_DATA, CustomSection, NATIVE_WALLET_ID } from './types';
 import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
 import { CustomSectionModule, DreamsModule, GoalsModule } from './components/Modules';
@@ -104,6 +104,18 @@ function App() {
     if (!clean.goals) clean.goals = [];
     if (!clean.dreams) clean.dreams = [];
     if (!clean.customSections) clean.customSections = [];
+    
+    // Garantir que a WALLET nativa exista
+    if (!clean.customSections.find(s => s.id === NATIVE_WALLET_ID)) {
+      clean.customSections.unshift({
+        id: NATIVE_WALLET_ID,
+        title: "WALLET",
+        items: [],
+        type: 'income',
+        structure: 'standard'
+      });
+    }
+
     if (!clean.sectionsOrder) clean.sectionsOrder = clean.customSections?.map(s => s.id) || [];
     return clean;
   };
@@ -177,6 +189,7 @@ function App() {
   };
 
   const deleteSection = (id: string) => {
+    if (id === NATIVE_WALLET_ID) return; // Proteção contra deleção da Wallet
     handleUpdate(prev => ({
       ...prev,
       customSections: prev.customSections.filter(s => s.id !== id),
@@ -185,7 +198,12 @@ function App() {
   };
 
   const updateSection = (updatedSection: CustomSection, immediate = false) => {
-    handleUpdate(prev => ({ ...prev, customSections: prev.customSections.map(s => s.id === updatedSection.id ? updatedSection : s) }), immediate);
+    // Se for a Wallet, impede a mudança de título
+    const sectionToSave = updatedSection.id === NATIVE_WALLET_ID 
+      ? { ...updatedSection, title: "WALLET" } 
+      : updatedSection;
+      
+    handleUpdate(prev => ({ ...prev, customSections: prev.customSections.map(s => s.id === sectionToSave.id ? sectionToSave : s) }), immediate);
   };
 
   const handleMoveSection = (fromIdx: number, toIdx: number, type: 'income' | 'expense') => {
@@ -238,7 +256,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
           <div className="flex flex-col cursor-pointer" onClick={() => setActiveModule('dashboard')}>
             <h1 className="font-black text-[12px] sm:text-2xl tracking-tighter uppercase leading-none">
-              FINANCIAL <span className="text-neon-blue">VAULT</span>
+              FINANCIAL <span className="text-white">VAULT</span> - <span className="text-neon-blue">JOEY</span>
             </h1>
           </div>
 
@@ -273,7 +291,14 @@ function App() {
                 </div>
                 {data.customSections.filter(s => s.type === 'income').map((section, idx) => (
                   <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'income')}>
-                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} isOpen={expandedSections.has(section.id)} onToggle={() => toggleSection(section.id)} />
+                    <CustomSectionModule 
+                        section={section} 
+                        walletSection={data.customSections.find(s => s.id === NATIVE_WALLET_ID)}
+                        onUpdate={updateSection} 
+                        onDeleteSection={() => deleteSection(section.id)} 
+                        isOpen={expandedSections.has(section.id)} 
+                        onToggle={() => toggleSection(section.id)} 
+                    />
                   </DraggableModuleWrapper>
                 ))}
               </div>
@@ -288,7 +313,13 @@ function App() {
                 </div>
                 {data.customSections.filter(s => s.type === 'expense').map((section, idx) => (
                   <DraggableModuleWrapper key={section.id} id={section.id} index={idx} onMove={(f,t) => handleMoveSection(f, t, 'expense')}>
-                    <CustomSectionModule section={section} onUpdate={updateSection} onDeleteSection={() => deleteSection(section.id)} isOpen={expandedSections.has(section.id)} onToggle={() => toggleSection(section.id)} />
+                    <CustomSectionModule 
+                        section={section} 
+                        onUpdate={updateSection} 
+                        onDeleteSection={() => deleteSection(section.id)} 
+                        isOpen={expandedSections.has(section.id)} 
+                        onToggle={() => toggleSection(section.id)} 
+                    />
                   </DraggableModuleWrapper>
                 ))}
               </div>

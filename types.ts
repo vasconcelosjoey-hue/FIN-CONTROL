@@ -70,14 +70,24 @@ export interface FinancialData {
   lastUpdate?: number;
 }
 
+export const NATIVE_WALLET_ID = "native-wallet-session";
+
 export const INITIAL_DATA: FinancialData = {
-  customSections: [], 
+  customSections: [
+    {
+      id: NATIVE_WALLET_ID,
+      title: "WALLET",
+      items: [],
+      type: 'income',
+      structure: 'standard'
+    }
+  ], 
   creditCards: [],
   pixKeys: [],
   radarItems: [],
   dreams: [],
   goals: [],
   dreamsTotalBudget: 0,
-  sectionsOrder: [],
+  sectionsOrder: [NATIVE_WALLET_ID],
   lastUpdate: 0,
 };

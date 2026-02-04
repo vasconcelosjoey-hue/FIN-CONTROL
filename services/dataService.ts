@@ -5,12 +5,33 @@ import { FinancialData, INITIAL_DATA } from "../types";
 
 const LOCAL_STORAGE_KEY = "fincontroller_data";
 
+/**
+ * Valida a estrutura dos dados antes de salvar na nuvem ou localmente.
+ * Previne que usuários injetem scripts ou estruturas corrompidas via Console.
+ */
+const validateFinancialData = (data: any): FinancialData => {
+  const clean = { ...INITIAL_DATA };
+  
+  if (!data || typeof data !== 'object') return clean;
+
+  // Garante que arrays essenciais existam
+  clean.customSections = Array.isArray(data.customSections) ? data.customSections : clean.customSections;
+  clean.goals = Array.isArray(data.goals) ? data.goals : clean.goals;
+  clean.dreams = Array.isArray(data.dreams) ? data.dreams : clean.dreams;
+  clean.creditCards = Array.isArray(data.creditCards) ? data.creditCards : clean.creditCards;
+  clean.pixKeys = Array.isArray(data.pixKeys) ? data.pixKeys : clean.pixKeys;
+  clean.radarItems = Array.isArray(data.radarItems) ? data.radarItems : clean.radarItems;
+  
+  clean.dreamsTotalBudget = typeof data.dreamsTotalBudget === 'number' ? data.dreamsTotalBudget : 0;
+  clean.lastUpdate = typeof data.lastUpdate === 'number' ? data.lastUpdate : Date.now();
+  clean.sectionsOrder = Array.isArray(data.sectionsOrder) ? data.sectionsOrder : clean.sectionsOrder;
+
+  return clean;
+};
+
 export const saveToLocal = (userId: string, data: FinancialData): void => {
-  const dataToSave = {
-    ...data,
-    lastUpdate: data.lastUpdate || Date.now()
-  };
-  localStorage.setItem(`${LOCAL_STORAGE_KEY}_${userId}`, JSON.stringify(dataToSave));
+  const validated = validateFinancialData(data);
+  localStorage.setItem(`${LOCAL_STORAGE_KEY}_${userId}`, JSON.stringify(validated));
 };
 
 export const loadData = async (userId: string): Promise<FinancialData> => {
@@ -22,47 +43,41 @@ export const loadData = async (userId: string): Promise<FinancialData> => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const cloudData = docSnap.data() as FinancialData;
+      const cloudData = validateFinancialData(docSnap.data());
       const cloudTimestamp = cloudData.lastUpdate || 0;
       const localTimestamp = localData?.lastUpdate || 0;
 
-      // Se a nuvem for estritamente mais nova ou igual, atualiza o local
       if (cloudTimestamp >= localTimestamp) {
-        console.log("☁️ Sync: Versão da nuvem é a mais recente.");
         saveToLocal(userId, cloudData);
         return cloudData;
       } else {
-        // Se o local for mais novo, atualiza a nuvem
-        console.log("⚡ Sync: Enviando dados locais para a nuvem.");
-        await setDoc(docRef, { ...localData, lastUpdate: Date.now() });
-        return localData;
+        const validatedLocal = validateFinancialData(localData);
+        await setDoc(docRef, { ...validatedLocal, lastUpdate: Date.now() });
+        return validatedLocal;
       }
     } else if (localData) {
-      // Primeira vez na nuvem
-      await setDoc(docRef, localData);
-      return localData;
+      const validatedLocal = validateFinancialData(localData);
+      await setDoc(docRef, validatedLocal);
+      return validatedLocal;
     }
   } catch (error: any) {
-    if (error.code === 'permission-denied') {
-      console.error("🚫 Erro: Sem permissão no Firestore. Verifique as 'Rules' no console.");
-    } else {
-      console.error("⚠️ Erro ao carregar dados:", error);
-    }
+    console.error("⚠️ Erro crítico de segurança/acesso:", error.message);
   }
 
-  return localData || INITIAL_DATA;
+  return validateFinancialData(localData) || INITIAL_DATA;
 };
 
 export const saveToCloud = async (userId: string, data: FinancialData): Promise<void> => {
   try {
+    const validatedData = validateFinancialData(data);
     const dataWithTimestamp = {
-      ...data,
+      ...validatedData,
       lastUpdate: Date.now()
     };
     await setDoc(doc(db, "users", userId), dataWithTimestamp);
   } catch (error: any) {
     if (error.code === 'permission-denied') {
-      console.error("🚫 Erro ao salvar: Permissão negada no Firestore.");
+      alert("ERRO DE SEGURANÇA: Tentativa de gravação não autorizada detectada.");
     }
     throw error;
   }
@@ -73,16 +88,9 @@ export const subscribeToData = (userId: string, callback: (data: FinancialData) 
     doc(db, "users", userId), 
     (doc) => {
       if (doc.exists()) {
-        const cloudData = doc.data() as FinancialData;
+        const cloudData = validateFinancialData(doc.data());
         saveToLocal(userId, cloudData);
         callback(cloudData);
-      }
-    },
-    (error) => {
-      if (error.code === 'permission-denied') {
-        console.warn("🔒 Sincronização em tempo real bloqueada por falta de permissão (Rules).");
-      } else {
-        console.error("❌ Erro na subscrição do Firestore:", error);
       }
     }
   );

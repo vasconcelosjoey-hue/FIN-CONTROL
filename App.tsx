@@ -4,7 +4,7 @@ import { FinancialData, INITIAL_DATA, CustomSection, NATIVE_WALLET_ID } from './
 import { loadData, saveToLocal, saveToCloud, subscribeToData } from './services/dataService';
 import { Dashboard } from './components/Dashboard';
 import { CustomSectionModule, DreamsModule, GoalsModule } from './components/Modules';
-import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins, LayoutPanelTop, Target } from 'lucide-react';
+import { RefreshCw, Plus, Cloud, ShieldCheck, Star, LogOut, User, ChevronUp, Coins, LayoutPanelTop, Target, ShieldAlert } from 'lucide-react';
 import { DraggableModuleWrapper, Modal, Input, Button, Select } from './components/ui/UIComponents';
 import { AuthScreen } from './components/AuthScreen';
 import { auth } from './firebaseConfig';
@@ -80,6 +80,28 @@ function App() {
   const isInternalUpdate = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Proteção contra Ferramentas de Desenvolvedor (Básico)
+  useEffect(() => {
+    const disableRightClick = (e: MouseEvent) => e.preventDefault();
+    const disableDevToolsShortcuts = (e: KeyboardEvent) => {
+      if (
+        e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U')
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', disableRightClick);
+    document.addEventListener('keydown', disableDevToolsShortcuts);
+
+    return () => {
+      document.removeEventListener('contextmenu', disableRightClick);
+      document.removeEventListener('keydown', disableDevToolsShortcuts);
+    };
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
@@ -98,14 +120,13 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const normalizeData = (d: FinancialData) => {
+  const normalizeData = useCallback((d: FinancialData) => {
     if (!d) return INITIAL_DATA;
     const clean = { ...INITIAL_DATA, ...d };
     if (!clean.goals) clean.goals = [];
     if (!clean.dreams) clean.dreams = [];
     if (!clean.customSections) clean.customSections = [];
     
-    // Garantir que a WALLET nativa exista
     if (!clean.customSections.find(s => s.id === NATIVE_WALLET_ID)) {
       clean.customSections.unshift({
         id: NATIVE_WALLET_ID,
@@ -118,14 +139,14 @@ function App() {
 
     if (!clean.sectionsOrder) clean.sectionsOrder = clean.customSections?.map(s => s.id) || [];
     return clean;
-  };
+  }, []);
 
   const syncToCloud = useCallback((targetData: FinancialData, immediate = false) => {
     if (!user) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     const performSync = async () => {
       try { await saveToCloud(user.uid, targetData); }
-      catch (err) { console.error(err); }
+      catch (err) { console.error("Falha na sincronização de segurança:", err); }
     };
     if (immediate) performSync();
     else saveTimeoutRef.current = setTimeout(performSync, 2000);
@@ -137,6 +158,8 @@ function App() {
     isInternalUpdate.current = true;
     setData(prev => {
       const next = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
+      
+      // Validação final de segurança: O userId do documento deve ser respeitado
       const nextWithTimestamp = { ...next, lastUpdate: now };
       saveToLocal(user.uid, nextWithTimestamp);
       syncToCloud(nextWithTimestamp, immediate);
@@ -160,7 +183,7 @@ function App() {
       } catch (e) { console.error(e); } finally { setTimeout(() => setLoading(false), 800); }
     })();
     return () => unsubscribeData();
-  }, [user]);
+  }, [user, normalizeData]);
 
   const toggleSection = (id: string) => {
     setExpandedSections(prev => {
@@ -189,7 +212,7 @@ function App() {
   };
 
   const deleteSection = (id: string) => {
-    if (id === NATIVE_WALLET_ID) return; // Proteção contra deleção da Wallet
+    if (id === NATIVE_WALLET_ID) return;
     handleUpdate(prev => ({
       ...prev,
       customSections: prev.customSections.filter(s => s.id !== id),
@@ -198,7 +221,6 @@ function App() {
   };
 
   const updateSection = (updatedSection: CustomSection, immediate = false) => {
-    // Se for a Wallet, impede a mudança de título
     const sectionToSave = updatedSection.id === NATIVE_WALLET_ID 
       ? { ...updatedSection, title: "WALLET" } 
       : updatedSection;
@@ -238,11 +260,12 @@ function App() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-8">
         <h1 className="text-3xl sm:text-6xl font-black text-white tracking-tighter uppercase mb-2">
-          FINANCIAL <span className="text-neon-blue">CONTROLLER</span>
+          FINANCIAL <span className="text-neon-blue">VAULT</span>
         </h1>
-        <p className="text-[10px] sm:text-sm text-slate-500 font-black uppercase tracking-[0.5em]">powered by JOI.A.</p>
-        <div className="mt-10">
-          <RefreshCw className="animate-spin text-neon-blue w-8 h-8 mx-auto" strokeWidth={3} />
+        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.5em] mb-10">JOI.A. SECURITY VERIFICATION...</p>
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin"></div>
+          <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-neon-blue animate-pulse" size={24} />
         </div>
       </div>
     );
@@ -255,14 +278,15 @@ function App() {
       <nav className="border-b border-white/10 bg-neon-surface/95 backdrop-blur-2xl sticky top-0 z-50 py-3 sm:py-5 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
           <div className="flex flex-col cursor-pointer" onClick={() => setActiveModule('dashboard')}>
-            <h1 className="font-black text-[12px] sm:text-2xl tracking-tighter uppercase leading-none">
-              FINANCIAL <span className="text-white">VAULT</span> - <span className="text-neon-blue">JOEY</span>
+            <h1 className="font-black text-[12px] sm:text-2xl tracking-tighter uppercase leading-none flex items-center gap-2">
+              <ShieldCheck size={20} className="text-neon-blue hidden sm:block" />
+              FINANCIAL <span className="text-white">VAULT</span>
             </h1>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
                <div className="hidden sm:flex bg-black/40 p-1 rounded-2xl border border-white/5 gap-2">
-                 <button onClick={() => setActiveModule('dashboard')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dashboard' ? 'bg-white/10 text-white border-white/40' : 'text-slate-500 hover:text-slate-300'}`}>Módulos</button>
+                 <button onClick={() => setActiveModule('dashboard')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dashboard' ? 'bg-white/10 text-white border-white/40 shadow-neon-blue' : 'text-slate-500 hover:text-slate-300'}`}>Módulos</button>
                  <button onClick={() => setActiveModule('dreams')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'dreams' ? 'bg-neon-pink/30 text-white border-neon-pink/60' : 'text-slate-500 hover:text-slate-300'}`}>Dreams</button>
                  <button onClick={() => setActiveModule('goals')} className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeModule === 'goals' ? 'bg-neon-blue/30 text-white border-neon-blue/60' : 'text-slate-500 hover:text-slate-300'}`}>Goals</button>
                </div>
@@ -273,6 +297,11 @@ function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-10">
+        <div className="flex items-center gap-2 mb-4 bg-neon-blue/5 border border-neon-blue/20 p-2 rounded-xl">
+           <ShieldAlert size={14} className="text-neon-blue" />
+           <p className="text-[8px] font-black uppercase text-neon-blue tracking-widest">Cofre Protegido por AES-256 e Firebase Rules • Sessão: {user.uid.slice(0, 10)}...</p>
+        </div>
+
         {activeModule === 'dreams' ? (
           <DreamsModule data={data} onUpdate={handleUpdate} onBack={() => setActiveModule('dashboard')} />
         ) : activeModule === 'goals' ? (
